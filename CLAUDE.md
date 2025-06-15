@@ -8,39 +8,53 @@ This is a Python project called "spark-profiler" designed for profiling Apache S
 
 ## Development Setup
 
-- **Python Version**: Requires Python >=3.13
+- **Python Version**: Requires Python >=3.8
 - **Project Management**: Uses pyproject.toml for dependency management
-- **Package Manager**: Standard pip/uv workflow
+- **Package Manager**: uv (ultra-fast Python package installer)
 
 ## Key Commands
 
 ```bash
-# Install in development mode
-pip install -e .
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install with development dependencies
-pip install -e ".[dev]"
+# Create virtual environment and install dependencies
+uv sync
 
-# Verify installation
-python examples/installation_verification.py
+# Install with all optional dependencies (including dev)
+uv sync --all-extras
+
+# Add a new dependency
+uv add <package-name>
+
+# Add a new dev dependency
+uv add --dev <package-name>
+
+# Run commands in the virtual environment
+uv run python examples/installation_verification.py
 
 # Run tests
-python -m pytest
+uv run pytest
 
 # Run tests with coverage
-python -m pytest --cov=spark_profiler
+uv run pytest --cov=spark_profiler
 
 # Format code
-python -m black spark_profiler/ tests/ examples/
+uv run black spark_profiler/ tests/ examples/
 
 # Type checking
-python -m mypy spark_profiler/
+uv run mypy spark_profiler/
 
 # Lint code
-python -m flake8 spark_profiler/
+uv run flake8 spark_profiler/
 
 # Build package
-python -m build
+uv run python -m build
+
+# Activate virtual environment manually (optional)
+source .venv/bin/activate  # Linux/macOS
+# or
+.venv\Scripts\activate  # Windows
 ```
 
 ## Architecture Overview

@@ -46,12 +46,11 @@ Documentation = "https://github.com/bjornvandijkman1993/spark-profiler#readme"
 Issues = "https://github.com/bjornvandijkman1993/spark-profiler/issues"
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["spark_profiler*"]
+[tool.hatch.build.targets.wheel]
+packages = ["spark_profiler"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
