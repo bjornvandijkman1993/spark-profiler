@@ -55,26 +55,18 @@ def main():
     df.show()
 
     print("\n" + "=" * 60)
-    print("PROFILING ENTIRE DATAFRAME (PANDAS OUTPUT)")
+    print("PROFILING ENTIRE DATAFRAME")
     print("=" * 60)
 
     # Create profiler and generate profile
     profiler = DataFrameProfiler(df)
+    profile = profiler.profile()
 
-    # Default output is now pandas DataFrame
-    profile_df = profiler.profile()
-    print(f"\nProfile DataFrame shape: {profile_df.shape}")
-    print("\nProfile DataFrame preview:")
-    print(profile_df[["column_name", "data_type", "null_percentage", "distinct_count"]].to_string())
-
-    # Access metadata from DataFrame attributes
-    print(f"\nTotal Rows: {profile_df.attrs['overview']['total_rows']:,}")
-    print(f"Total Columns: {profile_df.attrs['overview']['total_columns']}")
-    print(f"Profiling Timestamp: {profile_df.attrs['profiling_timestamp']}")
-
-    # Get dictionary format for detailed display
-    profile = profiler.profile(output_format="dict")
+    # Display overview
     overview = profile["overview"]
+    print(f"Total Rows: {overview['total_rows']:,}")
+    print(f"Total Columns: {overview['total_columns']}")
+    print(f"Column Types: {list(overview['column_types'].keys())}")
 
     # Display column details
     print("\nColumn Statistics:")
@@ -114,37 +106,23 @@ def main():
     print("PROFILING SPECIFIC COLUMNS")
     print("=" * 60)
 
-    # Profile only specific columns (returns pandas by default)
-    numeric_profile_df = profiler.profile(columns=["age", "salary"])
-    print("\nNumeric columns only (pandas DataFrame):")
-    print(numeric_profile_df[["column_name", "min", "max", "mean"]].to_string())
+    # Profile only specific columns
+    numeric_profile = profiler.profile(columns=["age", "salary"])
+    print("\nNumeric columns only:")
+    for col_name, stats in numeric_profile["columns"].items():
+        print(f"{col_name}: min={stats['min']}, max={stats['max']}, mean={stats['mean']:.2f}")
 
     print("\n" + "=" * 60)
     print("FORMATTED OUTPUT EXAMPLES")
     print("=" * 60)
 
     # Example of formatted output
+    from spark_profiler.utils import format_profile_output
 
     # Summary format
     print("\nSummary Report:")
-    summary = profiler.format_output("summary")
+    summary = format_profile_output(profile, format_type="summary")
     print(summary)
-
-    # Save to CSV
-    print("\nSaving profile to CSV...")
-    profiler.to_csv("employee_profile.csv", index=False)
-    print("✓ Saved to employee_profile.csv")
-
-    # Example of data quality checks with pandas
-    print("\n" + "=" * 60)
-    print("DATA QUALITY CHECKS")
-    print("=" * 60)
-
-    # Find columns with issues
-    issues = profile_df[profile_df["null_percentage"] > 10]
-    if not issues.empty:
-        print("\nColumns with >10% null values:")
-        print(issues[["column_name", "null_percentage"]].to_string())
 
 
 if __name__ == "__main__":

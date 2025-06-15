@@ -10,39 +10,39 @@ jobs:
   format:
     name: Auto Format Code
     runs-on: ubuntu-latest
-    
+
     # Only run on PRs from forks or when manually triggered
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == true
-    
+
     steps:
     - uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         ref: ${{ github.head_ref }}
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.11"
-    
+
     - name: Install uv
       uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
         cache-dependency-glob: "uv.lock"
-    
+
     - name: Install formatting tools
       run: |
         uv sync --frozen --all-extras
-    
+
     - name: Run black formatting
       run: |
         uv run black spark_profiler/ tests/ examples/
-    
+
     - name: Run isort import sorting
       run: |
         uv run isort spark_profiler/ tests/ examples/ --profile black
-    
+
     - name: Check for changes
       id: verify-changed-files
       run: |
@@ -51,7 +51,7 @@ jobs:
         else
           echo "changed=false" >> $GITHUB_OUTPUT
         fi
-    
+
     - name: Commit changes
       if: steps.verify-changed-files.outputs.changed == 'true'
       run: |

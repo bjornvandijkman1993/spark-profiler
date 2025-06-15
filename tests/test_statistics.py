@@ -3,15 +3,13 @@ Test cases for statistics computation module.
 """
 
 import pytest
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 from pyspark.sql.types import (
     StructType,
     StructField,
     StringType,
     IntegerType,
-    DoubleType,
     DateType,
-    TimestampType,
 )
 
 from spark_profiler.statistics import StatisticsComputer
@@ -30,15 +28,15 @@ class TestStatisticsComputer:
         """Test cached total rows calculation."""
         data = [(1, "a"), (2, "b"), (3, "c")]
         df = spark_session.createDataFrame(data, ["id", "value"])
-        
+
         computer = StatisticsComputer(df)
-        
+
         # First call should compute
         assert computer.total_rows is None
         total = computer._get_total_rows()
         assert total == 3
         assert computer.total_rows == 3
-        
+
         # Second call should use cached value
         total2 = computer._get_total_rows()
         assert total2 == 3
@@ -55,10 +53,10 @@ class TestStatisticsComputer:
             (7, None),
         ]
         df = spark_session.createDataFrame(data, ["id", "fruit"])
-        
+
         computer = StatisticsComputer(df)
         stats = computer.compute_basic_stats("fruit")
-        
+
         assert stats["total_count"] == 7
         assert stats["non_null_count"] == 5
         assert stats["null_count"] == 2
@@ -70,10 +68,10 @@ class TestStatisticsComputer:
         """Test basic statistics when all values are null."""
         data = [(1, None), (2, None), (3, None)]
         df = spark_session.createDataFrame(data, ["id", "value"])
-        
+
         computer = StatisticsComputer(df)
         stats = computer.compute_basic_stats("value")
-        
+
         assert stats["total_count"] == 3
         assert stats["non_null_count"] == 0
         assert stats["null_count"] == 3
@@ -85,10 +83,10 @@ class TestStatisticsComputer:
         """Test basic statistics when there are no null values."""
         data = [(i, f"value_{i}") for i in range(100)]
         df = spark_session.createDataFrame(data, ["id", "value"])
-        
+
         computer = StatisticsComputer(df)
         stats = computer.compute_basic_stats("value")
-        
+
         assert stats["total_count"] == 100
         assert stats["non_null_count"] == 100
         assert stats["null_count"] == 0
@@ -100,10 +98,10 @@ class TestStatisticsComputer:
         """Test numeric statistics computation."""
         data = [(i, float(i * 10)) for i in range(1, 11)]  # 10, 20, ..., 100
         df = spark_session.createDataFrame(data, ["id", "value"])
-        
+
         computer = StatisticsComputer(df)
         stats = computer.compute_numeric_stats("value")
-        
+
         assert stats["min"] == 10.0
         assert stats["max"] == 100.0
         assert stats["mean"] == 55.0
@@ -117,10 +115,10 @@ class TestStatisticsComputer:
         """Test numeric statistics with null values."""
         data = [(1, 10.0), (2, 20.0), (3, None), (4, 40.0), (5, None)]
         df = spark_session.createDataFrame(data, ["id", "value"])
-        
+
         computer = StatisticsComputer(df)
         stats = computer.compute_numeric_stats("value")
-        
+
         # Statistics should be computed on non-null values only
         assert stats["min"] == 10.0
         assert stats["max"] == 40.0
@@ -130,10 +128,10 @@ class TestStatisticsComputer:
         """Test numeric statistics when all values are the same."""
         data = [(i, 42.0) for i in range(5)]
         df = spark_session.createDataFrame(data, ["id", "value"])
-        
+
         computer = StatisticsComputer(df)
         stats = computer.compute_numeric_stats("value")
-        
+
         assert stats["min"] == 42.0
         assert stats["max"] == 42.0
         assert stats["mean"] == 42.0
@@ -151,10 +149,10 @@ class TestStatisticsComputer:
             (6, "x"),
         ]
         df = spark_session.createDataFrame(data, ["id", "text"])
-        
+
         computer = StatisticsComputer(df)
         stats = computer.compute_string_stats("text")
-        
+
         assert stats["min_length"] == 0  # Empty string
         assert stats["max_length"] == 23  # "a very long string here"
         assert stats["avg_length"] == pytest.approx(8.4, 0.1)  # Average of non-null lengths
@@ -164,10 +162,10 @@ class TestStatisticsComputer:
         """Test string statistics when all values are empty strings."""
         data = [(1, ""), (2, ""), (3, "")]
         df = spark_session.createDataFrame(data, ["id", "text"])
-        
+
         computer = StatisticsComputer(df)
         stats = computer.compute_string_stats("text")
-        
+
         assert stats["min_length"] == 0
         assert stats["max_length"] == 0
         assert stats["avg_length"] == 0.0
@@ -177,10 +175,10 @@ class TestStatisticsComputer:
         """Test string statistics with null values."""
         data = [(1, "hello"), (2, None), (3, "world"), (4, None)]
         df = spark_session.createDataFrame(data, ["id", "text"])
-        
+
         computer = StatisticsComputer(df)
         stats = computer.compute_string_stats("text")
-        
+
         # Length functions should handle nulls
         assert stats["min_length"] == 5  # Both "hello" and "world" have length 5
         assert stats["max_length"] == 5
@@ -196,10 +194,10 @@ class TestStatisticsComputer:
             (4, None),
         ]
         df = spark_session.createDataFrame(data, ["id", "date_col"])
-        
+
         computer = StatisticsComputer(df)
         stats = computer.compute_temporal_stats("date_col")
-        
+
         assert stats["min_date"] == date(2023, 1, 1)
         assert stats["max_date"] == date(2023, 12, 31)
         assert stats["date_range_days"] == 364  # Days between Jan 1 and Dec 31
@@ -213,26 +211,28 @@ class TestStatisticsComputer:
             (4, None),
         ]
         df = spark_session.createDataFrame(data, ["id", "timestamp_col"])
-        
+
         computer = StatisticsComputer(df)
         stats = computer.compute_temporal_stats("timestamp_col")
-        
+
         assert stats["min_date"] == datetime(2023, 1, 1, 0, 0)
         assert stats["max_date"] == datetime(2023, 1, 3, 23, 59)
         assert stats["date_range_days"] == 2  # 3 days span
 
     def test_compute_temporal_stats_all_nulls(self, spark_session):
         """Test temporal statistics when all values are null."""
-        schema = StructType([
-            StructField("id", IntegerType(), True),
-            StructField("date_col", DateType(), True),
-        ])
+        schema = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("date_col", DateType(), True),
+            ]
+        )
         data = [(1, None), (2, None), (3, None)]
         df = spark_session.createDataFrame(data, schema)
-        
+
         computer = StatisticsComputer(df)
         stats = computer.compute_temporal_stats("date_col")
-        
+
         assert stats["min_date"] is None
         assert stats["max_date"] is None
         assert stats["date_range_days"] is None
@@ -245,24 +245,26 @@ class TestStatisticsComputer:
             (3, date(2023, 6, 15)),
         ]
         df = spark_session.createDataFrame(data, ["id", "date_col"])
-        
+
         computer = StatisticsComputer(df)
         stats = computer.compute_temporal_stats("date_col")
-        
+
         assert stats["min_date"] == date(2023, 6, 15)
         assert stats["max_date"] == date(2023, 6, 15)
         assert stats["date_range_days"] == 0  # Same date
 
     def test_empty_dataframe(self, spark_session):
         """Test statistics computation on empty DataFrame."""
-        schema = StructType([
-            StructField("id", IntegerType(), True),
-            StructField("value", StringType(), True),
-        ])
+        schema = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("value", StringType(), True),
+            ]
+        )
         df = spark_session.createDataFrame([], schema)
-        
+
         computer = StatisticsComputer(df)
-        
+
         # Basic stats should handle empty DataFrame
         stats = computer.compute_basic_stats("value")
         assert stats["total_count"] == 0

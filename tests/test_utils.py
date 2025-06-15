@@ -30,9 +30,9 @@ class TestGetColumnDataTypes:
         data = [(1, "Alice", 25.5)]
         columns = ["id", "name", "score"]
         df = spark_session.createDataFrame(data, columns)
-        
+
         result = get_column_data_types(df)
-        
+
         assert len(result) == 3
         assert result["id"] == LongType()
         assert result["name"] == StringType()
@@ -40,29 +40,33 @@ class TestGetColumnDataTypes:
 
     def test_complex_schema(self, spark_session):
         """Test getting data types from a DataFrame with complex types."""
-        schema = StructType([
-            StructField("id", IntegerType(), True),
-            StructField("name", StringType(), True),
-            StructField("active", BooleanType(), True),
-            StructField("scores", ArrayType(DoubleType()), True),
-            StructField("metadata", MapType(StringType(), StringType()), True),
-            StructField("created_date", DateType(), True),
-            StructField("updated_time", TimestampType(), True),
-        ])
-        
-        data = [(
-            1, 
-            "Alice", 
-            True, 
-            [85.5, 90.0], 
-            {"department": "IT", "level": "senior"},
-            date(2023, 1, 1),
-            datetime(2023, 1, 1, 12, 0)
-        )]
-        
+        schema = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("name", StringType(), True),
+                StructField("active", BooleanType(), True),
+                StructField("scores", ArrayType(DoubleType()), True),
+                StructField("metadata", MapType(StringType(), StringType()), True),
+                StructField("created_date", DateType(), True),
+                StructField("updated_time", TimestampType(), True),
+            ]
+        )
+
+        data = [
+            (
+                1,
+                "Alice",
+                True,
+                [85.5, 90.0],
+                {"department": "IT", "level": "senior"},
+                date(2023, 1, 1),
+                datetime(2023, 1, 1, 12, 0),
+            )
+        ]
+
         df = spark_session.createDataFrame(data, schema)
         result = get_column_data_types(df)
-        
+
         assert len(result) == 7
         assert result["id"] == IntegerType()
         assert result["name"] == StringType()
@@ -74,14 +78,16 @@ class TestGetColumnDataTypes:
 
     def test_empty_dataframe(self, spark_session):
         """Test getting data types from an empty DataFrame."""
-        schema = StructType([
-            StructField("id", IntegerType(), True),
-            StructField("name", StringType(), True),
-        ])
-        
+        schema = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("name", StringType(), True),
+            ]
+        )
+
         df = spark_session.createDataFrame([], schema)
         result = get_column_data_types(df)
-        
+
         assert len(result) == 2
         assert result["id"] == IntegerType()
         assert result["name"] == StringType()
@@ -92,14 +98,11 @@ class TestFormatProfileOutput:
 
     def test_format_as_dict(self):
         """Test formatting as dictionary (default)."""
-        profile_data = {
-            "overview": {"total_rows": 100, "total_columns": 3},
-            "columns": {"col1": {"min": 1, "max": 10}}
-        }
-        
+        profile_data = {"overview": {"total_rows": 100, "total_columns": 3}, "columns": {"col1": {"min": 1, "max": 10}}}
+
         result = format_profile_output(profile_data, "dict")
         assert result == profile_data
-        
+
         # Test default format
         result = format_profile_output(profile_data)
         assert result == profile_data
@@ -110,34 +113,27 @@ class TestFormatProfileOutput:
             "overview": {"total_rows": 100, "total_columns": 3},
             "columns": {
                 "col1": {"min": 1, "max": 10, "mean": 5.5},
-                "col2": {"data_type": "StringType", "null_count": 5}
-            }
+                "col2": {"data_type": "StringType", "null_count": 5},
+            },
         }
-        
+
         result = format_profile_output(profile_data, "json")
-        
+
         # Check it's a valid JSON string
         assert isinstance(result, str)
         parsed = json.loads(result)
         assert parsed == profile_data
-        
+
         # Check formatting
         assert "\n" in result  # Should be indented
         assert "  " in result  # Should have indentation
 
     def test_format_as_json_with_datetime(self):
         """Test JSON formatting with datetime objects."""
-        profile_data = {
-            "columns": {
-                "date_col": {
-                    "min_date": datetime(2023, 1, 1),
-                    "max_date": date(2023, 12, 31)
-                }
-            }
-        }
-        
+        profile_data = {"columns": {"date_col": {"min_date": datetime(2023, 1, 1), "max_date": date(2023, 12, 31)}}}
+
         result = format_profile_output(profile_data, "json")
-        
+
         # Should handle datetime serialization
         assert isinstance(result, str)
         parsed = json.loads(result)
@@ -155,7 +151,7 @@ class TestFormatProfileOutput:
                     "distinct_count": 1000,
                     "min": 1,
                     "max": 1000,
-                    "mean": 500.5
+                    "mean": 500.5,
                 },
                 "name": {
                     "data_type": "StringType",
@@ -163,28 +159,28 @@ class TestFormatProfileOutput:
                     "distinct_count": 950,
                     "min_length": 3,
                     "max_length": 20,
-                    "avg_length": 8.5
+                    "avg_length": 8.5,
                 },
                 "created": {
                     "data_type": "DateType",
                     "null_percentage": 0.0,
                     "distinct_count": 365,
                     "min_date": "2023-01-01",
-                    "max_date": "2023-12-31"
-                }
-            }
+                    "max_date": "2023-12-31",
+                },
+            },
         }
-        
+
         result = format_profile_output(profile_data, "summary")
-        
+
         # Check it's a string
         assert isinstance(result, str)
-        
+
         # Check key components are present
         assert "DataFrame Profile Summary" in result
         assert "Total Rows: 1,000" in result
         assert "Total Columns: 4" in result
-        
+
         # Check column details
         assert "Column: id" in result
         assert "Type: IntegerType" in result
@@ -192,22 +188,22 @@ class TestFormatProfileOutput:
         assert "Min: 1" in result
         assert "Max: 1000" in result
         assert "Mean: 500.50" in result
-        
+
         assert "Column: name" in result
         assert "Min Length: 3" in result
         assert "Max Length: 20" in result
         assert "Avg Length: 8.50" in result
-        
+
         assert "Column: created" in result
         assert "Date Range: 2023-01-01 to 2023-12-31" in result
 
     def test_format_invalid_type(self):
         """Test formatting with invalid format type."""
         profile_data = {"test": "data"}
-        
+
         with pytest.raises(ValueError) as excinfo:
             format_profile_output(profile_data, "invalid")
-        
+
         assert "Unsupported format type: invalid" in str(excinfo.value)
 
 
@@ -217,34 +213,28 @@ class TestCreateSummaryReport:
     def test_empty_profile_data(self):
         """Test summary report with empty profile data."""
         profile_data = {}
-        
+
         result = _create_summary_report(profile_data)
-        
+
         assert "DataFrame Profile Summary" in result
         assert "Total Rows: N/A" in result
         assert "Total Columns: N/A" in result
 
     def test_missing_overview(self):
         """Test summary report with missing overview section."""
-        profile_data = {
-            "columns": {
-                "col1": {"data_type": "IntegerType", "null_percentage": 10.0}
-            }
-        }
-        
+        profile_data = {"columns": {"col1": {"data_type": "IntegerType", "null_percentage": 10.0}}}
+
         result = _create_summary_report(profile_data)
-        
+
         assert "Total Rows: N/A" in result
         assert "Column: col1" in result
 
     def test_missing_columns(self):
         """Test summary report with missing columns section."""
-        profile_data = {
-            "overview": {"total_rows": 500, "total_columns": 2}
-        }
-        
+        profile_data = {"overview": {"total_rows": 500, "total_columns": 2}}
+
         result = _create_summary_report(profile_data)
-        
+
         assert "Total Rows: 500" in result
         assert "Column Details:" in result
         # Should not have any column details
@@ -258,11 +248,11 @@ class TestCreateSummaryReport:
                     "data_type": "UnknownType",
                     # Missing null_percentage and distinct_count
                 }
-            }
+            },
         }
-        
+
         result = _create_summary_report(profile_data)
-        
+
         assert "Column: incomplete_col" in result
         assert "Type: UnknownType" in result
         assert "Null %: 0.00%" in result  # Should use default
@@ -278,13 +268,13 @@ class TestCreateSummaryReport:
                     "distinct_count": 50,
                     "min": 0.0,
                     "max": 100.0,
-                    "mean": 50.12345
+                    "mean": 50.12345,
                 }
             }
         }
-        
+
         result = _create_summary_report(profile_data)
-        
+
         # Check mean is formatted to 2 decimal places
         assert "Mean: 50.12" in result
         assert "Null %: 2.50%" in result
@@ -295,13 +285,13 @@ class TestCreateSummaryReport:
             "overview": {"total_rows": 1000, "total_columns": 2},
             "columns": {
                 "col1": {"data_type": "IntegerType", "null_percentage": 0.0},
-                "col2": {"data_type": "StringType", "null_percentage": 5.0}
-            }
+                "col2": {"data_type": "StringType", "null_percentage": 5.0},
+            },
         }
-        
+
         result = _create_summary_report(profile_data)
         lines = result.split("\n")
-        
+
         # Check structure
         assert lines[0] == "DataFrame Profile Summary"
         assert lines[1] == "=" * 50

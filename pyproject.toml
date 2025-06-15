@@ -39,6 +39,12 @@ dev = [
     "build>=0.8.0",
     "twine>=4.0.0",
 ]
+docs = [
+    "sphinx>=8.0.0",
+    "sphinx-rtd-theme>=3.0.0",
+    "sphinx-autodoc-typehints>=3.2.0",
+    "myst-parser>=4.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/bjornvandijkman1993/spark-profiler"

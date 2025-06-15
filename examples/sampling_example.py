@@ -18,9 +18,7 @@ from spark_profiler import DataFrameProfiler, SamplingConfig, create_sampling_co
 
 def create_large_sample_data():
     """Create a larger sample DataFrame for sampling demonstration."""
-    spark = (
-        SparkSession.builder.appName("SamplingExample").master("local[*]").getOrCreate()
-    )
+    spark = SparkSession.builder.appName("SamplingExample").master("local[*]").getOrCreate()
 
     # Define schema
     schema = StructType(
@@ -94,7 +92,7 @@ def main():
     profile_custom = profiler_custom.profile()
 
     sampling_info = profile_custom["sampling"]
-    print(f"Custom sampling results:")
+    print("Custom sampling results:")
     print(f"  Sample size: {sampling_info['sample_size']:,} rows")
     print(f"  Quality score: {sampling_info['quality_score']:.3f}")
     print(f"  Reduction ratio: {sampling_info['reduction_ratio']:.4f}")
@@ -104,16 +102,14 @@ def main():
     print("=" * 70)
 
     # Fraction-based sampling
-    fraction_config = create_sampling_config(
-        target_fraction=0.02, seed=123  # 2% sample
-    )
+    fraction_config = create_sampling_config(target_fraction=0.02, seed=123)  # 2% sample
 
     profiler_fraction = DataFrameProfiler(df, sampling_config=fraction_config)
     profile_fraction = profiler_fraction.profile()
 
     sampling_info = profile_fraction["sampling"]
-    print(f"Fraction-based sampling results:")
-    print(f"  Target fraction: 2%")
+    print("Fraction-based sampling results:")
+    print("  Target fraction: 2%")
     print(f"  Actual sample size: {sampling_info['sample_size']:,} rows")
     print(f"  Actual fraction: {sampling_info['sampling_fraction']:.4f}")
     print(f"  Quality score: {sampling_info['quality_score']:.3f}")
@@ -127,9 +123,7 @@ def main():
     # Time full profiling
     print("⏱️  Timing full dataset profiling...")
     start_time = time.time()
-    profiler_full = DataFrameProfiler(
-        df, sampling_config=SamplingConfig(auto_sample=False)
-    )
+    profiler_full = DataFrameProfiler(df, sampling_config=SamplingConfig(auto_sample=False))
     profile_full = profiler_full.profile()
     full_time = time.time() - start_time
 
@@ -140,21 +134,19 @@ def main():
     profile_sampled = profiler_sampled.profile()
     sampled_time = time.time() - start_time
 
-    print(f"\nPerformance Results:")
+    print("\nPerformance Results:")
     print(f"  Full dataset time: {full_time:.2f} seconds")
     print(f"  Sampled time: {sampled_time:.2f} seconds")
     print(f"  Actual speedup: {full_time / sampled_time:.1f}x")
 
     # Compare some statistics to show accuracy
-    print(f"\nAccuracy Comparison (age column):")
+    print("\nAccuracy Comparison (age column):")
     full_age_stats = profile_full["columns"]["age"]
     sampled_age_stats = profile_sampled["columns"]["age"]
 
     print(f"  Full dataset mean: {full_age_stats['mean']:.2f}")
     print(f"  Sampled mean: {sampled_age_stats['mean']:.2f}")
-    print(
-        f"  Difference: {abs(full_age_stats['mean'] - sampled_age_stats['mean']):.2f}"
-    )
+    print(f"  Difference: {abs(full_age_stats['mean'] - sampled_age_stats['mean']):.2f}")
 
     print("\n" + "=" * 70)
     print("5. LEGACY COMPATIBILITY")
@@ -165,7 +157,7 @@ def main():
     profile_legacy = profiler_legacy.profile()
 
     sampling_info = profile_legacy["sampling"]
-    print(f"Legacy sample_fraction=0.01 results:")
+    print("Legacy sample_fraction=0.01 results:")
     print(f"  Sample size: {sampling_info['sample_size']:,} rows")
     print(f"  Quality score: {sampling_info['quality_score']:.3f}")
 

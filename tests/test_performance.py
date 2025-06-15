@@ -3,16 +3,7 @@ Test cases for performance optimization utilities.
 """
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from pyspark.sql.types import (
-    StructType,
-    StructField,
-    StringType,
-    IntegerType,
-    DoubleType,
-    TimestampType,
-    DateType,
-)
+from unittest.mock import Mock, patch
 from datetime import datetime, date
 
 from spark_profiler.performance import BatchStatisticsComputer, optimize_dataframe_for_profiling
@@ -30,14 +21,14 @@ class TestBatchStatisticsComputer:
     def test_enable_caching(self, sample_dataframe):
         """Test enabling DataFrame caching."""
         computer = BatchStatisticsComputer(sample_dataframe)
-        
+
         # Mock the cache method
         sample_dataframe.cache = Mock(return_value=sample_dataframe)
-        
+
         computer.enable_caching()
         assert computer.cache_enabled is True
         sample_dataframe.cache.assert_called_once()
-        
+
         # Test that enabling again doesn't cache twice
         computer.enable_caching()
         sample_dataframe.cache.assert_called_once()
@@ -45,18 +36,18 @@ class TestBatchStatisticsComputer:
     def test_disable_caching(self, sample_dataframe):
         """Test disabling DataFrame caching."""
         computer = BatchStatisticsComputer(sample_dataframe)
-        
+
         # Mock cache and unpersist methods
         sample_dataframe.cache = Mock(return_value=sample_dataframe)
         sample_dataframe.unpersist = Mock(return_value=sample_dataframe)
-        
+
         # Enable then disable caching
         computer.enable_caching()
         computer.disable_caching()
-        
+
         assert computer.cache_enabled is False
         sample_dataframe.unpersist.assert_called_once()
-        
+
         # Test that disabling again doesn't unpersist twice
         computer.disable_caching()
         sample_dataframe.unpersist.assert_called_once()
@@ -72,36 +63,36 @@ class TestBatchStatisticsComputer:
         ]
         columns = ["id", "name", "score", "timestamp", "date"]
         df = spark_session.createDataFrame(data, columns)
-        
+
         computer = BatchStatisticsComputer(df)
         results = computer.compute_all_columns_batch()
-        
+
         # Check that all columns are processed
         assert set(results.keys()) == set(columns)
-        
+
         # Check numeric column statistics
         assert results["id"]["data_type"] == "LongType()"
         assert results["id"]["total_count"] == 4
         assert results["id"]["null_count"] == 0
         assert results["id"]["min"] == 1
         assert results["id"]["max"] == 4
-        
+
         # Check string column statistics
         assert results["name"]["data_type"] == "StringType()"
         assert results["name"]["null_count"] == 1
         assert results["name"]["empty_count"] == 1
-        
+
         # Check that caching was cleaned up
         assert computer.cache_enabled is False
 
     def test_compute_all_columns_batch_specific_columns(self, sample_dataframe):
         """Test batch computation for specific columns only."""
         computer = BatchStatisticsComputer(sample_dataframe)
-        
+
         # Test with subset of columns
         selected_columns = ["id", "name"]
         results = computer.compute_all_columns_batch(columns=selected_columns)
-        
+
         assert set(results.keys()) == set(selected_columns)
         assert "age" not in results
         assert "salary" not in results
@@ -110,10 +101,10 @@ class TestBatchStatisticsComputer:
         """Test statistics computation for numeric columns."""
         data = [(1, 10.5), (2, 20.0), (3, 30.5), (4, None), (5, 50.0)]
         df = spark_session.createDataFrame(data, ["id", "value"])
-        
+
         computer = BatchStatisticsComputer(df)
         stats = computer._compute_column_stats_optimized("value", df.schema["value"].dataType)
-        
+
         assert stats["data_type"] == "DoubleType()"
         assert stats["total_count"] == 5
         assert stats["non_null_count"] == 4
@@ -136,10 +127,10 @@ class TestBatchStatisticsComputer:
             (5, None),
         ]
         df = spark_session.createDataFrame(data, ["id", "text"])
-        
+
         computer = BatchStatisticsComputer(df)
         stats = computer._compute_column_stats_optimized("text", df.schema["text"].dataType)
-        
+
         assert stats["data_type"] == "StringType()"
         assert stats["total_count"] == 5
         assert stats["null_count"] == 1
@@ -157,22 +148,18 @@ class TestBatchStatisticsComputer:
             (4, None, None),
         ]
         df = spark_session.createDataFrame(data, ["id", "timestamp", "date"])
-        
+
         computer = BatchStatisticsComputer(df)
-        
+
         # Test timestamp column
-        timestamp_stats = computer._compute_column_stats_optimized(
-            "timestamp", df.schema["timestamp"].dataType
-        )
+        timestamp_stats = computer._compute_column_stats_optimized("timestamp", df.schema["timestamp"].dataType)
         assert timestamp_stats["data_type"] == "TimestampType()"
         assert timestamp_stats["min_date"] == datetime(2023, 1, 1)
         assert timestamp_stats["max_date"] == datetime(2023, 12, 31)
         assert timestamp_stats["date_range_days"] == 364
-        
+
         # Test date column
-        date_stats = computer._compute_column_stats_optimized(
-            "date", df.schema["date"].dataType
-        )
+        date_stats = computer._compute_column_stats_optimized("date", df.schema["date"].dataType)
         assert date_stats["data_type"] == "DateType()"
         assert date_stats["min_date"] == date(2023, 1, 1)
         assert date_stats["max_date"] == date(2023, 12, 31)
@@ -181,10 +168,10 @@ class TestBatchStatisticsComputer:
         """Test statistics computation when column has all null values."""
         data = [(1, None), (2, None), (3, None)]
         df = spark_session.createDataFrame(data, ["id", "value"])
-        
+
         computer = BatchStatisticsComputer(df)
         stats = computer._compute_column_stats_optimized("value", df.schema["value"].dataType)
-        
+
         assert stats["total_count"] == 3
         assert stats["non_null_count"] == 0
         assert stats["null_count"] == 3
@@ -194,14 +181,14 @@ class TestBatchStatisticsComputer:
     def test_error_handling_in_batch_compute(self, sample_dataframe):
         """Test error handling during batch computation."""
         computer = BatchStatisticsComputer(sample_dataframe)
-        
+
         # Mock enable_caching to raise an exception
         computer.enable_caching = Mock(side_effect=Exception("Cache error"))
-        
+
         # Should handle error and still return empty results
         with pytest.raises(Exception):
             computer.compute_all_columns_batch()
-        
+
         # Ensure caching is disabled even on error
         assert computer.cache_enabled is False
 
@@ -220,10 +207,10 @@ class TestOptimizeDataFrameForProfiling:
         # Create a larger DataFrame
         data = [(i, f"name_{i}", i * 1.5) for i in range(1000)]
         df = spark_session.createDataFrame(data, ["id", "name", "value"])
-        
+
         # Apply sampling
         result = optimize_dataframe_for_profiling(df, sample_fraction=0.1)
-        
+
         # Check that sampling reduced the size
         result_count = result.count()
         assert result_count < 1000
@@ -234,11 +221,11 @@ class TestOptimizeDataFrameForProfiling:
         # Sample fraction of 0 should not sample
         result = optimize_dataframe_for_profiling(sample_dataframe, sample_fraction=0)
         assert result.count() == sample_dataframe.count()
-        
+
         # Sample fraction of 1.0 should not sample
         result = optimize_dataframe_for_profiling(sample_dataframe, sample_fraction=1.0)
         assert result.count() == sample_dataframe.count()
-        
+
         # Sample fraction > 1 should not sample
         result = optimize_dataframe_for_profiling(sample_dataframe, sample_fraction=1.5)
         assert result.count() == sample_dataframe.count()
@@ -248,10 +235,10 @@ class TestOptimizeDataFrameForProfiling:
         # Create a small DataFrame with multiple partitions
         data = [(i, f"name_{i}") for i in range(10)]
         df = spark_session.createDataFrame(data, ["id", "name"]).repartition(10)
-        
+
         # Check initial partitions
         assert df.rdd.getNumPartitions() == 10
-        
+
         # Optimize should coalesce to 1 partition for small data
         result = optimize_dataframe_for_profiling(df)
         assert result.rdd.getNumPartitions() == 1
@@ -261,14 +248,14 @@ class TestOptimizeDataFrameForProfiling:
         # Create a large DataFrame with few partitions
         # Using range for efficiency in testing
         df = spark_session.range(0, 2000000).coalesce(2)
-        
+
         # Check initial partitions
         assert df.rdd.getNumPartitions() == 2
-        
+
         # Mock count to avoid actual computation in test
-        with patch.object(df, 'count', return_value=2000000):
+        with patch.object(df, "count", return_value=2000000):
             result = optimize_dataframe_for_profiling(df)
-            
+
             # Should increase partitions for large dataset
             # The function should repartition to at least 8
             expected_partitions = result.rdd.getNumPartitions()
@@ -279,7 +266,7 @@ class TestOptimizeDataFrameForProfiling:
         # Create a medium DataFrame
         data = [(i, f"name_{i}") for i in range(10000)]
         df = spark_session.createDataFrame(data, ["id", "name"]).repartition(4)
-        
+
         # Optimize should not change partitions for medium data
         result = optimize_dataframe_for_profiling(df)
         # Since 10000 rows is between the thresholds, partitions shouldn't change

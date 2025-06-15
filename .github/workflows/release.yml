@@ -9,34 +9,34 @@ jobs:
   test:
     name: Test Before Release
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.11"
-    
+
     - name: Set up Java
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
-    
+
     - name: Install uv
       uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
         cache-dependency-glob: "uv.lock"
-    
+
     - name: Install dependencies
       run: |
         uv sync --frozen --all-extras
-    
+
     - name: Run tests
       run: uv run pytest tests/ -v
-    
+
     - name: Run examples
       run: |
         uv run python examples/installation_verification.py
@@ -46,31 +46,31 @@ jobs:
     name: Build Package
     runs-on: ubuntu-latest
     needs: test
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.11"
-    
+
     - name: Install uv
       uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
         cache-dependency-glob: "uv.lock"
-    
+
     - name: Install build dependencies
       run: |
         uv sync --frozen --all-extras
-    
+
     - name: Build package
       run: uv build
-    
+
     - name: Check package
       run: uv run twine check dist/*
-    
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -84,14 +84,14 @@ jobs:
     environment: release
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
-    
+
     steps:
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
         name: dist
         path: dist/
-    
+
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
@@ -103,47 +103,47 @@ jobs:
     needs: build
     permissions:
       contents: write
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
         name: dist
         path: dist/
-    
+
     - name: Extract release notes
       id: extract_notes
       run: |
         # Extract version from tag
         VERSION=${GITHUB_REF#refs/tags/v}
         echo "version=$VERSION" >> $GITHUB_OUTPUT
-        
+
         # Create release notes
         cat > release_notes.md << EOF
         # Release $VERSION
-        
+
         ## What's New
-        
+
         This release includes improvements and new features for the PySpark DataFrame Profiler.
-        
+
         ## Installation
-        
+
         \`\`\`bash
         pip install spark-profiler==$VERSION
         \`\`\`
-        
+
         ## Verification
-        
+
         \`\`\`python
         from spark_profiler import DataFrameProfiler
         # Your PySpark DataFrame profiling code here
         \`\`\`
-        
+
         See the [examples](https://github.com/bjornvandijkman1993/spark-profiler/tree/main/examples) for detailed usage.
         EOF
-    
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:

@@ -25,10 +25,22 @@ install-dev:
 
 # Testing targets
 test:
-	uv run pytest
+	@if [ -f .env ]; then \
+		set -a && . ./.env && set +a && uv run pytest; \
+	else \
+		echo "Setting up test environment..."; \
+		./scripts/setup_test_environment.sh && \
+		set -a && . ./.env && set +a && uv run pytest; \
+	fi
 
 test-cov:
-	uv run pytest --cov=spark_profiler --cov-report=term-missing --cov-report=html
+	@if [ -f .env ]; then \
+		set -a && . ./.env && set +a && uv run pytest --cov=spark_profiler --cov-report=term-missing --cov-report=html; \
+	else \
+		echo "Setting up test environment..."; \
+		./scripts/setup_test_environment.sh && \
+		set -a && . ./.env && set +a && uv run pytest --cov=spark_profiler --cov-report=term-missing --cov-report=html; \
+	fi
 
 test-integration:
 	uv run pytest tests/test_integration.py -v

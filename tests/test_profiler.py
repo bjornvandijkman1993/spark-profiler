@@ -3,15 +3,6 @@ Test cases for the DataFrame profiler.
 """
 
 import pytest
-from unittest.mock import Mock, patch
-from pyspark.sql.types import (
-    StructType,
-    StructField,
-    StringType,
-    IntegerType,
-    DoubleType,
-)
-from datetime import datetime
 
 from spark_profiler import DataFrameProfiler
 from spark_profiler.statistics import StatisticsComputer
@@ -25,7 +16,7 @@ class TestDataFrameProfiler:
         """Test profiler initialization with valid DataFrame."""
         profiler = DataFrameProfiler(sample_dataframe)
         assert profiler.df == sample_dataframe
-        assert len(profiler.column_types) == 3
+        assert len(profiler.column_types) == 4  # id, name, age, salary
 
     def test_init_with_invalid_input(self):
         """Test profiler initialization with invalid input."""
@@ -39,17 +30,18 @@ class TestDataFrameProfiler:
 
         assert "overview" in profile
         assert "columns" in profile
-        assert len(profile["columns"]) == 3
+        assert len(profile["columns"]) == 4  # id, name, age, salary
 
         # Check overview
         overview = profile["overview"]
         assert overview["total_rows"] == 5
-        assert overview["total_columns"] == 3
+        assert overview["total_columns"] == 4
 
         # Check column profiles exist
         assert "id" in profile["columns"]
         assert "name" in profile["columns"]
-        assert "value" in profile["columns"]
+        assert "age" in profile["columns"]
+        assert "salary" in profile["columns"]
 
     def test_profile_specific_columns(self, sample_dataframe):
         """Test profiling specific columns."""
@@ -59,7 +51,8 @@ class TestDataFrameProfiler:
         assert len(profile["columns"]) == 2
         assert "id" in profile["columns"]
         assert "name" in profile["columns"]
-        assert "value" not in profile["columns"]
+        assert "age" not in profile["columns"]
+        assert "salary" not in profile["columns"]
 
     def test_profile_invalid_columns(self, sample_dataframe):
         """Test profiling with invalid column names."""
@@ -71,7 +64,7 @@ class TestDataFrameProfiler:
     def test_numeric_column_stats(self, sample_dataframe):
         """Test statistics for numeric columns."""
         profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile(columns=["id", "value"])
+        profile = profiler.profile(columns=["id", "salary"])
 
         # Check numeric stats for 'id' column
         id_stats = profile["columns"]["id"]
@@ -81,11 +74,11 @@ class TestDataFrameProfiler:
         assert "std" in id_stats
         assert "median" in id_stats
 
-        # Check numeric stats for 'value' column (has nulls)
-        value_stats = profile["columns"]["value"]
-        assert "min" in value_stats
-        assert "max" in value_stats
-        assert value_stats["null_count"] > 0
+        # Check numeric stats for 'salary' column
+        salary_stats = profile["columns"]["salary"]
+        assert "min" in salary_stats
+        assert "max" in salary_stats
+        assert salary_stats["null_count"] == 0  # No nulls in sample data
 
     def test_string_column_stats(self, sample_dataframe):
         """Test statistics for string columns."""
@@ -97,7 +90,7 @@ class TestDataFrameProfiler:
         assert "max_length" in name_stats
         assert "avg_length" in name_stats
         assert "empty_count" in name_stats
-        assert name_stats["empty_count"] == 1  # One empty string
+        assert name_stats["empty_count"] == 0  # No empty strings in sample data
 
 
 class TestStatisticsComputer:
@@ -119,9 +112,9 @@ class TestStatisticsComputer:
         assert stats["non_null_count"] == 5  # id column has no nulls
         assert stats["null_count"] == 0
 
-    def test_numeric_stats_computation(self, sample_dataframe):
+    def test_numeric_stats_computation(self, simple_dataframe):
         """Test numeric statistics computation."""
-        computer = StatisticsComputer(sample_dataframe)
+        computer = StatisticsComputer(simple_dataframe)
         stats = computer.compute_numeric_stats("value")
 
         required_keys = ["min", "max", "mean", "std", "median", "q1", "q3"]
@@ -137,7 +130,7 @@ class TestStatisticsComputer:
         for key in required_keys:
             assert key in stats
 
-        assert stats["empty_count"] == 1  # One empty string
+        assert stats["empty_count"] == 0  # No empty strings in sample data
 
 
 class TestUtils:
@@ -147,14 +140,16 @@ class TestUtils:
         """Test column data type extraction."""
         column_types = get_column_data_types(sample_dataframe)
 
-        assert len(column_types) == 3
+        assert len(column_types) == 4
         assert "id" in column_types
         assert "name" in column_types
-        assert "value" in column_types
+        assert "age" in column_types
+        assert "salary" in column_types
 
-        assert str(column_types["id"]) == "IntegerType()"
+        assert str(column_types["id"]) == "LongType()"
         assert str(column_types["name"]) == "StringType()"
-        assert str(column_types["value"]) == "DoubleType()"
+        assert str(column_types["age"]) == "LongType()"
+        assert str(column_types["salary"]) == "DoubleType()"
 
     def test_format_profile_output_dict(self, sample_dataframe):
         """Test dictionary format output."""

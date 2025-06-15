@@ -8,8 +8,6 @@ from pyspark.sql.functions import (
     col,
     count,
     when,
-    isnan,
-    isnull,
     min as spark_min,
     max as spark_max,
     mean,
@@ -17,8 +15,6 @@ from pyspark.sql.functions import (
     expr,
     length,
     approx_count_distinct,
-    collect_list,
-    size,
 )
 
 
@@ -57,9 +53,7 @@ class StatisticsComputer:
         result = self.df.agg(
             count(col(column_name)).alias("non_null_count"),
             count(when(col(column_name).isNull(), 1)).alias("null_count"),
-            approx_count_distinct(col(column_name), rsd=0.05).alias(
-                "distinct_count"
-            ),  # 5% relative error for speed
+            approx_count_distinct(col(column_name), rsd=0.05).alias("distinct_count"),  # 5% relative error for speed
         ).collect()[0]
 
         non_null_count = result["non_null_count"]
@@ -70,13 +64,9 @@ class StatisticsComputer:
             "total_count": total_rows,
             "non_null_count": non_null_count,
             "null_count": null_count,
-            "null_percentage": (
-                (null_count / total_rows * 100) if total_rows > 0 else 0.0
-            ),
+            "null_percentage": ((null_count / total_rows * 100) if total_rows > 0 else 0.0),
             "distinct_count": distinct_count,
-            "distinct_percentage": (
-                (distinct_count / non_null_count * 100) if non_null_count > 0 else 0.0
-            ),
+            "distinct_percentage": ((distinct_count / non_null_count * 100) if non_null_count > 0 else 0.0),
         }
 
     def compute_numeric_stats(self, column_name: str) -> Dict[str, Any]:
@@ -104,7 +94,7 @@ class StatisticsComputer:
             "min": result["min_value"],
             "max": result["max_value"],
             "mean": result["mean_value"],
-            "std": result["std_value"],
+            "std": result["std_value"] if result["std_value"] is not None else 0.0,
             "median": result["median_value"],
             "q1": result["q1_value"],
             "q3": result["q3_value"],

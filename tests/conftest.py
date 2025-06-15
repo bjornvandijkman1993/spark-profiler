@@ -8,17 +8,16 @@ from pyspark.sql import SparkSession
 @pytest.fixture(scope="session")
 def spark_session():
     """Create a shared SparkSession for tests.
-    
+
     This fixture is created once per test session and shared across all tests.
     It sets up Spark in local mode with minimal configuration to avoid Java issues.
     """
     # Set Java options to avoid common issues
     os.environ.setdefault("SPARK_LOCAL_IP", "127.0.0.1")
-    
+
     # Create SparkSession with test configuration
     spark = (
-        SparkSession.builder
-        .appName("spark-profiler-tests")
+        SparkSession.builder.appName("spark-profiler-tests")
         .master("local[1]")  # Use single thread for tests
         .config("spark.driver.bindAddress", "127.0.0.1")
         .config("spark.driver.host", "127.0.0.1")
@@ -29,9 +28,9 @@ def spark_session():
         .config("spark.executor.memory", "1g")
         .getOrCreate()
     )
-    
+
     yield spark
-    
+
     # Cleanup
     spark.stop()
 
@@ -54,14 +53,8 @@ def sample_dataframe(spark_session):
 def large_dataframe(spark_session):
     """Create a large DataFrame for testing sampling."""
     # Create a DataFrame with 100k rows
-    return (
-        spark_session.range(0, 100000)
-        .selectExpr(
-            "id",
-            "id % 100 as category",
-            "rand() * 1000 as value",
-            "concat('user_', id) as name"
-        )
+    return spark_session.range(0, 100000).selectExpr(
+        "id", "id % 100 as category", "rand() * 1000 as value", "concat('user_', id) as name"
     )
 
 
@@ -76,4 +69,18 @@ def null_dataframe(spark_session):
         (5, "Eve", None, None),
     ]
     columns = ["id", "name", "age", "salary"]
+    return spark_session.createDataFrame(data, columns)
+
+
+@pytest.fixture
+def simple_dataframe(spark_session):
+    """Create a simple DataFrame with id, name, value columns for legacy tests."""
+    data = [
+        (1, "Alice", 100.5),
+        (2, "Bob", 200.3),
+        (3, "", 150.7),  # Empty string
+        (4, "David", None),  # Null value
+        (5, "Eve", 250.0),
+    ]
+    columns = ["id", "name", "value"]
     return spark_session.createDataFrame(data, columns)
