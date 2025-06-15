@@ -10,6 +10,7 @@ from pyspark.sql.types import NumericType, StringType, TimestampType, DateType
 from .statistics import StatisticsComputer
 from .utils import get_column_data_types
 from .performance import BatchStatisticsComputer, optimize_dataframe_for_profiling
+from .sampling import SamplingConfig, SamplingDecisionEngine, SamplingMetadata
 
 
 class DataFrameProfiler:
@@ -20,24 +21,57 @@ class DataFrameProfiler:
     including basic counts, data type specific metrics, and null value analysis.
     """
     
-    def __init__(self, dataframe: DataFrame, optimize_for_large_datasets: bool = False, 
-                 sample_fraction: Optional[float] = None):
+    def __init__(self, dataframe: DataFrame, 
+                 optimize_for_large_datasets: bool = False, 
+                 sample_fraction: Optional[float] = None,
+                 sampling_config: Optional[SamplingConfig] = None):
         """
         Initialize the profiler with a PySpark DataFrame.
         
         Args:
             dataframe: PySpark DataFrame to profile
             optimize_for_large_datasets: If True, use optimized batch processing for better performance
-            sample_fraction: If provided, sample the DataFrame to this fraction for faster profiling
+            sample_fraction: If provided, sample the DataFrame to this fraction for faster profiling (legacy)
+            sampling_config: Advanced sampling configuration (recommended over sample_fraction)
         """
         if not isinstance(dataframe, DataFrame):
             raise TypeError("Input must be a PySpark DataFrame")
         
-        # Optimize DataFrame if requested
-        if optimize_for_large_datasets or sample_fraction:
-            self.df = optimize_dataframe_for_profiling(dataframe, sample_fraction)
+        # Handle legacy sample_fraction parameter
+        if sample_fraction and sampling_config:
+            raise ValueError("Cannot specify both sample_fraction and sampling_config")
+        
+        if sample_fraction:
+            sampling_config = SamplingConfig(target_fraction=sample_fraction)
+        
+        # Set up sampling
+        if sampling_config is None:
+            sampling_config = SamplingConfig()
+        
+        self.sampling_config = sampling_config
+        self.sampling_engine = SamplingDecisionEngine(sampling_config)
+        self.sampling_metadata: Optional[SamplingMetadata] = None
+        
+        # Apply sampling if needed
+        if self.sampling_engine.should_sample(dataframe):
+            self.df, self.sampling_metadata = self.sampling_engine.create_sample(dataframe)
         else:
             self.df = dataframe
+            # Create metadata for non-sampled case
+            original_size = dataframe.count()
+            self.sampling_metadata = SamplingMetadata(
+                original_size=original_size,
+                sample_size=original_size,
+                sampling_fraction=1.0,
+                strategy_used="none",
+                sampling_time=0.0,
+                quality_score=1.0,
+                is_sampled=False
+            )
+        
+        # Optimize DataFrame if requested (after sampling)
+        if optimize_for_large_datasets:
+            self.df = optimize_dataframe_for_profiling(self.df)
             
         self.column_types = get_column_data_types(self.df)
         self.stats_computer = StatisticsComputer(self.df)
@@ -64,7 +98,8 @@ class DataFrameProfiler:
         
         profile_result = {
             'overview': self._get_overview(),
-            'columns': {}
+            'columns': {},
+            'sampling': self._get_sampling_info()
         }
         
         # Use batch processing for large datasets if enabled
@@ -120,3 +155,20 @@ class DataFrameProfiler:
             column_profile.update(temporal_stats)
         
         return column_profile
+    
+    def _get_sampling_info(self) -> Dict[str, Any]:
+        """Get sampling information for the profile."""
+        if not self.sampling_metadata:
+            return {'is_sampled': False}
+        
+        return {
+            'is_sampled': self.sampling_metadata.is_sampled,
+            'original_size': self.sampling_metadata.original_size,
+            'sample_size': self.sampling_metadata.sample_size,
+            'sampling_fraction': self.sampling_metadata.sampling_fraction,
+            'strategy_used': self.sampling_metadata.strategy_used,
+            'sampling_time': self.sampling_metadata.sampling_time,
+            'quality_score': self.sampling_metadata.quality_score,
+            'reduction_ratio': self.sampling_metadata.reduction_ratio,
+            'estimated_speedup': self.sampling_metadata.speedup_estimate
+        }

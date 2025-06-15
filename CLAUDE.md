@@ -21,6 +21,9 @@ pip install -e .
 # Install with development dependencies
 pip install -e ".[dev]"
 
+# Verify installation
+python examples/installation_verification.py
+
 # Run tests
 python -m pytest
 
@@ -58,17 +61,28 @@ The library is structured as follows:
 
 ### Usage Patterns
 ```python
-# Basic usage
+# Basic usage with auto-sampling
 profiler = DataFrameProfiler(spark_df)
 profile = profiler.profile()
 
-# Optimized for large datasets
+# Custom sampling configuration
+from spark_profiler import SamplingConfig
+config = SamplingConfig(target_size=100_000, seed=42)
+profiler = DataFrameProfiler(spark_df, sampling_config=config)
+profile = profiler.profile()
+
+# Optimized for large datasets with sampling
 profiler = DataFrameProfiler(spark_df, optimize_for_large_datasets=True)
 profile = profiler.profile()
 
-# Sample for faster profiling
+# Legacy sample_fraction (still supported)
 profiler = DataFrameProfiler(spark_df, sample_fraction=0.1)
 profile = profiler.profile()
+
+# Check sampling information
+sampling_info = profile['sampling']
+print(f"Sample quality: {sampling_info['quality_score']:.3f}")
+print(f"Speedup: {sampling_info['estimated_speedup']:.1f}x")
 ```
 
 ### Statistics Computed
@@ -78,7 +92,18 @@ profile = profiler.profile()
 - **Temporal**: date ranges, min/max dates
 
 ### Performance Optimizations
-- Approximate distinct counts for speed
-- Batch aggregations to minimize data scans
-- DataFrame caching for multiple operations
-- Intelligent partitioning for different dataset sizes
+- **Intelligent Sampling**: Automatic sampling for datasets >10M rows with quality estimation
+- **Configurable Sampling**: Custom target sizes, fractions, and quality thresholds
+- **Quality Monitoring**: Statistical quality scores and confidence reporting
+- **Approximate Functions**: Fast distinct counts and percentile computations
+- **Batch Aggregations**: Minimize data scans with combined operations
+- **DataFrame Caching**: Smart caching for multiple operations
+- **Adaptive Partitioning**: Intelligent partitioning for different dataset sizes
+
+### Sampling Features
+- **Auto-Sampling**: Automatically applies sampling for large datasets (>10M rows)
+- **Random Sampling**: Reproducible random sampling with seed control
+- **Quality Estimation**: Statistical quality scores for sampling accuracy
+- **Performance Monitoring**: Track sampling time and estimated speedup
+- **Flexible Configuration**: Target size, fraction, or auto-determination
+- **Legacy Support**: Backward compatibility with sample_fraction parameter

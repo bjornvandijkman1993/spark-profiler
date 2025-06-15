@@ -6,6 +6,7 @@ for all columns including null counts, data type specific metrics, and performan
 """
 
 from .profiler import DataFrameProfiler
+from .sampling import SamplingConfig, create_sampling_config
 
 __version__ = "0.1.0"
-__all__ = ["DataFrameProfiler"]
+__all__ = ["DataFrameProfiler", "SamplingConfig", "create_sampling_config"]

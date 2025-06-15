@@ -49,4 +49,4 @@ derby.log
 spark-warehouse/
 
 # Temporary files
-test_installation.py
+# (none currently)
