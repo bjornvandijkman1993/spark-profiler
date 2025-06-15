@@ -2,11 +2,14 @@
 
 [![CI](https://github.com/bjornvandijkman1993/spark-profiler/workflows/CI/badge.svg)](https://github.com/bjornvandijkman1993/spark-profiler/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/bjornvandijkman1993/spark-profiler/branch/main/graph/badge.svg)](https://codecov.io/gh/bjornvandijkman1993/spark-profiler)
+[![Documentation Status](https://readthedocs.org/projects/spark-profiler/badge/?version=latest)](https://spark-profiler.readthedocs.io/en/latest/?badge=latest)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://badge.fury.io/py/spark-profiler.svg)](https://badge.fury.io/py/spark-profiler)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A comprehensive PySpark DataFrame profiler for generating detailed statistics and data quality reports with intelligent sampling capabilities for large-scale datasets.
+
+📚 **[Documentation](https://spark-profiler.readthedocs.io)** | 🐛 **[Issues](https://github.com/bjornvandijkman1993/spark-profiler/issues)** | 💡 **[Examples](https://github.com/bjornvandijkman1993/spark-profiler/tree/main/examples)**
 
 ## ✨ Features
 
@@ -184,6 +187,16 @@ mypy spark_profiler/
 - **Python**: 3.8+
 - **PySpark**: 3.0.0+
 - **Java**: 11+ (required by PySpark)
+
+## 📚 Documentation
+
+Comprehensive documentation is available at **[spark-profiler.readthedocs.io](https://spark-profiler.readthedocs.io)**
+
+- **[Installation Guide](https://spark-profiler.readthedocs.io/en/latest/installation.html)** - Detailed setup instructions
+- **[Quick Start](https://spark-profiler.readthedocs.io/en/latest/quickstart.html)** - Get up and running quickly
+- **[User Guide](https://spark-profiler.readthedocs.io/en/latest/user_guide.html)** - Advanced usage and best practices
+- **[API Reference](https://spark-profiler.readthedocs.io/en/latest/api_reference.html)** - Complete API documentation
+- **[Examples](https://spark-profiler.readthedocs.io/en/latest/examples.html)** - Real-world usage examples
 
 ## 🤝 Contributing
 

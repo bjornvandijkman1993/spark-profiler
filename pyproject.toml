@@ -38,6 +38,12 @@ dev = [
     "build>=0.8.0",
     "twine>=4.0.0",
 ]
+docs = [
+    "sphinx>=8.0.0",
+    "sphinx-rtd-theme>=3.0.0",
+    "sphinx-autodoc-typehints>=3.2.0",
+    "myst-parser>=4.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/bjornvandijkman1993/spark-profiler"
@@ -137,3 +143,12 @@ multi_line_output = 3
 line_length = 88
 known_first_party = ["spark_profiler"]
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+[dependency-groups]
+dev = [
+    "myst-parser>=3.0.1",
+    "pre-commit>=3.5.0",
+    "sphinx>=7.1.2",
+    "sphinx-autodoc-typehints>=2.0.1",
+    "sphinx-rtd-theme>=3.0.2",
+]

@@ -1,0 +1,85 @@
+/* Custom CSS for spark-profiler documentation */
+
+/* Improve code block appearance */
+.highlight {
+    background: #f8f8f8;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    margin: 1em 0;
+}
+
+/* Better table styling */
+table.docutils {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+
+table.docutils td, table.docutils th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+table.docutils th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+/* Improve admonition styling */
+.admonition {
+    border-radius: 6px;
+    border-left: 4px solid #448aff;
+    background-color: #e7f2ff;
+    padding: 12px;
+    margin: 1em 0;
+}
+
+.admonition.note {
+    border-left-color: #448aff;
+    background-color: #e7f2ff;
+}
+
+.admonition.warning {
+    border-left-color: #ff9800;
+    background-color: #fff3e0;
+}
+
+.admonition.tip {
+    border-left-color: #4caf50;
+    background-color: #e8f5e9;
+}
+
+/* API documentation improvements */
+.sig-name {
+    font-weight: bold;
+    color: #0066cc;
+}
+
+.sig-param {
+    font-style: italic;
+}
+
+/* Navigation improvements */
+.wy-nav-content {
+    max-width: 1200px;
+}
+
+/* Example code styling */
+.example {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+/* Improve parameter lists */
+.field-list {
+    margin-top: 1em;
+}
+
+.field-name {
+    font-weight: bold;
+    min-width: 100px;
+    display: inline-block;
+}

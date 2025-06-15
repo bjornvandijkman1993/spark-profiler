@@ -42,9 +42,7 @@ class BatchStatisticsComputer:
             self.df.unpersist()
             self.cache_enabled = False
 
-    def compute_all_columns_batch(
-        self, columns: Optional[List[str]] = None
-    ) -> Dict[str, Dict[str, Any]]:
+    def compute_all_columns_batch(self, columns: Optional[List[str]] = None) -> Dict[str, Dict[str, Any]]:
         """
         Compute statistics for multiple columns in batch operations.
 
@@ -67,25 +65,19 @@ class BatchStatisticsComputer:
 
         try:
             # Get data types for all columns
-            column_types = {
-                field.name: field.dataType for field in self.df.schema.fields
-            }
+            column_types = {field.name: field.dataType for field in self.df.schema.fields}
 
             results = {}
             for column in columns:
                 if column in column_types:
-                    results[column] = self._compute_column_stats_optimized(
-                        column, column_types[column]
-                    )
+                    results[column] = self._compute_column_stats_optimized(column, column_types[column])
 
             return results
         finally:
             # Always clean up caching
             self.disable_caching()
 
-    def _compute_column_stats_optimized(
-        self, column_name: str, column_type
-    ) -> Dict[str, Any]:
+    def _compute_column_stats_optimized(self, column_name: str, column_type: str) -> Dict[str, Any]:
         """
         Compute optimized statistics for a single column.
 
@@ -99,8 +91,6 @@ class BatchStatisticsComputer:
         from pyspark.sql.functions import (
             count,
             when,
-            isnan,
-            isnull,
             min as spark_min,
             max as spark_max,
             mean,
@@ -114,12 +104,8 @@ class BatchStatisticsComputer:
         # Build aggregation expressions based on column type
         agg_exprs = [
             count(col(column_name)).alias(f"{column_name}_non_null_count"),
-            count(when(col(column_name).isNull(), 1)).alias(
-                f"{column_name}_null_count"
-            ),
-            approx_count_distinct(col(column_name), rsd=0.05).alias(
-                f"{column_name}_distinct_count"
-            ),
+            count(when(col(column_name).isNull(), 1)).alias(f"{column_name}_null_count"),
+            approx_count_distinct(col(column_name), rsd=0.05).alias(f"{column_name}_distinct_count"),
         ]
 
         # Add type-specific aggregations
@@ -130,30 +116,18 @@ class BatchStatisticsComputer:
                     spark_max(col(column_name)).alias(f"{column_name}_max"),
                     mean(col(column_name)).alias(f"{column_name}_mean"),
                     stddev(col(column_name)).alias(f"{column_name}_std"),
-                    expr(f"percentile_approx({column_name}, 0.5)").alias(
-                        f"{column_name}_median"
-                    ),
-                    expr(f"percentile_approx({column_name}, 0.25)").alias(
-                        f"{column_name}_q1"
-                    ),
-                    expr(f"percentile_approx({column_name}, 0.75)").alias(
-                        f"{column_name}_q3"
-                    ),
+                    expr(f"percentile_approx({column_name}, 0.5)").alias(f"{column_name}_median"),
+                    expr(f"percentile_approx({column_name}, 0.25)").alias(f"{column_name}_q1"),
+                    expr(f"percentile_approx({column_name}, 0.75)").alias(f"{column_name}_q3"),
                 ]
             )
         elif isinstance(column_type, StringType):
             agg_exprs.extend(
                 [
-                    spark_min(length(col(column_name))).alias(
-                        f"{column_name}_min_length"
-                    ),
-                    spark_max(length(col(column_name))).alias(
-                        f"{column_name}_max_length"
-                    ),
+                    spark_min(length(col(column_name))).alias(f"{column_name}_min_length"),
+                    spark_max(length(col(column_name))).alias(f"{column_name}_max_length"),
                     mean(length(col(column_name))).alias(f"{column_name}_avg_length"),
-                    count(when(col(column_name) == "", 1)).alias(
-                        f"{column_name}_empty_count"
-                    ),
+                    count(when(col(column_name) == "", 1)).alias(f"{column_name}_empty_count"),
                 ]
             )
         elif isinstance(column_type, (TimestampType, DateType)):
@@ -178,13 +152,9 @@ class BatchStatisticsComputer:
             "total_count": total_rows,
             "non_null_count": non_null_count,
             "null_count": null_count,
-            "null_percentage": (
-                (null_count / total_rows * 100) if total_rows > 0 else 0.0
-            ),
+            "null_percentage": ((null_count / total_rows * 100) if total_rows > 0 else 0.0),
             "distinct_count": distinct_count,
-            "distinct_percentage": (
-                (distinct_count / non_null_count * 100) if non_null_count > 0 else 0.0
-            ),
+            "distinct_percentage": ((distinct_count / non_null_count * 100) if non_null_count > 0 else 0.0),
         }
 
         # Add type-specific statistics
@@ -194,7 +164,7 @@ class BatchStatisticsComputer:
                     "min": result[f"{column_name}_min"],
                     "max": result[f"{column_name}_max"],
                     "mean": result[f"{column_name}_mean"],
-                    "std": result[f"{column_name}_std"],
+                    "std": result[f"{column_name}_std"] if result[f"{column_name}_std"] is not None else 0.0,
                     "median": result[f"{column_name}_median"],
                     "q1": result[f"{column_name}_q1"],
                     "q3": result[f"{column_name}_q3"],
@@ -231,9 +201,7 @@ class BatchStatisticsComputer:
         return stats
 
 
-def optimize_dataframe_for_profiling(
-    df: DataFrame, sample_fraction: Optional[float] = None
-) -> DataFrame:
+def optimize_dataframe_for_profiling(df: DataFrame, sample_fraction: Optional[float] = None) -> DataFrame:
     """
     Optimize DataFrame for profiling operations.
 
@@ -262,6 +230,6 @@ def optimize_dataframe_for_profiling(
     elif row_count > 1000000 and current_partitions < 8:
         # Large dataset might benefit from more partitions
         target_partitions = min(200, max(8, row_count // 100000))
-        optimized_df = optimized_df.repartition(target_partitions)
+        optimized_df = optimized_df.repartition(int(target_partitions))
 
     return optimized_df

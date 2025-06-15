@@ -4,18 +4,6 @@ Main DataFrame profiler class for PySpark DataFrames.
 
 from typing import Dict, Any, List, Optional
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import (
-    col,
-    count,
-    when,
-    isnan,
-    isnull,
-    min as spark_min,
-    max as spark_max,
-    mean,
-    stddev,
-    expr,
-)
 from pyspark.sql.types import NumericType, StringType, TimestampType, DateType
 
 from .statistics import StatisticsComputer
@@ -68,9 +56,7 @@ class DataFrameProfiler:
 
         # Apply sampling if needed
         if self.sampling_engine.should_sample(dataframe):
-            self.df, self.sampling_metadata = self.sampling_engine.create_sample(
-                dataframe
-            )
+            self.df, self.sampling_metadata = self.sampling_engine.create_sample(dataframe)
         else:
             self.df = dataframe
             # Create metadata for non-sampled case
@@ -91,10 +77,9 @@ class DataFrameProfiler:
 
         self.column_types = get_column_data_types(self.df)
         self.stats_computer = StatisticsComputer(self.df)
-        self.batch_computer = (
-            BatchStatisticsComputer(self.df) if optimize_for_large_datasets else None
-        )
+        self.batch_computer = BatchStatisticsComputer(self.df) if optimize_for_large_datasets else None
         self.optimize_for_large_datasets = optimize_for_large_datasets
+        self._cached_profile: Optional[Dict[str, Any]] = None  # Cache for profile results
 
     def profile(self, columns: Optional[List[str]] = None) -> Dict[str, Any]:
         """
@@ -106,6 +91,9 @@ class DataFrameProfiler:
         Returns:
             Dictionary containing profile information with column names as keys
         """
+        # Cache the full profile if no specific columns are requested
+        if columns is None and self._cached_profile is not None:
+            return self._cached_profile
         if columns is None:
             columns = self.df.columns
 
@@ -114,7 +102,7 @@ class DataFrameProfiler:
         if invalid_columns:
             raise ValueError(f"Columns not found in DataFrame: {invalid_columns}")
 
-        profile_result = {
+        profile_result: Dict[str, Any] = {
             "overview": self._get_overview(),
             "columns": {},
             "sampling": self._get_sampling_info(),
@@ -122,25 +110,56 @@ class DataFrameProfiler:
 
         # Use batch processing for large datasets if enabled
         if self.optimize_for_large_datasets and self.batch_computer:
-            profile_result["columns"] = self.batch_computer.compute_all_columns_batch(
-                columns
-            )
+            profile_result["columns"] = self.batch_computer.compute_all_columns_batch(columns)
         else:
             # Standard column-by-column processing
             for column in columns:
                 profile_result["columns"][column] = self._profile_column(column)
 
+        # Cache the full profile if all columns were profiled
+        if columns is None or set(columns) == set(self.df.columns):
+            self._cached_profile = profile_result
+
         return profile_result
+
+    def get_profile(self, format_type: str = "dict") -> Any:
+        """
+        Get the profile in the specified format.
+
+        Args:
+            format_type: Format to return ('dict', 'json', or 'summary')
+
+        Returns:
+            Profile in the requested format
+        """
+        # Generate profile if not cached
+        if self._cached_profile is None:
+            self._cached_profile = self.profile()
+
+        from .utils import format_profile_output
+
+        return format_profile_output(self._cached_profile, format_type)
 
     def _get_overview(self) -> Dict[str, Any]:
         """Get overview statistics for the entire DataFrame."""
-        total_rows = self.df.count()
+        # Use original size if sampling was applied
+        if self.sampling_metadata and self.sampling_metadata.is_sampled:
+            total_rows = self.sampling_metadata.original_size
+        else:
+            total_rows = self.df.count()
         total_columns = len(self.df.columns)
+
+        # Estimate memory usage (approximate)
+        # This is a rough estimate based on row count and column count
+        # Actual memory usage depends on data types and content
+        avg_bytes_per_cell = 20  # Conservative estimate
+        memory_usage = total_rows * total_columns * avg_bytes_per_cell
 
         return {
             "total_rows": total_rows,
             "total_columns": total_columns,
             "column_types": self.column_types,
+            "memory_usage": memory_usage,
         }
 
     def _profile_column(self, column_name: str) -> Dict[str, Any]:
