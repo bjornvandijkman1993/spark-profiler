@@ -5,6 +5,7 @@ description = "A comprehensive PySpark DataFrame profiler for generating detaile
 requires-python = ">=3.8"
 dependencies = [
     "pyspark>=3.0.0",
+    "pandas>=1.0.0",
 ]
 authors = [
     {name = "Spark Profiler Contributors"}
@@ -37,12 +38,6 @@ dev = [
     "bandit[toml]>=1.7.0",
     "build>=0.8.0",
     "twine>=4.0.0",
-]
-docs = [
-    "sphinx>=8.0.0",
-    "sphinx-rtd-theme>=3.0.0",
-    "sphinx-autodoc-typehints>=3.2.0",
-    "myst-parser>=4.0.0",
 ]
 
 [project.urls]
@@ -146,9 +141,5 @@ sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 
 [dependency-groups]
 dev = [
-    "myst-parser>=3.0.1",
     "pre-commit>=3.5.0",
-    "sphinx>=7.1.2",
-    "sphinx-autodoc-typehints>=2.0.1",
-    "sphinx-rtd-theme>=3.0.2",
 ]

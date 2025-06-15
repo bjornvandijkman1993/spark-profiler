@@ -2,12 +2,13 @@
 Main DataFrame profiler class for PySpark DataFrames.
 """
 
-from typing import Dict, Any, List, Optional
+import pandas as pd
+from typing import Dict, Any, List, Optional, Union
 from pyspark.sql import DataFrame
 from pyspark.sql.types import NumericType, StringType, TimestampType, DateType
 
 from .statistics import StatisticsComputer
-from .utils import get_column_data_types
+from .utils import get_column_data_types, format_profile_output
 from .performance import BatchStatisticsComputer, optimize_dataframe_for_profiling
 from .sampling import SamplingConfig, SamplingDecisionEngine, SamplingMetadata
 
@@ -79,21 +80,21 @@ class DataFrameProfiler:
         self.stats_computer = StatisticsComputer(self.df)
         self.batch_computer = BatchStatisticsComputer(self.df) if optimize_for_large_datasets else None
         self.optimize_for_large_datasets = optimize_for_large_datasets
-        self._cached_profile: Optional[Dict[str, Any]] = None  # Cache for profile results
 
-    def profile(self, columns: Optional[List[str]] = None) -> Dict[str, Any]:
+    def profile(
+        self, columns: Optional[List[str]] = None, output_format: str = "pandas"
+    ) -> Union[pd.DataFrame, Dict[str, Any], str]:
         """
         Generate a comprehensive profile of the DataFrame.
 
         Args:
             columns: List of specific columns to profile. If None, profiles all columns.
+            output_format: Output format ("pandas", "dict", "json", "summary")
+                          Defaults to "pandas" for easy analysis.
 
         Returns:
-            Dictionary containing profile information with column names as keys
+            Profile results in requested format
         """
-        # Cache the full profile if no specific columns are requested
-        if columns is None and self._cached_profile is not None:
-            return self._cached_profile
         if columns is None:
             columns = self.df.columns
 
@@ -102,7 +103,7 @@ class DataFrameProfiler:
         if invalid_columns:
             raise ValueError(f"Columns not found in DataFrame: {invalid_columns}")
 
-        profile_result: Dict[str, Any] = {
+        profile_result = {
             "overview": self._get_overview(),
             "columns": {},
             "sampling": self._get_sampling_info(),
@@ -116,50 +117,17 @@ class DataFrameProfiler:
             for column in columns:
                 profile_result["columns"][column] = self._profile_column(column)
 
-        # Cache the full profile if all columns were profiled
-        if columns is None or set(columns) == set(self.df.columns):
-            self._cached_profile = profile_result
-
-        return profile_result
-
-    def get_profile(self, format_type: str = "dict") -> Any:
-        """
-        Get the profile in the specified format.
-
-        Args:
-            format_type: Format to return ('dict', 'json', or 'summary')
-
-        Returns:
-            Profile in the requested format
-        """
-        # Generate profile if not cached
-        if self._cached_profile is None:
-            self._cached_profile = self.profile()
-
-        from .utils import format_profile_output
-
-        return format_profile_output(self._cached_profile, format_type)
+        return format_profile_output(profile_result, output_format)
 
     def _get_overview(self) -> Dict[str, Any]:
         """Get overview statistics for the entire DataFrame."""
-        # Use original size if sampling was applied
-        if self.sampling_metadata and self.sampling_metadata.is_sampled:
-            total_rows = self.sampling_metadata.original_size
-        else:
-            total_rows = self.df.count()
+        total_rows = self.df.count()
         total_columns = len(self.df.columns)
-
-        # Estimate memory usage (approximate)
-        # This is a rough estimate based on row count and column count
-        # Actual memory usage depends on data types and content
-        avg_bytes_per_cell = 20  # Conservative estimate
-        memory_usage = total_rows * total_columns * avg_bytes_per_cell
 
         return {
             "total_rows": total_rows,
             "total_columns": total_columns,
             "column_types": self.column_types,
-            "memory_usage": memory_usage,
         }
 
     def _profile_column(self, column_name: str) -> Dict[str, Any]:
@@ -208,3 +176,51 @@ class DataFrameProfiler:
             "reduction_ratio": self.sampling_metadata.reduction_ratio,
             "estimated_speedup": self.sampling_metadata.speedup_estimate,
         }
+
+    def to_csv(self, path: str, **kwargs) -> None:
+        """
+        Save profile results to CSV file.
+
+        Args:
+            path: Path to save the CSV file
+            **kwargs: Additional arguments passed to pandas.DataFrame.to_csv()
+        """
+        df = self.profile(output_format="pandas")
+        df.to_csv(path, **kwargs)
+
+    def to_parquet(self, path: str, **kwargs) -> None:
+        """
+        Save profile results to Parquet file.
+
+        Args:
+            path: Path to save the Parquet file
+            **kwargs: Additional arguments passed to pandas.DataFrame.to_parquet()
+        """
+        df = self.profile(output_format="pandas")
+        df.to_parquet(path, **kwargs)
+
+    def to_sql(self, name: str, con, **kwargs) -> None:
+        """
+        Save profile results to SQL database table.
+
+        Args:
+            name: Name of the SQL table
+            con: SQLAlchemy engine or DBAPI2 connection
+            **kwargs: Additional arguments passed to pandas.DataFrame.to_sql()
+        """
+        df = self.profile(output_format="pandas")
+        df.to_sql(name, con, **kwargs)
+
+    def format_output(self, format_type: str = "pandas") -> Union[pd.DataFrame, Dict[str, Any], str]:
+        """
+        Get profile output in specified format.
+
+        This is a convenience method that calls profile() with the specified format.
+
+        Args:
+            format_type: Output format ("pandas", "dict", "json", "summary")
+
+        Returns:
+            Profile results in requested format
+        """
+        return self.profile(output_format=format_type)
