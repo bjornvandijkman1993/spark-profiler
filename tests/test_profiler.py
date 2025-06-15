@@ -4,7 +4,6 @@ Test cases for the DataFrame profiler.
 
 import pytest
 from unittest.mock import Mock, patch
-from pyspark.sql import SparkSession
 from pyspark.sql.types import (
     StructType,
     StructField,
@@ -17,34 +16,6 @@ from datetime import datetime
 from spark_profiler import DataFrameProfiler
 from spark_profiler.statistics import StatisticsComputer
 from spark_profiler.utils import get_column_data_types, format_profile_output
-
-
-@pytest.fixture(scope="session")
-def spark_session():
-    """Create a Spark session for testing."""
-    return SparkSession.builder.appName("TestProfiler").getOrCreate()
-
-
-@pytest.fixture
-def sample_dataframe(spark_session):
-    """Create a sample DataFrame for testing."""
-    schema = StructType(
-        [
-            StructField("id", IntegerType(), True),
-            StructField("name", StringType(), True),
-            StructField("value", DoubleType(), True),
-        ]
-    )
-
-    data = [
-        (1, "Alice", 100.5),
-        (2, "Bob", 200.0),
-        (3, None, 150.75),
-        (4, "Charlie", None),
-        (5, "", 175.25),
-    ]
-
-    return spark_session.createDataFrame(data, schema)
 
 
 class TestDataFrameProfiler:

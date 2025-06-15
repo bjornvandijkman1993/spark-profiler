@@ -25,18 +25,23 @@ jobs:
       with:
         python-version: "3.11"
     
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+    
     - name: Install formatting tools
       run: |
-        python -m pip install --upgrade pip
-        pip install black isort
+        uv sync --frozen --all-extras
     
     - name: Run black formatting
       run: |
-        black spark_profiler/ tests/ examples/
+        uv run black spark_profiler/ tests/ examples/
     
     - name: Run isort import sorting
       run: |
-        isort spark_profiler/ tests/ examples/ --profile black
+        uv run isort spark_profiler/ tests/ examples/ --profile black
     
     - name: Check for changes
       id: verify-changed-files

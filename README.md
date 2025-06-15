@@ -20,7 +20,15 @@ A comprehensive PySpark DataFrame profiler for generating detailed statistics an
 
 ## 🚀 Quick Start
 
-### Installation
+### Prerequisites
+
+- Python >=3.8
+- Java 8 or 11 (required for PySpark)
+  - macOS: `brew install openjdk@11`
+  - Ubuntu/Debian: `sudo apt-get install openjdk-11-jdk`
+  - Windows: Download from [Oracle](https://www.oracle.com/java/technologies/downloads/) or [OpenJDK](https://adoptium.net/)
+
+## Installation
 
 ```bash
 pip install spark-profiler

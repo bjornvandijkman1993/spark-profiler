@@ -4,7 +4,6 @@ Test cases for sampling functionality.
 
 import pytest
 from unittest.mock import Mock, patch
-from pyspark.sql import SparkSession
 from pyspark.sql.types import (
     StructType,
     StructField,
@@ -19,28 +18,6 @@ from spark_profiler.sampling import (
     SamplingDecisionEngine,
     SamplingMetadata,
 )
-
-
-@pytest.fixture(scope="session")
-def spark_session():
-    """Create a Spark session for testing."""
-    return SparkSession.builder.appName("TestSampling").getOrCreate()
-
-
-@pytest.fixture
-def large_dataframe(spark_session):
-    """Create a large DataFrame for testing sampling."""
-    schema = StructType(
-        [
-            StructField("id", IntegerType(), True),
-            StructField("name", StringType(), True),
-            StructField("value", DoubleType(), True),
-        ]
-    )
-
-    # Create 100,000 rows for testing
-    data = [(i, f"name_{i}", float(i * 1.5)) for i in range(100000)]
-    return spark_session.createDataFrame(data, schema)
 
 
 @pytest.fixture
