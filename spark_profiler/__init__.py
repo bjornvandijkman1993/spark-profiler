@@ -1,0 +1,11 @@
+"""
+PySpark DataFrame Profiler
+
+A library for generating comprehensive profiles of PySpark DataFrames with statistics
+for all columns including null counts, data type specific metrics, and performance optimizations.
+"""
+
+from .profiler import DataFrameProfiler
+
+__version__ = "0.1.0"
+__all__ = ["DataFrameProfiler"]
