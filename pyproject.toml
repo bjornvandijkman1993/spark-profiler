@@ -30,15 +30,20 @@ dev = [
     "pytest>=6.0.0",
     "pytest-cov>=2.0.0",
     "black>=22.0.0",
+    "isort>=5.0.0",
     "flake8>=4.0.0",
     "mypy>=0.900",
+    "safety>=2.0.0",
+    "bandit[toml]>=1.7.0",
+    "build>=0.8.0",
+    "twine>=4.0.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-username/spark-profiler"
-Repository = "https://github.com/your-username/spark-profiler"
-Documentation = "https://github.com/your-username/spark-profiler#readme"
-Issues = "https://github.com/your-username/spark-profiler/issues"
+Homepage = "https://github.com/bjornvandijkman1993/spark-profiler"
+Repository = "https://github.com/bjornvandijkman1993/spark-profiler"
+Documentation = "https://github.com/bjornvandijkman1993/spark-profiler#readme"
+Issues = "https://github.com/bjornvandijkman1993/spark-profiler/issues"
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
@@ -87,3 +92,49 @@ warn_unused_ignores = true
 [[tool.mypy.overrides]]
 module = "pyspark.*"
 ignore_missing_imports = true
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "venv",
+    ".venv",
+    "build",
+    "dist",
+    "*.egg-info"
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".venv"]
+skips = ["B101"]  # Skip assert_used test
+
+[tool.coverage.run]
+source = ["spark_profiler"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:"
+]
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["spark_profiler"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
