@@ -74,17 +74,207 @@ class BatchStatisticsComputer:
                 field.name: field.dataType for field in self.df.schema.fields
             }
 
-            results = {}
+            # Build all aggregation expressions at once
+            all_agg_exprs = []
+            columns_to_process = []
+
             for column in columns:
                 if column in column_types:
-                    results[column] = self._compute_column_stats_optimized(
+                    columns_to_process.append(column)
+                    agg_exprs = self._build_column_agg_exprs(
                         column, column_types[column]
                     )
+                    all_agg_exprs.extend(agg_exprs)
 
-            return results
+            # Execute single aggregation for all columns
+            if all_agg_exprs:
+                result_row = self.df.agg(*all_agg_exprs).collect()[0]
+
+                # Get total rows if not cached
+                total_rows = (
+                    self.total_rows if self.total_rows is not None else self.df.count()
+                )
+
+                # Extract results for each column
+                results = {}
+                for column in columns_to_process:
+                    results[column] = self._extract_column_stats(
+                        column, column_types[column], result_row, total_rows
+                    )
+
+                return results
+            else:
+                return {}
         finally:
             # Always clean up caching
             self.disable_caching()
+
+    def _build_column_agg_exprs(
+        self, column_name: str, column_type: DataType
+    ) -> List[Any]:
+        """
+        Build aggregation expressions for a single column.
+
+        Args:
+            column_name: Name of the column
+            column_type: PySpark data type of the column
+
+        Returns:
+            List of aggregation expressions for this column
+        """
+        from pyspark.sql.functions import (
+            count,
+            when,
+            min as spark_min,
+            max as spark_max,
+            mean,
+            stddev,
+            expr,
+            length,
+            approx_count_distinct,
+            col,
+        )
+        from pyspark.sql.types import NumericType, StringType, TimestampType, DateType
+
+        # Build aggregation expressions based on column type
+        agg_exprs = [
+            count(col(column_name)).alias(f"{column_name}_non_null_count"),
+            count(when(col(column_name).isNull(), 1)).alias(
+                f"{column_name}_null_count"
+            ),
+            approx_count_distinct(col(column_name), rsd=0.05).alias(
+                f"{column_name}_distinct_count"
+            ),
+        ]
+
+        # Add type-specific aggregations
+        if isinstance(column_type, NumericType):
+            agg_exprs.extend(
+                [
+                    spark_min(col(column_name)).alias(f"{column_name}_min"),
+                    spark_max(col(column_name)).alias(f"{column_name}_max"),
+                    mean(col(column_name)).alias(f"{column_name}_mean"),
+                    stddev(col(column_name)).alias(f"{column_name}_std"),
+                    expr(f"percentile_approx({column_name}, 0.5)").alias(
+                        f"{column_name}_median"
+                    ),
+                    expr(f"percentile_approx({column_name}, 0.25)").alias(
+                        f"{column_name}_q1"
+                    ),
+                    expr(f"percentile_approx({column_name}, 0.75)").alias(
+                        f"{column_name}_q3"
+                    ),
+                ]
+            )
+        elif isinstance(column_type, StringType):
+            agg_exprs.extend(
+                [
+                    spark_min(length(col(column_name))).alias(
+                        f"{column_name}_min_length"
+                    ),
+                    spark_max(length(col(column_name))).alias(
+                        f"{column_name}_max_length"
+                    ),
+                    mean(length(col(column_name))).alias(f"{column_name}_avg_length"),
+                    count(when(col(column_name) == "", 1)).alias(
+                        f"{column_name}_empty_count"
+                    ),
+                ]
+            )
+        elif isinstance(column_type, (TimestampType, DateType)):
+            agg_exprs.extend(
+                [
+                    spark_min(col(column_name)).alias(f"{column_name}_min_date"),
+                    spark_max(col(column_name)).alias(f"{column_name}_max_date"),
+                ]
+            )
+
+        return agg_exprs
+
+    def _extract_column_stats(
+        self, column_name: str, column_type: DataType, result_row: Any, total_rows: int
+    ) -> Dict[str, Any]:
+        """
+        Extract statistics for a single column from the aggregation result.
+
+        Args:
+            column_name: Name of the column
+            column_type: PySpark data type of the column
+            result_row: Row containing all aggregation results
+            total_rows: Total number of rows in the DataFrame
+
+        Returns:
+            Dictionary with column statistics
+        """
+        from pyspark.sql.types import NumericType, StringType, TimestampType, DateType
+
+        # Extract basic statistics
+        non_null_count = result_row[f"{column_name}_non_null_count"]
+        null_count = result_row[f"{column_name}_null_count"]
+        distinct_count = result_row[f"{column_name}_distinct_count"]
+
+        stats = {
+            "data_type": str(column_type),
+            "total_count": total_rows,
+            "non_null_count": non_null_count,
+            "null_count": null_count,
+            "null_percentage": (
+                (null_count / total_rows * 100) if total_rows > 0 else 0.0
+            ),
+            "distinct_count": distinct_count,
+            "distinct_percentage": (
+                (distinct_count / non_null_count * 100) if non_null_count > 0 else 0.0
+            ),
+        }
+
+        # Add type-specific statistics
+        if isinstance(column_type, NumericType):
+            stats.update(
+                {
+                    "min": result_row[f"{column_name}_min"],
+                    "max": result_row[f"{column_name}_max"],
+                    "mean": result_row[f"{column_name}_mean"],
+                    "std": (
+                        result_row[f"{column_name}_std"]
+                        if result_row[f"{column_name}_std"] is not None
+                        else 0.0
+                    ),
+                    "median": result_row[f"{column_name}_median"],
+                    "q1": result_row[f"{column_name}_q1"],
+                    "q3": result_row[f"{column_name}_q3"],
+                }
+            )
+        elif isinstance(column_type, StringType):
+            stats.update(
+                {
+                    "min_length": result_row[f"{column_name}_min_length"],
+                    "max_length": result_row[f"{column_name}_max_length"],
+                    "avg_length": result_row[f"{column_name}_avg_length"],
+                    "empty_count": result_row[f"{column_name}_empty_count"],
+                }
+            )
+        elif isinstance(column_type, (TimestampType, DateType)):
+            min_date = result_row[f"{column_name}_min_date"]
+            max_date = result_row[f"{column_name}_max_date"]
+
+            date_range_days = None
+            if min_date and max_date:
+                try:
+                    date_range_days = (max_date - min_date).days
+                except (AttributeError, TypeError):
+                    # Log the error or handle it appropriately
+                    # For now, we'll set date_range_days to None to indicate calculation failed
+                    date_range_days = None
+
+            stats.update(
+                {
+                    "min_date": min_date,
+                    "max_date": max_date,
+                    "date_range_days": date_range_days,
+                }
+            )
+
+        return stats
 
     def _compute_column_stats_optimized(
         self, column_name: str, column_type: DataType

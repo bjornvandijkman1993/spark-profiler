@@ -9,6 +9,7 @@ This is a Python project called "pyspark-analyzer" designed for profiling Apache
 ## Development Setup
 
 - **Python Version**: Requires Python >=3.8
+- **Java Version**: Requires Java 17+ for PySpark (automatically detected by test scripts)
 - **Project Management**: Uses pyproject.toml for dependency management
 - **Package Manager**: uv (ultra-fast Python package installer)
 
@@ -33,11 +34,20 @@ uv add --dev <package-name>
 # Run commands in the virtual environment
 uv run python examples/installation_verification.py
 
-# Run tests
-uv run pytest
+# Run tests (automatically sets up Java environment)
+make test
 
 # Run tests with coverage
-uv run pytest --cov=pyspark_analyzer
+make test-cov
+
+# Run tests quickly (stop on first failure)
+make test-quick
+
+# Alternative: Run tests directly with uv (requires .env file)
+source .env && uv run pytest
+
+# Alternative: Run tests with coverage directly
+source .env && uv run pytest --cov=pyspark_analyzer
 
 # Format code
 uv run black pyspark_analyzer/ tests/ examples/
@@ -55,6 +65,30 @@ uv run python -m build
 source .venv/bin/activate  # Linux/macOS
 # or
 .venv\Scripts\activate  # Windows
+```
+
+## Java Setup for PySpark
+
+PySpark requires Java 17+ to run. The test commands in the Makefile automatically handle Java setup:
+
+```bash
+# First-time setup (automatic when running tests)
+./scripts/setup_test_environment.sh
+
+# This creates a .env file with Java environment variables:
+# - JAVA_HOME: Path to Java 17 installation
+# - PATH: Updated to include Java binaries
+# - SPARK_LOCAL_IP: Set to 127.0.0.1 for local testing
+# - PYSPARK_PYTHON/PYSPARK_DRIVER_PYTHON: Set to virtual env Python
+
+# To manually install Java 17 on macOS:
+brew install openjdk@17
+
+# The setup script automatically detects Java from common locations:
+# - /opt/homebrew/opt/openjdk@17 (Apple Silicon Macs)
+# - /usr/local/opt/openjdk@17 (Intel Macs)
+# - /Library/Java/JavaVirtualMachines/*/Contents/Home
+# - And other standard locations
 ```
 
 ## Architecture Overview

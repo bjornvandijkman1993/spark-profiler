@@ -8,6 +8,35 @@ from pyspark.sql import DataFrame
 from pyspark.sql.types import DataType
 
 
+def escape_column_name(column_name: str) -> str:
+    """
+    Escape column name for safe use in PySpark SQL operations.
+
+    Handles special characters and SQL injection attempts by properly
+    escaping backticks and wrapping the column name in backticks.
+
+    Args:
+        column_name: Raw column name that may contain special characters
+
+    Returns:
+        Escaped column name wrapped in backticks
+
+    Examples:
+        >>> escape_column_name("normal_column")
+        '`normal_column`'
+        >>> escape_column_name("column.with.dots")
+        '`column.with.dots`'
+        >>> escape_column_name("col`with`backticks")
+        '`col``with``backticks`'
+        >>> escape_column_name("col; DROP TABLE users;--")
+        '`col; DROP TABLE users;--`'
+    """
+    # Escape any backticks in the column name by doubling them
+    escaped = column_name.replace("`", "``")
+    # Wrap in backticks
+    return f"`{escaped}`"
+
+
 def get_column_data_types(dataframe: DataFrame) -> Dict[str, DataType]:
     """
     Get data types for all columns in the DataFrame.

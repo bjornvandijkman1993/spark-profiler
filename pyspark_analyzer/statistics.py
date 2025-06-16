@@ -25,6 +25,7 @@ from pyspark.sql.functions import (
     desc,
     abs as spark_abs,
 )
+from .utils import escape_column_name
 
 
 class StatisticsComputer:
@@ -63,10 +64,11 @@ class StatisticsComputer:
         total_rows = self._get_total_rows()
 
         # Single aggregation for efficiency - optimized for large datasets
+        escaped_name = escape_column_name(column_name)
         result = self.df.agg(
-            count(col(column_name)).alias("non_null_count"),
-            count(when(col(column_name).isNull(), 1)).alias("null_count"),
-            approx_count_distinct(col(column_name), rsd=0.05).alias(
+            count(col(escaped_name)).alias("non_null_count"),
+            count(when(col(escaped_name).isNull(), 1)).alias("null_count"),
+            approx_count_distinct(col(escaped_name), rsd=0.05).alias(
                 "distinct_count"
             ),  # 5% relative error for speed
         ).collect()[0]
