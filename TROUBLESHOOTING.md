@@ -80,7 +80,7 @@ export $(cat .env | xargs) && uv run pytest
 export $(cat .env | xargs) && uv run pytest tests/test_profiler.py -v
 
 # Option 3: With coverage
-export $(cat .env | xargs) && uv run pytest --cov=spark_profiler
+export $(cat .env | xargs) && uv run pytest --cov=pyspark_analyzer
 ```
 
 ### 5. Debugging PySpark Issues
@@ -132,7 +132,7 @@ uv run pytest
 
 ## Other Common Issues
 
-### ImportError: No module named 'spark_profiler'
+### ImportError: No module named 'pyspark_analyzer'
 
 Make sure the package is installed in development mode:
 

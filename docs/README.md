@@ -1,6 +1,6 @@
 # Documentation
 
-This directory contains the source files for spark-profiler's documentation, built with Sphinx.
+This directory contains the source files for pyspark-analyzer's documentation, built with Sphinx.
 
 ## Building Documentation Locally
 
@@ -89,7 +89,7 @@ docs/
 
 ```markdown
 ```python
-from spark_profiler import DataFrameProfiler
+from pyspark_analyzer import DataFrameProfiler
 
 profiler = DataFrameProfiler(df)
 profile = profiler.profile()
@@ -118,18 +118,18 @@ Documentation is automatically built and deployed via GitHub Actions:
 
 ### GitHub Pages
 
-Accessible at: https://yourusername.github.io/spark-profiler/
+Accessible at: https://yourusername.github.io/pyspark-analyzer/
 
 ### Read the Docs
 
-Accessible at: https://spark-profiler.readthedocs.io/
+Accessible at: https://pyspark-analyzer.readthedocs.io/
 
 ## Troubleshooting
 
 ### Import Errors
 
 If Sphinx can't import the module:
-1. Ensure spark-profiler is installed: `pip install -e .`
+1. Ensure pyspark-analyzer is installed: `pip install -e .`
 2. Check the Python path in `conf.py`
 3. Verify Java is installed (required by PySpark)
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Development setup script for spark-profiler
+# Development setup script for pyspark-analyzer
 
 set -e
 
-echo "🚀 Setting up spark-profiler development environment..."
+echo "🚀 Setting up pyspark-analyzer development environment..."
 
 # Check Python version
 python_version=$(python3 --version 2>&1 | awk '{print $2}')
@@ -54,4 +54,4 @@ echo "To run tests:"
 echo "  uv run pytest"
 echo ""
 echo "To run tests with coverage:"
-echo "  uv run pytest --cov=spark_profiler"
+echo "  uv run pytest --cov=pyspark_analyzer"

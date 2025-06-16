@@ -12,7 +12,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 from datetime import datetime
-from spark_profiler import DataFrameProfiler
+from pyspark_analyzer import DataFrameProfiler
 
 
 def create_sample_data():
@@ -123,7 +123,7 @@ def main():
     print("=" * 60)
 
     # Example of formatted output
-    from spark_profiler.utils import format_profile_output
+    from pyspark_analyzer.utils import format_profile_output
 
     # Summary format
     print("\nSummary Report:")

@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime, date
 
-from spark_profiler.performance import (
+from pyspark_analyzer.performance import (
     BatchStatisticsComputer,
     optimize_dataframe_for_profiling,
 )

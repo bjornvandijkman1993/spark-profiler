@@ -45,7 +45,7 @@ jobs:
 
     - name: Run tests with pytest
       run: |
-        uv run pytest tests/ -v --tb=short --cov=spark_profiler --cov-report=xml --cov-report=html
+        uv run pytest tests/ -v --tb=short --cov=pyspark_analyzer --cov-report=xml --cov-report=html
 
     - name: Upload coverage to Codecov
       if: matrix.python-version == '3.11'
@@ -79,13 +79,13 @@ jobs:
         uv sync --frozen --all-extras
 
     - name: Run black format check
-      run: uv run black --check --diff spark_profiler/ tests/ examples/
+      run: uv run black --check --diff pyspark_analyzer/ tests/ examples/
 
     - name: Run ruff linting
-      run: uv run ruff check spark_profiler/ tests/ examples/
+      run: uv run ruff check pyspark_analyzer/ tests/ examples/
 
     - name: Run mypy type checking
-      run: uv run mypy spark_profiler/
+      run: uv run mypy pyspark_analyzer/
       continue-on-error: true  # Allow type checking to fail without breaking CI
 
   security:
@@ -115,7 +115,7 @@ jobs:
       continue-on-error: true
 
     - name: Run bandit security scan
-      run: uv run bandit -r spark_profiler/ -f json
+      run: uv run bandit -r pyspark_analyzer/ -f json
       continue-on-error: true
 
   examples:

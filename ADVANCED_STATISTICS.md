@@ -1,6 +1,6 @@
-# Advanced Statistics in spark-profiler
+# Advanced Statistics in pyspark-analyzer
 
-This document describes the advanced statistics features added to spark-profiler.
+This document describes the advanced statistics features added to pyspark-analyzer.
 
 ## Overview
 
@@ -43,7 +43,7 @@ Two methods available:
 ### Basic Usage with Advanced Statistics
 
 ```python
-from spark_profiler import DataFrameProfiler
+from pyspark_analyzer import DataFrameProfiler
 
 # Create profiler
 profiler = DataFrameProfiler(df)

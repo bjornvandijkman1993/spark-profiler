@@ -57,7 +57,7 @@ jobs:
         ! grep -r "/Users/" examples/ || (echo "Found hardcoded paths in examples" && exit 1)
 
         # Check for proper imports
-        grep -r "from spark_profiler import" examples/ || (echo "Missing proper imports in examples" && exit 1)
+        grep -r "from pyspark_analyzer import" examples/ || (echo "Missing proper imports in examples" && exit 1)
 
   check-documentation:
     name: Check Documentation

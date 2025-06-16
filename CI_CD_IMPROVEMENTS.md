@@ -1,4 +1,4 @@
-# CI/CD Improvements for spark-profiler
+# CI/CD Improvements for pyspark-analyzer
 
 ## Current State Summary
 
@@ -170,7 +170,7 @@ These can be implemented immediately with minimal effort:
    ```toml
    [tool.bumpversion]
    current_version = "0.1.1"
-   files = ["pyproject.toml", "spark_profiler/__init__.py"]
+   files = ["pyproject.toml", "pyspark_analyzer/__init__.py"]
    ```
 
 3. **Basic changelog** template:
@@ -184,8 +184,8 @@ These can be implemented immediately with minimal effort:
    ```yaml
    - name: Test PyPI package
      run: |
-       pip install spark-profiler
-       python -c "import spark_profiler; print(spark_profiler.__version__)"
+       pip install pyspark-analyzer
+       python -c "import pyspark_analyzer; print(pyspark_analyzer.__version__)"
    ```
 
 ## Conclusion

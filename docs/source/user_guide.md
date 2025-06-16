@@ -2,7 +2,7 @@
 
 ## Overview
 
-spark-profiler is designed to provide comprehensive statistical analysis of PySpark DataFrames with a focus on performance and scalability. This guide covers advanced usage patterns and best practices.
+pyspark-analyzer is designed to provide comprehensive statistical analysis of PySpark DataFrames with a focus on performance and scalability. This guide covers advanced usage patterns and best practices.
 
 ## Understanding Profile Output
 
@@ -76,7 +76,7 @@ Optimizations include:
 #### 1. Sampling Configuration
 
 ```python
-from spark_profiler import SamplingConfig
+from pyspark_analyzer import SamplingConfig
 
 # Aggressive sampling for very large datasets
 config = SamplingConfig(
@@ -267,7 +267,7 @@ def html_formatter(profile):
 
 ```python
 import logging
-logging.getLogger("spark_profiler").setLevel(logging.DEBUG)
+logging.getLogger("pyspark_analyzer").setLevel(logging.DEBUG)
 
 profiler = DataFrameProfiler(df)
 profile = profiler.profile()  # Will show debug information

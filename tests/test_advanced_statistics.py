@@ -14,8 +14,8 @@ from pyspark.sql.types import (
 )
 import numpy as np
 
-from spark_profiler import DataFrameProfiler
-from spark_profiler.statistics import StatisticsComputer
+from pyspark_analyzer import DataFrameProfiler
+from pyspark_analyzer.statistics import StatisticsComputer
 
 
 # Using spark_session fixture from conftest.py

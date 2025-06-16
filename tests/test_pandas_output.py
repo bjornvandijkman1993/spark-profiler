@@ -15,8 +15,8 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-from spark_profiler import DataFrameProfiler
-from spark_profiler.utils import format_profile_output
+from pyspark_analyzer import DataFrameProfiler
+from pyspark_analyzer.utils import format_profile_output
 
 
 @pytest.fixture(scope="module")

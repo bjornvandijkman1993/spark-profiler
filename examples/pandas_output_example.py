@@ -1,5 +1,5 @@
 """
-Example demonstrating pandas DataFrame output from spark-profiler.
+Example demonstrating pandas DataFrame output from pyspark-analyzer.
 
 This example shows how to:
 1. Generate profiles as pandas DataFrames
@@ -19,7 +19,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-from spark_profiler import DataFrameProfiler
+from pyspark_analyzer import DataFrameProfiler
 
 
 def create_sample_data(spark, num_rows=10000):

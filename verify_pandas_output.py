@@ -5,7 +5,7 @@ This script tests the pandas output without requiring Spark/Java.
 
 import os
 import pandas as pd
-from spark_profiler.utils import format_profile_output, _create_pandas_dataframe
+from pyspark_analyzer.utils import format_profile_output, _create_pandas_dataframe
 
 # Sample profile data (simulating what DataFrameProfiler would return)
 sample_profile = {

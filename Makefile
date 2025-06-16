@@ -35,11 +35,11 @@ test:
 
 test-cov:
 	@if [ -f .env ]; then \
-		set -a && . ./.env && set +a && uv run pytest --cov=spark_profiler --cov-report=term-missing --cov-report=html; \
+		set -a && . ./.env && set +a && uv run pytest --cov=pyspark_analyzer --cov-report=term-missing --cov-report=html; \
 	else \
 		echo "Setting up test environment..."; \
 		./scripts/setup_test_environment.sh && \
-		set -a && . ./.env && set +a && uv run pytest --cov=spark_profiler --cov-report=term-missing --cov-report=html; \
+		set -a && . ./.env && set +a && uv run pytest --cov=pyspark_analyzer --cov-report=term-missing --cov-report=html; \
 	fi
 
 test-integration:
@@ -47,17 +47,17 @@ test-integration:
 
 # Code quality targets
 lint:
-	uv run flake8 spark_profiler/ tests/
+	uv run flake8 pyspark_analyzer/ tests/
 
 format:
-	uv run black spark_profiler/ tests/ examples/
-	uv run isort spark_profiler/ tests/ examples/
+	uv run black pyspark_analyzer/ tests/ examples/
+	uv run isort pyspark_analyzer/ tests/ examples/
 
 typecheck:
-	uv run mypy spark_profiler/
+	uv run mypy pyspark_analyzer/
 
 security:
-	uv run bandit -r spark_profiler/ -ll
+	uv run bandit -r pyspark_analyzer/ -ll
 
 # Build targets
 clean:

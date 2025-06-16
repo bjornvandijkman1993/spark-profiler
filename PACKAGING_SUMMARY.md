@@ -34,7 +34,7 @@ https://pypi.org/account/register/
 
 ### 2. Generate API Token
 - Go to Account Settings → API tokens
-- Create token for "spark-profiler" project
+- Create token for "pyspark-analyzer" project
 - Copy and save securely
 
 ### 3. Add GitHub Secret
@@ -54,8 +54,8 @@ git push origin v0.1.0
 ```
 
 ### 5. Monitor Release
-- Check GitHub Actions: https://github.com/bjornvandijkman1993/spark-profiler/actions
-- Verify on PyPI: https://pypi.org/project/spark-profiler/
+- Check GitHub Actions: https://github.com/bjornvandijkman1993/pyspark-analyzer/actions
+- Verify on PyPI: https://pypi.org/project/pyspark-analyzer/
 
 ## 🧪 Testing Commands
 
@@ -71,14 +71,14 @@ git push origin v0.1.0
 
 ### Installation Test (After Release)
 ```bash
-pip install spark-profiler
-python -c "from spark_profiler import DataFrameProfiler; print('Success!')"
+pip install pyspark-analyzer
+python -c "from pyspark_analyzer import DataFrameProfiler; print('Success!')"
 ```
 
 ## 📦 Package Contents
 
 The package includes:
-- All Python modules in `spark_profiler/`
+- All Python modules in `pyspark_analyzer/`
 - README.md (shown on PyPI)
 - LICENSE file
 - Type hints (py.typed)

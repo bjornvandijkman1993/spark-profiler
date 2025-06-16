@@ -1,21 +1,21 @@
-.. spark-profiler documentation master file
+.. pyspark-analyzer documentation master file
 
-Welcome to spark-profiler's documentation!
+Welcome to pyspark-analyzer's documentation!
 ==========================================
 
-.. image:: https://img.shields.io/pypi/v/spark-profiler.svg
-   :target: https://pypi.python.org/pypi/spark-profiler
+.. image:: https://img.shields.io/pypi/v/pyspark-analyzer.svg
+   :target: https://pypi.python.org/pypi/pyspark-analyzer
    :alt: PyPI version
 
-.. image:: https://img.shields.io/pypi/pyversions/spark-profiler.svg
-   :target: https://pypi.python.org/pypi/spark-profiler
+.. image:: https://img.shields.io/pypi/pyversions/pyspark-analyzer.svg
+   :target: https://pypi.python.org/pypi/pyspark-analyzer
    :alt: Python versions
 
-.. image:: https://github.com/yourusername/spark-profiler/workflows/CI/badge.svg
-   :target: https://github.com/yourusername/spark-profiler/actions
+.. image:: https://github.com/yourusername/pyspark-analyzer/workflows/CI/badge.svg
+   :target: https://github.com/yourusername/pyspark-analyzer/actions
    :alt: CI Status
 
-**spark-profiler** is a comprehensive profiling library for Apache Spark DataFrames, designed to help data engineers and scientists understand their data quickly and efficiently.
+**pyspark-analyzer** is a comprehensive profiling library for Apache Spark DataFrames, designed to help data engineers and scientists understand their data quickly and efficiently.
 
 Key Features
 ------------
@@ -31,7 +31,7 @@ Installation
 
 .. code-block:: bash
 
-   pip install spark-profiler
+   pip install pyspark-analyzer
 
 Quick Start
 -----------
@@ -39,7 +39,7 @@ Quick Start
 .. code-block:: python
 
    from pyspark.sql import SparkSession
-   from spark_profiler import DataFrameProfiler
+   from pyspark_analyzer import DataFrameProfiler
 
    # Create a Spark session
    spark = SparkSession.builder.appName("ProfilerExample").getOrCreate()

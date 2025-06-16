@@ -14,7 +14,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-from spark_profiler.statistics import StatisticsComputer
+from pyspark_analyzer.statistics import StatisticsComputer
 
 
 class TestStatisticsComputer:

@@ -77,7 +77,7 @@ jobs:
 
           ### Checklist
           - [ ] Version updated in `pyproject.toml`
-          - [ ] Version updated in `spark_profiler/__init__.py`
+          - [ ] Version updated in `pyspark_analyzer/__init__.py`
           - [ ] `.bumpversion.cfg` updated with new version
 
           ### Next steps

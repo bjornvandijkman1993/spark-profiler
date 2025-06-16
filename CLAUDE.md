@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Python project called "spark-profiler" designed for profiling Apache Spark applications. The project is currently in its initial state with minimal setup.
+This is a Python project called "pyspark-analyzer" designed for profiling Apache Spark applications. The project is currently in its initial state with minimal setup.
 
 ## Development Setup
 
@@ -37,16 +37,16 @@ uv run python examples/installation_verification.py
 uv run pytest
 
 # Run tests with coverage
-uv run pytest --cov=spark_profiler
+uv run pytest --cov=pyspark_analyzer
 
 # Format code
-uv run black spark_profiler/ tests/ examples/
+uv run black pyspark_analyzer/ tests/ examples/
 
 # Type checking
-uv run mypy spark_profiler/
+uv run mypy pyspark_analyzer/
 
 # Lint code
-uv run flake8 spark_profiler/
+uv run flake8 pyspark_analyzer/
 
 # Build package
 uv run python -m build
@@ -80,7 +80,7 @@ profiler = DataFrameProfiler(spark_df)
 profile = profiler.profile()
 
 # Custom sampling configuration
-from spark_profiler import SamplingConfig
+from pyspark_analyzer import SamplingConfig
 config = SamplingConfig(target_size=100_000, seed=42)
 profiler = DataFrameProfiler(spark_df, sampling_config=config)
 profile = profiler.profile()

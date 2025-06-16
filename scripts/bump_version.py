@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Version bumping script for spark-profiler.
+Version bumping script for pyspark-analyzer.
 
 Usage:
     python scripts/bump_version.py patch  # 0.1.1 -> 0.1.2
@@ -52,7 +52,7 @@ def main():
             print("1. Push the changes: git push && git push --tags")
             print("2. The release workflow will automatically trigger")
             print(
-                "3. Monitor the release at: https://github.com/bjornvandijkman1993/spark-profiler/actions"
+                "3. Monitor the release at: https://github.com/bjornvandijkman1993/pyspark-analyzer/actions"
             )
 
     except subprocess.CalledProcessError as e:

@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2025-01-16
 
 ### Added
-- Initial release of spark-profiler
+- Initial release of pyspark-analyzer
 - Basic statistics computation (count, nulls, data types)
 - Numeric statistics (min, max, mean, std, median, quartiles)
 - String statistics (length metrics, empty counts)
@@ -37,5 +37,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test suite
 - Example scripts and documentation
 
-[Unreleased]: https://github.com/bjornvandijkman1993/spark-profiler/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/bjornvandijkman1993/spark-profiler/releases/tag/v0.1.0
+[Unreleased]: https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/bjornvandijkman1993/pyspark-analyzer/releases/tag/v0.1.0

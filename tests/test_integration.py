@@ -16,9 +16,9 @@ from pyspark.sql.types import (
     ArrayType,
 )
 
-from spark_profiler import DataFrameProfiler, SamplingConfig
-from spark_profiler.performance import optimize_dataframe_for_profiling
-from spark_profiler.utils import format_profile_output
+from pyspark_analyzer import DataFrameProfiler, SamplingConfig
+from pyspark_analyzer.performance import optimize_dataframe_for_profiling
+from pyspark_analyzer.utils import format_profile_output
 
 
 class TestEndToEndProfiling:

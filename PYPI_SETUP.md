@@ -1,6 +1,6 @@
 # PyPI Setup Instructions
 
-This document provides step-by-step instructions for setting up PyPI publishing for spark-profiler.
+This document provides step-by-step instructions for setting up PyPI publishing for pyspark-analyzer.
 
 ## 1. Create PyPI Account
 
@@ -23,8 +23,8 @@ This document provides step-by-step instructions for setting up PyPI publishing 
 1. Log in to https://pypi.org
 2. Go to Account Settings → API tokens
 3. Click "Add API token"
-4. Token name: "spark-profiler-github-actions"
-5. Scope: "Project: spark-profiler" (or "Entire account" for first release)
+4. Token name: "pyspark-analyzer-github-actions"
+5. Scope: "Project: pyspark-analyzer" (or "Entire account" for first release)
 6. Click "Generate token"
 7. **IMPORTANT**: Copy the token immediately (shown only once!)
 8. Save it securely (password manager recommended)
@@ -103,7 +103,7 @@ chmod 600 ~/.pypirc
    ```bash
    pip install --index-url https://test.pypi.org/simple/ \
                --extra-index-url https://pypi.org/simple/ \
-               spark-profiler
+               pyspark-analyzer
    ```
 
 ### Production Release
@@ -121,14 +121,14 @@ chmod 600 ~/.pypirc
 
 ## 6. Post-Release Verification
 
-1. Check PyPI page: https://pypi.org/project/spark-profiler/
+1. Check PyPI page: https://pypi.org/project/pyspark-analyzer/
 2. Test installation:
    ```bash
-   pip install spark-profiler
+   pip install pyspark-analyzer
    ```
 3. Verify functionality:
    ```python
-   from spark_profiler import DataFrameProfiler
+   from pyspark_analyzer import DataFrameProfiler
    print("Success!")
    ```
 

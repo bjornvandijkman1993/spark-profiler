@@ -1,7 +1,7 @@
 #!/bin/bash
 # Script to run tests with proper environment setup
 
-echo "🧪 Running spark-profiler tests..."
+echo "🧪 Running pyspark-analyzer tests..."
 
 # Get the directory of this script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"

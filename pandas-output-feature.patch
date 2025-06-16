@@ -30,8 +30,8 @@ Co-Authored-By: Claude <noreply@anthropic.com>
  examples/basic_usage.py           |  51 ++-
  examples/pandas_output_example.py | 183 ++++++++++
  pyproject.toml                    |   1 +
- spark_profiler/profiler.py        |  65 +++-
- spark_profiler/utils.py           |  62 +++-
+ pyspark_analyzer/profiler.py        |  65 +++-
+ pyspark_analyzer/utils.py           |  62 +++-
  tests/test_pandas_output.py       | 255 ++++++++++++++
  uv.lock                           | 532 ++++++++++++++++++++++++++++--
  verify_pandas_output.py           | 158 +++++++++
@@ -50,7 +50,7 @@ index 0000000..de3e2d1
 +# Pandas DataFrame Output Design for Spark Profiler
 +
 +## Overview
-+This document outlines the design for adding pandas DataFrame output support to the spark-profiler library. This feature will enable users to export profiling results as a pandas DataFrame for easier analysis, storage, and tracking of statistics over time.
++This document outlines the design for adding pandas DataFrame output support to the pyspark-analyzer library. This feature will enable users to export profiling results as a pandas DataFrame for easier analysis, storage, and tracking of statistics over time.
 +
 +## Motivation
 +- **Time-series tracking**: Store profiling results in databases to track data quality metrics over time
@@ -178,7 +178,7 @@ index 0000000..de3e2d1
 +
 +#### Basic Usage (Default to pandas)
 +```python
-+from spark_profiler import DataFrameProfiler
++from pyspark_analyzer import DataFrameProfiler
 +
 +# Profile a Spark DataFrame
 +profiler = DataFrameProfiler(spark_df)
@@ -331,7 +331,7 @@ index 0000000..de3e2d1
 +7. Create example notebook demonstrating time-series tracking
 +
 +## Conclusion
-+By making pandas DataFrame the default output format and removing backward compatibility constraints, we create a more intuitive and powerful API. Users can immediately leverage pandas' rich ecosystem for analysis, visualization, and storage without additional conversion steps. This positions spark-profiler as a modern, data-science-friendly tool that seamlessly integrates with existing pandas workflows.
++By making pandas DataFrame the default output format and removing backward compatibility constraints, we create a more intuitive and powerful API. Users can immediately leverage pandas' rich ecosystem for analysis, visualization, and storage without additional conversion steps. This positions pyspark-analyzer as a modern, data-science-friendly tool that seamlessly integrates with existing pandas workflows.
 \ No newline at end of file
 diff --git a/examples/basic_usage.py b/examples/basic_usage.py
 index 581c5ae..080c453 100644
@@ -422,7 +422,7 @@ index 0000000..4b6bd49
 +++ b/examples/pandas_output_example.py
 @@ -0,0 +1,183 @@
 +"""
-+Example demonstrating pandas DataFrame output from spark-profiler.
++Example demonstrating pandas DataFrame output from pyspark-analyzer.
 +
 +This example shows how to:
 +1. Generate profiles as pandas DataFrames
@@ -443,7 +443,7 @@ index 0000000..4b6bd49
 +    TimestampType,
 +)
 +
-+from spark_profiler import DataFrameProfiler
++from pyspark_analyzer import DataFrameProfiler
 +
 +
 +def create_sample_data(spark, num_rows=10000):
@@ -617,10 +617,10 @@ index 5385b4d..78011c8 100644
  ]
  authors = [
      {name = "Spark Profiler Contributors"}
-diff --git a/spark_profiler/profiler.py b/spark_profiler/profiler.py
+diff --git a/pyspark_analyzer/profiler.py b/pyspark_analyzer/profiler.py
 index efd55a4..354bebf 100644
---- a/spark_profiler/profiler.py
-+++ b/spark_profiler/profiler.py
+--- a/pyspark_analyzer/profiler.py
++++ b/pyspark_analyzer/profiler.py
 @@ -2,7 +2,8 @@
  Main DataFrame profiler class for PySpark DataFrames.
  """
@@ -725,10 +725,10 @@ index efd55a4..354bebf 100644
 +            Profile results in requested format
 +        """
 +        return self.profile(output_format=format_type)
-diff --git a/spark_profiler/utils.py b/spark_profiler/utils.py
+diff --git a/pyspark_analyzer/utils.py b/pyspark_analyzer/utils.py
 index 52435e1..3aff283 100644
---- a/spark_profiler/utils.py
-+++ b/spark_profiler/utils.py
+--- a/pyspark_analyzer/utils.py
++++ b/pyspark_analyzer/utils.py
 @@ -2,7 +2,8 @@
  Utility functions for the DataFrame profiler.
  """
@@ -840,8 +840,8 @@ index 0000000..492f160
 +    TimestampType,
 +)
 +
-+from spark_profiler import DataFrameProfiler
-+from spark_profiler.utils import format_profile_output
++from pyspark_analyzer import DataFrameProfiler
++from pyspark_analyzer.utils import format_profile_output
 +
 +
 +@pytest.fixture(scope="module")
@@ -1805,7 +1805,7 @@ index 7ae667d..810c48e 100644
  [[package]]
  name = "sniffio"
  version = "1.3.1"
-@@ -2416,6 +2854,8 @@ name = "spark-profiler"
+@@ -2416,6 +2854,8 @@ name = "pyspark-analyzer"
  version = "0.1.0"
  source = { editable = "." }
  dependencies = [
@@ -1908,7 +1908,7 @@ index 0000000..95e78fc
 +"""
 +
 +import pandas as pd
-+from spark_profiler.utils import format_profile_output, _create_pandas_dataframe
++from pyspark_analyzer.utils import format_profile_output, _create_pandas_dataframe
 +
 +# Sample profile data (simulating what DataFrameProfiler would return)
 +sample_profile = {

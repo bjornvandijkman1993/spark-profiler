@@ -1,8 +1,8 @@
-# Packaging and Publishing Plan for spark-profiler
+# Packaging and Publishing Plan for pyspark-analyzer
 
 ## Overview
 
-This document outlines the complete plan for packaging and publishing the spark-profiler package to PyPI (Python Package Index).
+This document outlines the complete plan for packaging and publishing the pyspark-analyzer package to PyPI (Python Package Index).
 
 ## Prerequisites
 
@@ -123,7 +123,7 @@ uv run twine check dist/*
 python -m venv test-env
 source test-env/bin/activate  # or test-env\Scripts\activate on Windows
 pip install dist/*.whl
-python -c "from spark_profiler import DataFrameProfiler; print('Success!')"
+python -c "from pyspark_analyzer import DataFrameProfiler; print('Success!')"
 deactivate
 rm -rf test-env
 ```
@@ -141,7 +141,7 @@ rm -rf test-env
    ```
 4. Test installation:
    ```bash
-   pip install --index-url https://test.pypi.org/simple/ spark-profiler
+   pip install --index-url https://test.pypi.org/simple/ pyspark-analyzer
    ```
 
 ### 10. Production Release Process
@@ -158,7 +158,7 @@ rm -rf test-env
 7. [ ] Push tag: `git push origin vX.Y.Z`
 8. [ ] Monitor GitHub Actions for successful deployment
 9. [ ] Verify package on PyPI
-10. [ ] Test installation: `pip install spark-profiler==X.Y.Z`
+10. [ ] Test installation: `pip install pyspark-analyzer==X.Y.Z`
 
 ### 11. Post-Release Tasks
 

@@ -11,7 +11,7 @@ from typing import List
 sys.path.insert(0, os.path.abspath("../.."))
 
 # Project information
-project = "spark-profiler"
+project = "pyspark-analyzer"
 copyright = f"{datetime.now().year}, Bjorn van Dijkman"
 author = "Bjorn van Dijkman"
 release = "0.1.0"

@@ -1,6 +1,6 @@
-# Contributing to spark-profiler
+# Contributing to pyspark-analyzer
 
-We welcome contributions to spark-profiler! This guide will help you get started.
+We welcome contributions to pyspark-analyzer! This guide will help you get started.
 
 ## Development Setup
 
@@ -8,8 +8,8 @@ We welcome contributions to spark-profiler! This guide will help you get started
 
 ```bash
 # Fork the repository on GitHub, then:
-git clone https://github.com/YOUR_USERNAME/spark-profiler.git
-cd spark-profiler
+git clone https://github.com/YOUR_USERNAME/pyspark-analyzer.git
+cd pyspark-analyzer
 ```
 
 ### 2. Install Development Dependencies
@@ -53,7 +53,7 @@ Follow these guidelines:
 uv run pytest
 
 # Run with coverage
-uv run pytest --cov=spark_profiler
+uv run pytest --cov=pyspark_analyzer
 
 # Run specific test file
 uv run pytest tests/test_profiler.py
@@ -66,9 +66,9 @@ uv run pytest tests/test_profiler.py
 uv run pre-commit run --all-files
 
 # Or individually:
-uv run black spark_profiler/ tests/
-uv run ruff spark_profiler/ tests/
-uv run mypy spark_profiler/
+uv run black pyspark_analyzer/ tests/
+uv run ruff pyspark_analyzer/ tests/
+uv run mypy pyspark_analyzer/
 ```
 
 ### 5. Update Documentation
@@ -207,7 +207,7 @@ For major features:
 ### 2. Feature Structure
 
 ```
-spark_profiler/
+pyspark_analyzer/
 ├── new_feature.py      # Core implementation
 tests/
 ├── test_new_feature.py # Comprehensive tests

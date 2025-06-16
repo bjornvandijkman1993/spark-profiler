@@ -37,15 +37,15 @@ jobs:
 
     - name: Run black formatting
       run: |
-        uv run black spark_profiler/ tests/ examples/
+        uv run black pyspark_analyzer/ tests/ examples/
 
     - name: Run isort import sorting
       run: |
-        uv run isort spark_profiler/ tests/ examples/ --profile black
+        uv run isort pyspark_analyzer/ tests/ examples/ --profile black
 
     - name: Run ruff formatting fixes
       run: |
-        uv run ruff check spark_profiler/ tests/ examples/ --fix --exit-zero
+        uv run ruff check pyspark_analyzer/ tests/ examples/ --fix --exit-zero
 
     - name: Check for changes
       id: verify-changed-files

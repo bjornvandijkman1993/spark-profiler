@@ -1,7 +1,7 @@
 API Reference
 =============
 
-This section provides detailed API documentation for all public classes and functions in spark-profiler.
+This section provides detailed API documentation for all public classes and functions in pyspark-analyzer.
 
 Core Classes
 ------------
@@ -9,7 +9,7 @@ Core Classes
 DataFrameProfiler
 ~~~~~~~~~~~~~~~~~
 
-.. autoclass:: spark_profiler.DataFrameProfiler
+.. autoclass:: pyspark_analyzer.DataFrameProfiler
    :members:
    :undoc-members:
    :show-inheritance:
@@ -22,7 +22,7 @@ Sampling
 SamplingConfig
 ~~~~~~~~~~~~~~
 
-.. autoclass:: spark_profiler.SamplingConfig
+.. autoclass:: pyspark_analyzer.SamplingConfig
    :members:
    :undoc-members:
    :show-inheritance:
@@ -30,7 +30,7 @@ SamplingConfig
 SamplingMetadata
 ~~~~~~~~~~~~~~~~
 
-.. autoclass:: spark_profiler.sampling.SamplingMetadata
+.. autoclass:: pyspark_analyzer.sampling.SamplingMetadata
    :members:
    :undoc-members:
    :show-inheritance:
@@ -38,7 +38,7 @@ SamplingMetadata
 SamplingDecisionEngine
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: spark_profiler.sampling.SamplingDecisionEngine
+.. autoclass:: pyspark_analyzer.sampling.SamplingDecisionEngine
    :members:
    :undoc-members:
    :show-inheritance:
@@ -49,7 +49,7 @@ Statistics
 StatisticsComputer
 ~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: spark_profiler.statistics.StatisticsComputer
+.. autoclass:: pyspark_analyzer.statistics.StatisticsComputer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -60,7 +60,7 @@ Performance
 BatchStatisticsComputer
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: spark_profiler.performance.BatchStatisticsComputer
+.. autoclass:: pyspark_analyzer.performance.BatchStatisticsComputer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -68,7 +68,7 @@ BatchStatisticsComputer
 Utility Functions
 -----------------
 
-.. automodule:: spark_profiler.utils
+.. automodule:: pyspark_analyzer.utils
    :members:
    :undoc-members:
    :show-inheritance:
@@ -78,14 +78,14 @@ Examples
 
 Basic profiling::
 
-    from spark_profiler import DataFrameProfiler
+    from pyspark_analyzer import DataFrameProfiler
 
     profiler = DataFrameProfiler(df)
     profile = profiler.profile()
 
 With sampling configuration::
 
-    from spark_profiler import DataFrameProfiler, SamplingConfig
+    from pyspark_analyzer import DataFrameProfiler, SamplingConfig
 
     config = SamplingConfig(target_size=100_000)
     profiler = DataFrameProfiler(df, sampling_config=config)

@@ -13,7 +13,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 from datetime import datetime
-from spark_profiler import DataFrameProfiler, SamplingConfig, create_sampling_config
+from pyspark_analyzer import DataFrameProfiler, SamplingConfig, create_sampling_config
 
 
 def create_large_sample_data():

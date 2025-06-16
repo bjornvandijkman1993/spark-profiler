@@ -1,5 +1,5 @@
 [project]
-name = "spark-profiler"
+name = "pyspark-analyzer"
 version = "0.1.1"
 description = "A comprehensive PySpark DataFrame profiler for generating detailed statistics and data quality reports"
 requires-python = ">=3.8"
@@ -60,17 +60,17 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/bjornvandijkman1993/spark-profiler"
-Repository = "https://github.com/bjornvandijkman1993/spark-profiler"
-Documentation = "https://github.com/bjornvandijkman1993/spark-profiler#readme"
-Issues = "https://github.com/bjornvandijkman1993/spark-profiler/issues"
+Homepage = "https://github.com/bjornvandijkman1993/pyspark-analyzer"
+Repository = "https://github.com/bjornvandijkman1993/pyspark-analyzer"
+Documentation = "https://github.com/bjornvandijkman1993/pyspark-analyzer#readme"
+Issues = "https://github.com/bjornvandijkman1993/pyspark-analyzer/issues"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["spark_profiler"]
+packages = ["pyspark_analyzer"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -135,7 +135,7 @@ exclude_dirs = ["tests", "venv", ".venv"]
 skips = ["B101"]  # Skip assert_used test
 
 [tool.coverage.run]
-source = ["spark_profiler"]
+source = ["pyspark_analyzer"]
 omit = [
     "*/tests/*",
     "*/test_*.py",
@@ -160,7 +160,7 @@ exclude_lines = [
 profile = "black"
 multi_line_output = 3
 line_length = 88
-known_first_party = ["spark_profiler"]
+known_first_party = ["pyspark_analyzer"]
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 
 [dependency-groups]

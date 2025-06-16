@@ -26,8 +26,8 @@ export PYSPARK_PYTHON="/opt/homebrew/bin/python3"
 export PYSPARK_DRIVER_PYTHON="/opt/homebrew/bin/python3"
 
 # After (correct)
-export PYSPARK_PYTHON="/Users/bjornvandijkman/PycharmProjects/spark-profiler/.venv/bin/python"
-export PYSPARK_DRIVER_PYTHON="/Users/bjornvandijkman/PycharmProjects/spark-profiler/.venv/bin/python"
+export PYSPARK_PYTHON="/Users/bjornvandijkman/PycharmProjects/pyspark-analyzer/.venv/bin/python"
+export PYSPARK_DRIVER_PYTHON="/Users/bjornvandijkman/PycharmProjects/pyspark-analyzer/.venv/bin/python"
 ```
 
 ### 2. Enhanced Setup Script

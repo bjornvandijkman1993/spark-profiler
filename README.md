@@ -1,16 +1,16 @@
 # 🔍 PySpark DataFrame Profiler
 
-[![CI](https://github.com/bjornvandijkman1993/spark-profiler/workflows/CI/badge.svg)](https://github.com/bjornvandijkman1993/spark-profiler/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/bjornvandijkman1993/spark-profiler/branch/main/graph/badge.svg)](https://codecov.io/gh/bjornvandijkman1993/spark-profiler)
-[![Documentation Status](https://readthedocs.org/projects/spark-profiler/badge/?version=latest)](https://spark-profiler.readthedocs.io/en/latest/?badge=latest)
+[![CI](https://github.com/bjornvandijkman1993/pyspark-analyzer/workflows/CI/badge.svg)](https://github.com/bjornvandijkman1993/pyspark-analyzer/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/bjornvandijkman1993/pyspark-analyzer/branch/main/graph/badge.svg)](https://codecov.io/gh/bjornvandijkman1993/pyspark-analyzer)
+[![Documentation Status](https://readthedocs.org/projects/pyspark-analyzer/badge/?version=latest)](https://pyspark-analyzer.readthedocs.io/en/latest/?badge=latest)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyPI version](https://badge.fury.io/py/spark-profiler.svg)](https://pypi.org/project/spark-profiler/)
-[![Downloads](https://pepy.tech/badge/spark-profiler)](https://pepy.tech/project/spark-profiler)
+[![PyPI version](https://badge.fury.io/py/pyspark-analyzer.svg)](https://pypi.org/project/pyspark-analyzer/)
+[![Downloads](https://pepy.tech/badge/pyspark-analyzer)](https://pepy.tech/project/pyspark-analyzer)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A comprehensive PySpark DataFrame profiler for generating detailed statistics and data quality reports with intelligent sampling capabilities for large-scale datasets.
 
-📚 **[Documentation](https://spark-profiler.readthedocs.io)** | 🐛 **[Issues](https://github.com/bjornvandijkman1993/spark-profiler/issues)** | 💡 **[Examples](https://github.com/bjornvandijkman1993/spark-profiler/tree/main/examples)**
+📚 **[Documentation](https://pyspark-analyzer.readthedocs.io)** | 🐛 **[Issues](https://github.com/bjornvandijkman1993/pyspark-analyzer/issues)** | 💡 **[Examples](https://github.com/bjornvandijkman1993/pyspark-analyzer/tree/main/examples)**
 
 ## ✨ Features
 
@@ -37,22 +37,22 @@ A comprehensive PySpark DataFrame profiler for generating detailed statistics an
 ### From PyPI (Recommended)
 
 ```bash
-pip install spark-profiler
+pip install pyspark-analyzer
 ```
 
 ### From Source
 
 ```bash
-git clone https://github.com/bjornvandijkman1993/spark-profiler.git
-cd spark-profiler
+git clone https://github.com/bjornvandijkman1993/pyspark-analyzer.git
+cd pyspark-analyzer
 pip install -e .
 ```
 
 ### Using uv (for development)
 
 ```bash
-git clone https://github.com/bjornvandijkman1993/spark-profiler.git
-cd spark-profiler
+git clone https://github.com/bjornvandijkman1993/pyspark-analyzer.git
+cd pyspark-analyzer
 uv sync
 ```
 
@@ -60,7 +60,7 @@ uv sync
 
 ```python
 from pyspark.sql import SparkSession
-from spark_profiler import DataFrameProfiler
+from pyspark_analyzer import DataFrameProfiler
 
 # Create Spark session
 spark = SparkSession.builder.appName("DataProfiling").getOrCreate()
@@ -86,7 +86,7 @@ if sampling_info['is_sampled']:
 ### Advanced Sampling
 
 ```python
-from spark_profiler import DataFrameProfiler, SamplingConfig
+from pyspark_analyzer import DataFrameProfiler, SamplingConfig
 
 # Custom sampling configuration
 config = SamplingConfig(
@@ -161,8 +161,8 @@ Check out the [examples](./examples/) directory for comprehensive usage examples
 
 ```bash
 # Clone the repository
-git clone https://github.com/bjornvandijkman1993/spark-profiler.git
-cd spark-profiler
+git clone https://github.com/bjornvandijkman1993/pyspark-analyzer.git
+cd pyspark-analyzer
 
 # Create virtual environment
 python -m venv venv
@@ -182,7 +182,7 @@ python examples/installation_verification.py
 pytest
 
 # Run tests with coverage
-pytest --cov=spark_profiler
+pytest --cov=pyspark_analyzer
 
 # Run specific test file
 pytest tests/test_sampling.py -v
@@ -192,13 +192,13 @@ pytest tests/test_sampling.py -v
 
 ```bash
 # Format code
-black spark_profiler/ tests/ examples/
+black pyspark_analyzer/ tests/ examples/
 
 # Lint code
-flake8 spark_profiler/
+flake8 pyspark_analyzer/
 
 # Type checking
-mypy spark_profiler/
+mypy pyspark_analyzer/
 ```
 
 ## 📋 Requirements
@@ -209,13 +209,13 @@ mypy spark_profiler/
 
 ## 📚 Documentation
 
-Comprehensive documentation is available at **[spark-profiler.readthedocs.io](https://spark-profiler.readthedocs.io)**
+Comprehensive documentation is available at **[pyspark-analyzer.readthedocs.io](https://pyspark-analyzer.readthedocs.io)**
 
-- **[Installation Guide](https://spark-profiler.readthedocs.io/en/latest/installation.html)** - Detailed setup instructions
-- **[Quick Start](https://spark-profiler.readthedocs.io/en/latest/quickstart.html)** - Get up and running quickly
-- **[User Guide](https://spark-profiler.readthedocs.io/en/latest/user_guide.html)** - Advanced usage and best practices
-- **[API Reference](https://spark-profiler.readthedocs.io/en/latest/api_reference.html)** - Complete API documentation
-- **[Examples](https://spark-profiler.readthedocs.io/en/latest/examples.html)** - Real-world usage examples
+- **[Installation Guide](https://pyspark-analyzer.readthedocs.io/en/latest/installation.html)** - Detailed setup instructions
+- **[Quick Start](https://pyspark-analyzer.readthedocs.io/en/latest/quickstart.html)** - Get up and running quickly
+- **[User Guide](https://pyspark-analyzer.readthedocs.io/en/latest/user_guide.html)** - Advanced usage and best practices
+- **[API Reference](https://pyspark-analyzer.readthedocs.io/en/latest/api_reference.html)** - Complete API documentation
+- **[Examples](https://pyspark-analyzer.readthedocs.io/en/latest/examples.html)** - Real-world usage examples
 
 ## 🤝 Contributing
 

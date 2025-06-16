@@ -121,13 +121,13 @@ jobs:
         source test_env/bin/activate
 
         # Install the package
-        pip install spark-profiler==$VERSION
+        pip install pyspark-analyzer==$VERSION
 
         # Verify import and version
-        python -c "import spark_profiler; assert spark_profiler.__version__ == '$VERSION', f'Version mismatch: {spark_profiler.__version__} != $VERSION'"
+        python -c "import pyspark_analyzer; assert pyspark_analyzer.__version__ == '$VERSION', f'Version mismatch: {pyspark_analyzer.__version__} != $VERSION'"
 
         # Basic import test
-        python -c "from spark_profiler import DataFrameProfiler, SamplingConfig; print('Package imported successfully')"
+        python -c "from pyspark_analyzer import DataFrameProfiler, SamplingConfig; print('Package imported successfully')"
 
         echo "Package verification successful!"
 
@@ -165,17 +165,17 @@ jobs:
         ## Installation
 
         \`\`\`bash
-        pip install spark-profiler==$VERSION
+        pip install pyspark-analyzer==$VERSION
         \`\`\`
 
         ## Verification
 
         \`\`\`python
-        from spark_profiler import DataFrameProfiler
+        from pyspark_analyzer import DataFrameProfiler
         # Your PySpark DataFrame profiling code here
         \`\`\`
 
-        See the [examples](https://github.com/bjornvandijkman1993/spark-profiler/tree/main/examples) for detailed usage.
+        See the [examples](https://github.com/bjornvandijkman1993/pyspark-analyzer/tree/main/examples) for detailed usage.
         EOF
 
     - name: Create Release

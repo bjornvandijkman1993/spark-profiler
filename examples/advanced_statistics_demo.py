@@ -1,5 +1,5 @@
 """
-Demonstration of advanced statistics features in spark-profiler.
+Demonstration of advanced statistics features in pyspark-analyzer.
 """
 
 from pyspark.sql import SparkSession
@@ -15,7 +15,7 @@ from datetime import date, timedelta
 import random
 import numpy as np
 
-from spark_profiler import DataFrameProfiler
+from pyspark_analyzer import DataFrameProfiler
 
 
 def create_sample_data(spark):

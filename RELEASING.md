@@ -1,6 +1,6 @@
 # Release Process
 
-This document describes the process for releasing new versions of spark-profiler.
+This document describes the process for releasing new versions of pyspark-analyzer.
 
 ## Before You Begin
 
@@ -21,7 +21,7 @@ git pull origin main
 
 # Run tests to ensure everything works
 uv run pytest
-uv run mypy spark_profiler/
+uv run mypy pyspark_analyzer/
 ```
 
 ### 2. Update Version
@@ -68,17 +68,17 @@ git push origin vX.Y.Z
 
 ### 6. Monitor Release
 
-1. Go to [GitHub Actions](https://github.com/bjornvandijkman1993/spark-profiler/actions)
+1. Go to [GitHub Actions](https://github.com/bjornvandijkman1993/pyspark-analyzer/actions)
 2. Watch the "Release" workflow
 3. Ensure all steps complete successfully
 
 ### 7. Verify Release
 
-1. Check [PyPI page](https://pypi.org/project/spark-profiler/)
-2. Check [GitHub Releases](https://github.com/bjornvandijkman1993/spark-profiler/releases)
+1. Check [PyPI page](https://pypi.org/project/pyspark-analyzer/)
+2. Check [GitHub Releases](https://github.com/bjornvandijkman1993/pyspark-analyzer/releases)
 3. Test installation:
    ```bash
-   pip install spark-profiler==X.Y.Z
+   pip install pyspark-analyzer==X.Y.Z
    ```
 
 ## Release Types

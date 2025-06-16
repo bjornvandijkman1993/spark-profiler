@@ -1,6 +1,6 @@
 # Examples
 
-This section provides practical examples of using spark-profiler in various scenarios.
+This section provides practical examples of using pyspark-analyzer in various scenarios.
 
 ## Basic Examples
 
@@ -8,7 +8,7 @@ This section provides practical examples of using spark-profiler in various scen
 
 ```python
 from pyspark.sql import SparkSession
-from spark_profiler import DataFrameProfiler
+from pyspark_analyzer import DataFrameProfiler
 
 # Initialize Spark
 spark = SparkSession.builder \
@@ -147,7 +147,7 @@ compare_datasets(train_df, test_df, "Training", "Test")
 ### Example 4: Automated Feature Engineering
 
 ```python
-from spark_profiler import DataFrameProfiler, SamplingConfig
+from pyspark_analyzer import DataFrameProfiler, SamplingConfig
 
 def identify_feature_types(df, cardinality_threshold=50):
     """
@@ -217,7 +217,7 @@ for ftype, columns in feature_types.items():
 
 ```python
 import time
-from spark_profiler import DataFrameProfiler, SamplingConfig
+from pyspark_analyzer import DataFrameProfiler, SamplingConfig
 
 def profile_with_monitoring(df, name="DataFrame"):
     """

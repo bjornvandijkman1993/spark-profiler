@@ -1,12 +1,12 @@
 # Version Management
 
-This document describes how version management works in the spark-profiler project.
+This document describes how version management works in the pyspark-analyzer project.
 
 ## Current Setup
 
 The project uses `bump2version` for automated version management. Version numbers are synchronized across:
 - `pyproject.toml` - Package metadata
-- `spark_profiler/__init__.py` - Runtime version
+- `pyspark_analyzer/__init__.py` - Runtime version
 - `.bumpversion.cfg` - Version management configuration
 
 ## Manual Version Bumping

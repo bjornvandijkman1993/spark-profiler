@@ -9,7 +9,7 @@
 ## Install from PyPI
 
 ```bash
-pip install spark-profiler
+pip install pyspark-analyzer
 ```
 
 ## Install from Source
@@ -17,16 +17,16 @@ pip install spark-profiler
 ### Using pip
 
 ```bash
-git clone https://github.com/yourusername/spark-profiler.git
-cd spark-profiler
+git clone https://github.com/yourusername/pyspark-analyzer.git
+cd pyspark-analyzer
 pip install -e .
 ```
 
 ### Using uv (recommended for development)
 
 ```bash
-git clone https://github.com/yourusername/spark-profiler.git
-cd spark-profiler
+git clone https://github.com/yourusername/pyspark-analyzer.git
+cd pyspark-analyzer
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync
 ```
@@ -34,8 +34,8 @@ uv sync
 ## Verify Installation
 
 ```python
-import spark_profiler
-print(spark_profiler.__version__)
+import pyspark_analyzer
+print(pyspark_analyzer.__version__)
 
 # Run the verification script
 python examples/installation_verification.py
@@ -61,4 +61,4 @@ export SPARK_HOME=/path/to/spark
 export PYTHONPATH=$SPARK_HOME/python:$PYTHONPATH
 ```
 
-For more detailed troubleshooting, see our [Troubleshooting Guide](https://github.com/yourusername/spark-profiler/blob/main/TROUBLESHOOTING.md).
+For more detailed troubleshooting, see our [Troubleshooting Guide](https://github.com/yourusername/pyspark-analyzer/blob/main/TROUBLESHOOTING.md).

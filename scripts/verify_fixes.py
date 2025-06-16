@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Verify the fixes made to the spark-profiler without requiring Java/Spark.
+Verify the fixes made to the pyspark-analyzer without requiring Java/Spark.
 """
 
 import sys
@@ -13,7 +13,7 @@ sys.path.insert(0, str(project_root))
 
 def test_sampling_config():
     """Test SamplingConfig doesn't have confidence_level."""
-    from spark_profiler.sampling import SamplingConfig
+    from pyspark_analyzer.sampling import SamplingConfig
 
     config = SamplingConfig(target_size=50_000, min_sample_size=10_000, seed=42)
 
@@ -31,7 +31,7 @@ def test_sampling_config():
 
 def test_profiler_methods():
     """Test DataFrameProfiler has get_profile method."""
-    from spark_profiler.profiler import DataFrameProfiler
+    from pyspark_analyzer.profiler import DataFrameProfiler
 
     # Check method exists
     assert hasattr(DataFrameProfiler, "get_profile")
@@ -43,11 +43,11 @@ def test_profiler_methods():
 def test_imports():
     """Test all modules can be imported."""
     try:
-        import spark_profiler
-        import spark_profiler.statistics  # noqa: F401
-        import spark_profiler.performance  # noqa: F401
-        import spark_profiler.utils  # noqa: F401
-        import spark_profiler.sampling  # noqa: F401
+        import pyspark_analyzer
+        import pyspark_analyzer.statistics  # noqa: F401
+        import pyspark_analyzer.performance  # noqa: F401
+        import pyspark_analyzer.utils  # noqa: F401
+        import pyspark_analyzer.sampling  # noqa: F401
 
         print("✓ All imports successful")
     except ImportError as e:
@@ -58,7 +58,7 @@ def test_imports():
 
 def test_sampling_metadata():
     """Test SamplingMetadata structure."""
-    from spark_profiler.sampling import SamplingMetadata
+    from pyspark_analyzer.sampling import SamplingMetadata
 
     metadata = SamplingMetadata(
         original_size=100000,
@@ -80,7 +80,7 @@ def test_sampling_metadata():
 
 def main():
     """Run all verification tests."""
-    print("Verifying spark-profiler fixes...")
+    print("Verifying pyspark-analyzer fixes...")
     print("-" * 50)
 
     tests = [

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🔧 Setting up test environment for spark-profiler..."
+echo "🔧 Setting up test environment for pyspark-analyzer..."
 
 # Function to detect Java
 detect_java() {

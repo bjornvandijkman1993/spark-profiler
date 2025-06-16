@@ -34,8 +34,8 @@ pip install "$OLDPWD"/dist/*.whl
 # Test import
 echo "Testing import..."
 python -c "
-from spark_profiler import DataFrameProfiler
-from spark_profiler import SamplingConfig
+from pyspark_analyzer import DataFrameProfiler
+from pyspark_analyzer import SamplingConfig
 print('✅ Import successful!')
 print(f'Package location: {DataFrameProfiler.__module__}')
 "

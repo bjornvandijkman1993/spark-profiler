@@ -1,7 +1,7 @@
 # Pandas DataFrame Output Design for Spark Profiler
 
 ## Overview
-This document outlines the design for adding pandas DataFrame output support to the spark-profiler library. This feature will enable users to export profiling results as a pandas DataFrame for easier analysis, storage, and tracking of statistics over time.
+This document outlines the design for adding pandas DataFrame output support to the pyspark-analyzer library. This feature will enable users to export profiling results as a pandas DataFrame for easier analysis, storage, and tracking of statistics over time.
 
 ## Motivation
 - **Time-series tracking**: Store profiling results in databases to track data quality metrics over time
@@ -129,7 +129,7 @@ def _create_pandas_dataframe(profile_data: Dict[str, Any]) -> pd.DataFrame:
 
 #### Basic Usage (Default to pandas)
 ```python
-from spark_profiler import DataFrameProfiler
+from pyspark_analyzer import DataFrameProfiler
 
 # Profile a Spark DataFrame
 profiler = DataFrameProfiler(spark_df)
@@ -282,4 +282,4 @@ Add pandas-related commands and patterns for AI assistance
 7. Create example notebook demonstrating time-series tracking
 
 ## Conclusion
-By making pandas DataFrame the default output format and removing backward compatibility constraints, we create a more intuitive and powerful API. Users can immediately leverage pandas' rich ecosystem for analysis, visualization, and storage without additional conversion steps. This positions spark-profiler as a modern, data-science-friendly tool that seamlessly integrates with existing pandas workflows.
+By making pandas DataFrame the default output format and removing backward compatibility constraints, we create a more intuitive and powerful API. Users can immediately leverage pandas' rich ecosystem for analysis, visualization, and storage without additional conversion steps. This positions pyspark-analyzer as a modern, data-science-friendly tool that seamlessly integrates with existing pandas workflows.

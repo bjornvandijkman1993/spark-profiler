@@ -19,7 +19,7 @@ from pyspark.sql.types import (
     MapType,
 )
 
-from spark_profiler.utils import (
+from pyspark_analyzer.utils import (
     get_column_data_types,
     format_profile_output,
     _create_summary_report,

@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-This guide will help you get started with spark-profiler in just a few minutes.
+This guide will help you get started with pyspark-analyzer in just a few minutes.
 
 ## Basic Usage
 
@@ -8,7 +8,7 @@ This guide will help you get started with spark-profiler in just a few minutes.
 
 ```python
 from pyspark.sql import SparkSession
-from spark_profiler import DataFrameProfiler
+from pyspark_analyzer import DataFrameProfiler
 
 # Create Spark session
 spark = SparkSession.builder \
@@ -81,7 +81,7 @@ profile = profiler.profile()
 ### Custom Sampling
 
 ```python
-from spark_profiler import SamplingConfig
+from pyspark_analyzer import SamplingConfig
 
 # Configure sampling
 config = SamplingConfig(
