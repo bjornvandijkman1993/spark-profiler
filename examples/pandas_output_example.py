@@ -34,7 +34,9 @@ def create_sample_data(spark, num_rows=10000):
     for i in range(num_rows):
         # Some nulls to make it realistic
         customer_id = i + 1 if random.random() > 0.02 else None
-        product_name = f"Product_{random.randint(1, 100)}" if random.random() > 0.01 else None
+        product_name = (
+            f"Product_{random.randint(1, 100)}" if random.random() > 0.01 else None
+        )
         category = random.choice(categories) if random.random() > 0.05 else None
         price = round(random.uniform(10, 500), 2) if random.random() > 0.03 else None
         quantity = random.randint(1, 10) if random.random() > 0.02 else None
@@ -58,7 +60,11 @@ def create_sample_data(spark, num_rows=10000):
 
 def main():
     # Initialize Spark
-    spark = SparkSession.builder.appName("PandasOutputExample").master("local[*]").getOrCreate()
+    spark = (
+        SparkSession.builder.appName("PandasOutputExample")
+        .master("local[*]")
+        .getOrCreate()
+    )
 
     print("Creating sample e-commerce data...")
     df = create_sample_data(spark)
@@ -97,7 +103,9 @@ def main():
         print(quality_issues[["column_name", "null_percentage"]])
 
     # Find columns with low cardinality
-    low_cardinality = profile_df[(profile_df["distinct_count"] < 10) & (profile_df["column_name"] != "quantity")]
+    low_cardinality = profile_df[
+        (profile_df["distinct_count"] < 10) & (profile_df["column_name"] != "quantity")
+    ]
     if not low_cardinality.empty:
         print("\nColumns with low cardinality (<10 distinct values):")
         print(low_cardinality[["column_name", "distinct_count"]])
@@ -112,7 +120,14 @@ def main():
 
     # Save for historical tracking
     tracking_df = profile_df[
-        ["profiling_date", "dataset_name", "dataset_size", "column_name", "null_percentage", "distinct_count"]
+        [
+            "profiling_date",
+            "dataset_name",
+            "dataset_size",
+            "column_name",
+            "null_percentage",
+            "distinct_count",
+        ]
     ]
     tracking_df.to_csv("profiling_history.csv", mode="a", header=False, index=False)
     print("✓ Appended to profiling_history.csv for time-series tracking")
@@ -126,10 +141,14 @@ def main():
     profile_filtered_df = profiler_filtered.profile()
 
     # Compare the two profiles
-    comparison = profile_df.merge(profile_filtered_df, on="column_name", suffixes=("_full", "_filtered"))
+    comparison = profile_df.merge(
+        profile_filtered_df, on="column_name", suffixes=("_full", "_filtered")
+    )
 
     # Show differences in null percentages
-    comparison["null_pct_diff"] = comparison["null_percentage_filtered"] - comparison["null_percentage_full"]
+    comparison["null_pct_diff"] = (
+        comparison["null_percentage_filtered"] - comparison["null_percentage_full"]
+    )
 
     print("Null percentage differences (filtered - full):")
     print(comparison[["column_name", "null_pct_diff"]].sort_values("null_pct_diff"))
@@ -141,7 +160,9 @@ def main():
     numeric_cols = profile_df[profile_df["mean"].notna()]
     if not numeric_cols.empty:
         numeric_cols["range"] = numeric_cols["max"] - numeric_cols["min"]
-        numeric_cols["cv"] = numeric_cols["std"] / numeric_cols["mean"]  # Coefficient of variation
+        numeric_cols["cv"] = (
+            numeric_cols["std"] / numeric_cols["mean"]
+        )  # Coefficient of variation
 
         print("Numeric columns analysis:")
         print(numeric_cols[["column_name", "mean", "std", "cv", "range"]])
@@ -150,13 +171,17 @@ def main():
     print("\n=== Example 7: Export for Reporting ===")
 
     # Create a summary report DataFrame
-    report_df = profile_df[["column_name", "data_type", "null_percentage", "distinct_count"]].copy()
+    report_df = profile_df[
+        ["column_name", "data_type", "null_percentage", "distinct_count"]
+    ].copy()
     report_df["data_quality"] = report_df.apply(
         lambda row: "Good" if row["null_percentage"] < 5 else "Needs Review", axis=1
     )
 
     # Style the DataFrame for better visualization (when displayed in Jupyter)
-    styled = report_df.style.background_gradient(subset=["null_percentage"], cmap="RdYlGn_r")
+    styled = report_df.style.background_gradient(
+        subset=["null_percentage"], cmap="RdYlGn_r"
+    )
 
     # Save styled report as HTML
     with open("data_quality_report.html", "w") as f:

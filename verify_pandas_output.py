@@ -108,7 +108,9 @@ json_output = format_profile_output(sample_profile, "json")
 print(f"   ✓ JSON format: {type(json_output).__name__} (length: {len(json_output)})")
 
 summary_output = format_profile_output(sample_profile, "summary")
-print(f"   ✓ Summary format: {type(summary_output).__name__} (lines: {len(summary_output.splitlines())})")
+print(
+    f"   ✓ Summary format: {type(summary_output).__name__} (lines: {len(summary_output.splitlines())})"
+)
 
 # Test 4: Data quality checks
 print("\n4. Testing data quality analysis:")

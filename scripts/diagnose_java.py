@@ -38,7 +38,9 @@ def check_java():
         # Try to suggest JAVA_HOME based on platform
         if platform.system() == "Darwin":  # macOS
             try:
-                result = subprocess.run(["/usr/libexec/java_home"], capture_output=True, text=True)
+                result = subprocess.run(
+                    ["/usr/libexec/java_home"], capture_output=True, text=True
+                )
                 if result.returncode == 0:
                     suggested_home = result.stdout.strip()
                     print(f"   💡 Suggested JAVA_HOME: {suggested_home}")

@@ -6,7 +6,10 @@ import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime, date
 
-from spark_profiler.performance import BatchStatisticsComputer, optimize_dataframe_for_profiling
+from spark_profiler.performance import (
+    BatchStatisticsComputer,
+    optimize_dataframe_for_profiling,
+)
 
 
 class TestBatchStatisticsComputer:
@@ -103,7 +106,9 @@ class TestBatchStatisticsComputer:
         df = spark_session.createDataFrame(data, ["id", "value"])
 
         computer = BatchStatisticsComputer(df)
-        stats = computer._compute_column_stats_optimized("value", df.schema["value"].dataType)
+        stats = computer._compute_column_stats_optimized(
+            "value", df.schema["value"].dataType
+        )
 
         assert stats["data_type"] == "DoubleType()"
         assert stats["total_count"] == 5
@@ -129,7 +134,9 @@ class TestBatchStatisticsComputer:
         df = spark_session.createDataFrame(data, ["id", "text"])
 
         computer = BatchStatisticsComputer(df)
-        stats = computer._compute_column_stats_optimized("text", df.schema["text"].dataType)
+        stats = computer._compute_column_stats_optimized(
+            "text", df.schema["text"].dataType
+        )
 
         assert stats["data_type"] == "StringType()"
         assert stats["total_count"] == 5
@@ -152,14 +159,18 @@ class TestBatchStatisticsComputer:
         computer = BatchStatisticsComputer(df)
 
         # Test timestamp column
-        timestamp_stats = computer._compute_column_stats_optimized("timestamp", df.schema["timestamp"].dataType)
+        timestamp_stats = computer._compute_column_stats_optimized(
+            "timestamp", df.schema["timestamp"].dataType
+        )
         assert timestamp_stats["data_type"] == "TimestampType()"
         assert timestamp_stats["min_date"] == datetime(2023, 1, 1)
         assert timestamp_stats["max_date"] == datetime(2023, 12, 31)
         assert timestamp_stats["date_range_days"] == 364
 
         # Test date column
-        date_stats = computer._compute_column_stats_optimized("date", df.schema["date"].dataType)
+        date_stats = computer._compute_column_stats_optimized(
+            "date", df.schema["date"].dataType
+        )
         assert date_stats["data_type"] == "DateType()"
         assert date_stats["min_date"] == date(2023, 1, 1)
         assert date_stats["max_date"] == date(2023, 12, 31)
@@ -168,12 +179,19 @@ class TestBatchStatisticsComputer:
         """Test statistics computation when column has all null values."""
         from pyspark.sql.types import StructType, StructField, IntegerType, DoubleType
 
-        schema = StructType([StructField("id", IntegerType(), True), StructField("value", DoubleType(), True)])
+        schema = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("value", DoubleType(), True),
+            ]
+        )
         data = [(1, None), (2, None), (3, None)]
         df = spark_session.createDataFrame(data, schema=schema)
 
         computer = BatchStatisticsComputer(df)
-        stats = computer._compute_column_stats_optimized("value", df.schema["value"].dataType)
+        stats = computer._compute_column_stats_optimized(
+            "value", df.schema["value"].dataType
+        )
 
         assert stats["total_count"] == 3
         assert stats["non_null_count"] == 0

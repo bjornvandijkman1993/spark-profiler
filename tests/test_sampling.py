@@ -84,7 +84,9 @@ class TestRandomSamplingStrategy:
     def test_no_sampling_needed(self, small_dataframe):
         """Test when no sampling is needed."""
         strategy = RandomSamplingStrategy()
-        config = SamplingConfig(performance_threshold=1000)  # Higher than DataFrame size
+        config = SamplingConfig(
+            performance_threshold=1000
+        )  # Higher than DataFrame size
 
         sample_df, metadata = strategy.sample(small_dataframe, config)
 
@@ -236,12 +238,16 @@ class TestDataFrameProfilerSampling:
         config = SamplingConfig(target_size=10000)
 
         with pytest.raises(ValueError, match="Cannot specify both"):
-            DataFrameProfiler(large_dataframe, sample_fraction=0.1, sampling_config=config)
+            DataFrameProfiler(
+                large_dataframe, sample_fraction=0.1, sampling_config=config
+            )
 
     def test_sampling_with_optimization(self, large_dataframe):
         """Test sampling combined with performance optimization."""
         config = SamplingConfig(target_size=10000, auto_sample=False)
-        profiler = DataFrameProfiler(large_dataframe, sampling_config=config, optimize_for_large_datasets=True)
+        profiler = DataFrameProfiler(
+            large_dataframe, sampling_config=config, optimize_for_large_datasets=True
+        )
         profile = profiler.profile(output_format="dict")
 
         sampling_info = profile["sampling"]

@@ -120,8 +120,12 @@ class TestStatisticsComputer:
         assert stats["min"] == 10.0
         assert stats["max"] == 100.0
         assert stats["mean"] == 55.0
-        assert stats["median"] == pytest.approx(55.0, rel=0.1)  # Middle of 10-100, allow approximation
-        assert stats["q1"] == pytest.approx(30.0, 5)  # Approximate due to percentile_approx
+        assert stats["median"] == pytest.approx(
+            55.0, rel=0.1
+        )  # Middle of 10-100, allow approximation
+        assert stats["q1"] == pytest.approx(
+            30.0, 5
+        )  # Approximate due to percentile_approx
         assert stats["q3"] == pytest.approx(80.0, 5)
         assert "std" in stats
         assert stats["std"] > 0
@@ -182,7 +186,9 @@ class TestStatisticsComputer:
 
         assert stats["min_length"] == 0  # Empty string
         assert stats["max_length"] == 23  # "a very long string here"
-        assert stats["avg_length"] == pytest.approx(8.4, 0.1)  # Average of non-null lengths
+        assert stats["avg_length"] == pytest.approx(
+            8.4, 0.1
+        )  # Average of non-null lengths
         assert stats["empty_count"] == 1
 
     def test_compute_string_stats_all_empty(self, spark_session):

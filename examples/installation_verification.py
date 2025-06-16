@@ -26,7 +26,9 @@ def verify_installation():
 
     # Create Spark session
     print("📊 Creating Spark session...")
-    spark = SparkSession.builder.appName("ProfilerTest").master("local[*]").getOrCreate()
+    spark = (
+        SparkSession.builder.appName("ProfilerTest").master("local[*]").getOrCreate()
+    )
     spark.conf.set("spark.sql.adaptive.enabled", "false")  # Simplify for testing
 
     try:
@@ -73,17 +75,23 @@ def verify_installation():
 
         # Test specific column profiling
         print("\n🎯 Testing specific column profiling...")
-        numeric_profile = profiler.profile(columns=["age", "salary"], output_format="dict")
+        numeric_profile = profiler.profile(
+            columns=["age", "salary"], output_format="dict"
+        )
 
         for col_name, stats in numeric_profile["columns"].items():
-            print(f"✅ {col_name}: min={stats.get('min')}, max={stats.get('max')}, mean={stats.get('mean', 0):.2f}")
+            print(
+                f"✅ {col_name}: min={stats.get('min')}, max={stats.get('max')}, mean={stats.get('mean', 0):.2f}"
+            )
 
         # Test performance optimization
         print("\n⚡ Testing performance optimization...")
         optimized_profiler = DataFrameProfiler(df, optimize_for_large_datasets=True)
         optimized_profile = optimized_profiler.profile(output_format="dict")
 
-        print(f"✅ Optimized profiling completed for {len(optimized_profile['columns'])} columns")
+        print(
+            f"✅ Optimized profiling completed for {len(optimized_profile['columns'])} columns"
+        )
 
         # Test pandas output (new default)
         print("\n🐼 Testing pandas output format...")
@@ -103,7 +111,9 @@ def verify_installation():
         print("✅ JSON format generated successfully")
         print(f"JSON length: {len(json_output)} characters")
 
-        print("\n🎉 Installation verification successful! The library is working correctly.")
+        print(
+            "\n🎉 Installation verification successful! The library is working correctly."
+        )
         print("\n📖 Next steps:")
         print("   - Check out examples/basic_usage.py for comprehensive usage examples")
         print("   - Try examples/sampling_example.py for advanced sampling features")

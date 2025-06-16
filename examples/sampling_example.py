@@ -18,7 +18,9 @@ from spark_profiler import DataFrameProfiler, SamplingConfig, create_sampling_co
 
 def create_large_sample_data():
     """Create a larger sample DataFrame for sampling demonstration."""
-    spark = SparkSession.builder.appName("SamplingExample").master("local[*]").getOrCreate()
+    spark = (
+        SparkSession.builder.appName("SamplingExample").master("local[*]").getOrCreate()
+    )
 
     # Define schema
     schema = StructType(
@@ -102,7 +104,9 @@ def main():
     print("=" * 70)
 
     # Fraction-based sampling
-    fraction_config = create_sampling_config(target_fraction=0.02, seed=123)  # 2% sample
+    fraction_config = create_sampling_config(
+        target_fraction=0.02, seed=123
+    )  # 2% sample
 
     profiler_fraction = DataFrameProfiler(df, sampling_config=fraction_config)
     profile_fraction = profiler_fraction.profile()
@@ -123,7 +127,9 @@ def main():
     # Time full profiling
     print("⏱️  Timing full dataset profiling...")
     start_time = time.time()
-    profiler_full = DataFrameProfiler(df, sampling_config=SamplingConfig(auto_sample=False))
+    profiler_full = DataFrameProfiler(
+        df, sampling_config=SamplingConfig(auto_sample=False)
+    )
     profile_full = profiler_full.profile()
     full_time = time.time() - start_time
 
@@ -146,7 +152,9 @@ def main():
 
     print(f"  Full dataset mean: {full_age_stats['mean']:.2f}")
     print(f"  Sampled mean: {sampled_age_stats['mean']:.2f}")
-    print(f"  Difference: {abs(full_age_stats['mean'] - sampled_age_stats['mean']):.2f}")
+    print(
+        f"  Difference: {abs(full_age_stats['mean'] - sampled_age_stats['mean']):.2f}"
+    )
 
     print("\n" + "=" * 70)
     print("5. LEGACY COMPATIBILITY")

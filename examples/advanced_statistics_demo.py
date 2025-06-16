@@ -3,7 +3,14 @@ Demonstration of advanced statistics features in spark-profiler.
 """
 
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, IntegerType, DoubleType, StringType, DateType
+from pyspark.sql.types import (
+    StructType,
+    StructField,
+    IntegerType,
+    DoubleType,
+    StringType,
+    DateType,
+)
 from datetime import date, timedelta
 import random
 import numpy as np
@@ -19,7 +26,13 @@ def create_sample_data(spark):
 
     data = []
     fruits = ["apple", "banana", "cherry", "date", "elderberry", None, ""]
-    emails = ["user@example.com", "admin@test.org", "invalid-email", None, "test@domain.co.uk"]
+    emails = [
+        "user@example.com",
+        "admin@test.org",
+        "invalid-email",
+        None,
+        "test@domain.co.uk",
+    ]
 
     for i in range(1000):
         # ID column
@@ -84,7 +97,11 @@ def create_sample_data(spark):
 
 def main():
     # Initialize Spark
-    spark = SparkSession.builder.appName("AdvancedStatisticsDemo").master("local[*]").getOrCreate()
+    spark = (
+        SparkSession.builder.appName("AdvancedStatisticsDemo")
+        .master("local[*]")
+        .getOrCreate()
+    )
 
     # Create sample data
     print("Creating sample dataset with 1000 rows...")
@@ -101,7 +118,9 @@ def main():
     print("1. FULL PROFILE WITH ADVANCED STATISTICS")
     print("=" * 60)
 
-    full_profile = profiler.profile(output_format="dict", include_advanced=True, include_quality=True)
+    full_profile = profiler.profile(
+        output_format="dict", include_advanced=True, include_quality=True
+    )
 
     # Show advanced numeric statistics for price column
     price_stats = full_profile["columns"]["price"]
@@ -129,7 +148,9 @@ def main():
     if "outliers" in price_stats:
         outliers = price_stats["outliers"]
         print("  Outliers (IQR method):")
-        print(f"    - Total Outliers: {outliers['outlier_count']} ({outliers['outlier_percentage']:.1f}%)")
+        print(
+            f"    - Total Outliers: {outliers['outlier_count']} ({outliers['outlier_percentage']:.1f}%)"
+        )
         print(f"    - Lower Bound: ${outliers['lower_bound']:.2f}")
         print(f"    - Upper Bound: ${outliers['upper_bound']:.2f}")
 
@@ -181,14 +202,18 @@ def main():
     # IQR method
     iqr_outliers = stats_computer.compute_outlier_stats("quantity", method="iqr")
     print("\nIQR Method Results for 'quantity':")
-    print(f"  - Outliers: {iqr_outliers['outlier_count']} ({iqr_outliers['outlier_percentage']:.1f}%)")
+    print(
+        f"  - Outliers: {iqr_outliers['outlier_count']} ({iqr_outliers['outlier_percentage']:.1f}%)"
+    )
     print(f"  - Lower outliers: {iqr_outliers['lower_outlier_count']}")
     print(f"  - Upper outliers: {iqr_outliers['upper_outlier_count']}")
 
     # Z-score method
     zscore_outliers = stats_computer.compute_outlier_stats("quantity", method="zscore")
     print("\nZ-Score Method Results for 'quantity':")
-    print(f"  - Outliers (|z| > 3): {zscore_outliers['outlier_count']} ({zscore_outliers['outlier_percentage']:.1f}%)")
+    print(
+        f"  - Outliers (|z| > 3): {zscore_outliers['outlier_count']} ({zscore_outliers['outlier_percentage']:.1f}%)"
+    )
 
     # 5. Pattern Analysis
     print("\n" + "=" * 60)

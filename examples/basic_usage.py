@@ -87,7 +87,9 @@ def main():
             print(f"  Min: {stats['min']}")
             print(f"  Max: {stats['max']}")
             print(f"  Mean: {stats['mean']:.2f}" if stats["mean"] else "  Mean: N/A")
-            print(f"  Std Dev: {stats['std']:.2f}" if stats["std"] else "  Std Dev: N/A")
+            print(
+                f"  Std Dev: {stats['std']:.2f}" if stats["std"] else "  Std Dev: N/A"
+            )
             print(f"  Median: {stats['median']}")
             print(f"  Q1: {stats['q1']}")
             print(f"  Q3: {stats['q3']}")
@@ -110,7 +112,9 @@ def main():
     numeric_profile = profiler.profile(columns=["age", "salary"])
     print("\nNumeric columns only:")
     for col_name, stats in numeric_profile["columns"].items():
-        print(f"{col_name}: min={stats['min']}, max={stats['max']}, mean={stats['mean']:.2f}")
+        print(
+            f"{col_name}: min={stats['min']}, max={stats['max']}, mean={stats['mean']:.2f}"
+        )
 
     print("\n" + "=" * 60)
     print("FORMATTED OUTPUT EXAMPLES")

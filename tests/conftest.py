@@ -23,7 +23,9 @@ def spark_session():
         .config("spark.driver.host", "127.0.0.1")
         .config("spark.ui.enabled", "false")  # Disable UI for tests
         .config("spark.sql.shuffle.partitions", "2")  # Reduce partitions for tests
-        .config("spark.sql.adaptive.enabled", "false")  # Disable AQE for predictable tests
+        .config(
+            "spark.sql.adaptive.enabled", "false"
+        )  # Disable AQE for predictable tests
         .config("spark.driver.memory", "1g")
         .config("spark.executor.memory", "1g")
         .getOrCreate()
@@ -54,7 +56,10 @@ def large_dataframe(spark_session):
     """Create a large DataFrame for testing sampling."""
     # Create a DataFrame with 100k rows
     return spark_session.range(0, 100000).selectExpr(
-        "id", "id % 100 as category", "rand() * 1000 as value", "concat('user_', id) as name"
+        "id",
+        "id % 100 as category",
+        "rand() * 1000 as value",
+        "concat('user_', id) as name",
     )
 
 

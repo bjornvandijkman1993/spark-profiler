@@ -21,7 +21,9 @@ def get_column_data_types(dataframe: DataFrame) -> Dict[str, DataType]:
     return {field.name: field.dataType for field in dataframe.schema.fields}
 
 
-def format_profile_output(profile_data: Dict[str, Any], format_type: str = "dict") -> Any:
+def format_profile_output(
+    profile_data: Dict[str, Any], format_type: str = "dict"
+) -> Any:
     """
     Format the profile output in different formats.
 
@@ -60,7 +62,9 @@ def _create_summary_report(profile_data: Dict[str, Any]) -> str:
     columns = profile_data.get("columns", {})
 
     total_rows = overview.get("total_rows", "N/A")
-    total_rows_str = f"{total_rows:,}" if isinstance(total_rows, (int, float)) else str(total_rows)
+    total_rows_str = (
+        f"{total_rows:,}" if isinstance(total_rows, (int, float)) else str(total_rows)
+    )
 
     report_lines = [
         "DataFrame Profile Summary",

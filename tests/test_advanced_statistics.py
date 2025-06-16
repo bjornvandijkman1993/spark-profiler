@@ -39,7 +39,9 @@ class TestAdvancedNumericStatistics:
         # Create data with known distribution properties
         # Normal distribution should have skewness ~0 and kurtosis ~0
         np.random.seed(42)
-        normal_data = [(i, float(x)) for i, x in enumerate(np.random.normal(0, 1, 1000))]
+        normal_data = [
+            (i, float(x)) for i, x in enumerate(np.random.normal(0, 1, 1000))
+        ]
         df = spark_session.createDataFrame(normal_data, ["id", "value"])
 
         computer = StatisticsComputer(df)
@@ -47,11 +49,15 @@ class TestAdvancedNumericStatistics:
 
         # Check that skewness is close to 0 for normal distribution
         assert "skewness" in stats
-        assert abs(stats["skewness"]) < 0.5  # Normal distribution should have low skewness
+        assert (
+            abs(stats["skewness"]) < 0.5
+        )  # Normal distribution should have low skewness
 
         # Check kurtosis
         assert "kurtosis" in stats
-        assert abs(stats["kurtosis"]) < 2.0  # Normal distribution kurtosis should be close to 0
+        assert (
+            abs(stats["kurtosis"]) < 2.0
+        )  # Normal distribution kurtosis should be close to 0
 
         # Check other advanced stats
         assert "variance" in stats
@@ -230,7 +236,9 @@ class TestDataQualityStatistics:
         computer = StatisticsComputer(df)
         quality = computer.compute_data_quality_stats("text", column_type="string")
 
-        assert quality["completeness"] == pytest.approx(6 / 7, rel=1e-6)  # 6 non-null out of 7
+        assert quality["completeness"] == pytest.approx(
+            6 / 7, rel=1e-6
+        )  # 6 non-null out of 7
         assert quality["blank_count"] == 2  # Empty string and space
         assert quality["non_ascii_count"] == 1
         assert quality["single_char_count"] == 2  # "a" and " "

@@ -62,7 +62,9 @@ class SamplingStrategy(ABC):
     """Abstract base class for sampling strategies."""
 
     @abstractmethod
-    def sample(self, df: DataFrame, config: SamplingConfig) -> Tuple[DataFrame, SamplingMetadata]:
+    def sample(
+        self, df: DataFrame, config: SamplingConfig
+    ) -> Tuple[DataFrame, SamplingMetadata]:
         """Sample the DataFrame and return sample with metadata."""
         pass
 
@@ -75,7 +77,9 @@ class SamplingStrategy(ABC):
 class RandomSamplingStrategy(SamplingStrategy):
     """Random sampling strategy with quality estimation."""
 
-    def sample(self, df: DataFrame, config: SamplingConfig) -> Tuple[DataFrame, SamplingMetadata]:
+    def sample(
+        self, df: DataFrame, config: SamplingConfig
+    ) -> Tuple[DataFrame, SamplingMetadata]:
         """Perform random sampling on the DataFrame."""
         start_time = time.time()
 
@@ -99,7 +103,9 @@ class RandomSamplingStrategy(SamplingStrategy):
             is_sampled = True
 
             # Estimate quality (simplified for performance)
-            quality_score = self._estimate_quality_fast(original_size, sample_size, sampling_fraction)
+            quality_score = self._estimate_quality_fast(
+                original_size, sample_size, sampling_fraction
+            )
 
         sampling_time = time.time() - start_time
 
@@ -138,7 +144,9 @@ class RandomSamplingStrategy(SamplingStrategy):
         else:
             return float(min(0.80, 0.4 + sample_ratio * 0.4))
 
-    def _calculate_sampling_fraction(self, original_size: int, config: SamplingConfig) -> float:
+    def _calculate_sampling_fraction(
+        self, original_size: int, config: SamplingConfig
+    ) -> float:
         """Calculate the sampling fraction based on configuration."""
         if config.target_fraction:
             return config.target_fraction
@@ -157,7 +165,9 @@ class RandomSamplingStrategy(SamplingStrategy):
         )
         return target_size / original_size
 
-    def _estimate_quality_fast(self, original_size: int, sample_size: int, fraction: float) -> float:
+    def _estimate_quality_fast(
+        self, original_size: int, sample_size: int, fraction: float
+    ) -> float:
         """Fast quality estimation without additional data scans."""
         if sample_size >= original_size:
             return 1.0
@@ -189,7 +199,10 @@ class SamplingDecisionEngine:
     def should_sample(self, df: DataFrame) -> bool:
         """Determine if sampling is beneficial for the given DataFrame."""
         # Always sample if explicit targets are set
-        if self.config.target_size is not None or self.config.target_fraction is not None:
+        if (
+            self.config.target_size is not None
+            or self.config.target_fraction is not None
+        ):
             return True
 
         # If auto-sampling is disabled and no explicit targets, don't sample
@@ -206,7 +219,9 @@ class SamplingDecisionEngine:
         """Create a sample of the DataFrame with metadata."""
         return self.strategy.sample(df, self.config)
 
-    def recommend_config(self, df: DataFrame, use_case: str = "balanced") -> SamplingConfig:
+    def recommend_config(
+        self, df: DataFrame, use_case: str = "balanced"
+    ) -> SamplingConfig:
         """Recommend sampling configuration based on use case."""
         row_count = df.count()
 

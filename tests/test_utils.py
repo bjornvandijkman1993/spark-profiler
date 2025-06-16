@@ -19,7 +19,11 @@ from pyspark.sql.types import (
     MapType,
 )
 
-from spark_profiler.utils import get_column_data_types, format_profile_output, _create_summary_report
+from spark_profiler.utils import (
+    get_column_data_types,
+    format_profile_output,
+    _create_summary_report,
+)
 
 
 class TestGetColumnDataTypes:
@@ -98,7 +102,10 @@ class TestFormatProfileOutput:
 
     def test_format_as_dict(self):
         """Test formatting as dictionary (default)."""
-        profile_data = {"overview": {"total_rows": 100, "total_columns": 3}, "columns": {"col1": {"min": 1, "max": 10}}}
+        profile_data = {
+            "overview": {"total_rows": 100, "total_columns": 3},
+            "columns": {"col1": {"min": 1, "max": 10}},
+        }
 
         result = format_profile_output(profile_data, "dict")
         assert result == profile_data
@@ -130,7 +137,14 @@ class TestFormatProfileOutput:
 
     def test_format_as_json_with_datetime(self):
         """Test JSON formatting with datetime objects."""
-        profile_data = {"columns": {"date_col": {"min_date": datetime(2023, 1, 1), "max_date": date(2023, 12, 31)}}}
+        profile_data = {
+            "columns": {
+                "date_col": {
+                    "min_date": datetime(2023, 1, 1),
+                    "max_date": date(2023, 12, 31),
+                }
+            }
+        }
 
         result = format_profile_output(profile_data, "json")
 
@@ -222,7 +236,9 @@ class TestCreateSummaryReport:
 
     def test_missing_overview(self):
         """Test summary report with missing overview section."""
-        profile_data = {"columns": {"col1": {"data_type": "IntegerType", "null_percentage": 10.0}}}
+        profile_data = {
+            "columns": {"col1": {"data_type": "IntegerType", "null_percentage": 10.0}}
+        }
 
         result = _create_summary_report(profile_data)
 

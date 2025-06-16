@@ -28,8 +28,24 @@ class TestEndToEndProfiling:
         """Test profiling a DataFrame with various data types."""
         # Create a realistic dataset
         data = [
-            (1, "Alice Johnson", 28, 75000.50, True, date(2020, 1, 15), ["Python", "SQL"]),
-            (2, "Bob Smith", 35, 85000.00, True, date(2019, 6, 1), ["Java", "Scala", "SQL"]),
+            (
+                1,
+                "Alice Johnson",
+                28,
+                75000.50,
+                True,
+                date(2020, 1, 15),
+                ["Python", "SQL"],
+            ),
+            (
+                2,
+                "Bob Smith",
+                35,
+                85000.00,
+                True,
+                date(2019, 6, 1),
+                ["Java", "Scala", "SQL"],
+            ),
             (3, "Carol White", 42, 95000.75, False, date(2018, 3, 20), ["Python"]),
             (4, "David Brown", None, None, True, date(2021, 11, 30), None),
             (5, "", 29, 65000.00, True, None, ["R", "Python", "SQL"]),
@@ -107,7 +123,9 @@ class TestEndToEndProfiling:
         # When sampled, overview shows sampled rows, original size is in sampling info
         assert profile["sampling"]["original_size"] == 15_000_000
         assert profile["overview"]["total_rows"] == profile["sampling"]["sample_size"]
-        assert profile["columns"]["category"]["distinct_count"] == pytest.approx(1000, rel=0.1)
+        assert profile["columns"]["category"]["distinct_count"] == pytest.approx(
+            1000, rel=0.1
+        )
         assert profile["columns"]["revenue"]["min"] >= 0
         assert profile["columns"]["revenue"]["max"] <= 1_000_000
 
@@ -115,7 +133,9 @@ class TestEndToEndProfiling:
         """Test profiling with custom sampling configuration."""
         # Create medium-sized DataFrame
         df = spark_session.range(0, 500_000).selectExpr(
-            "id", "rand() * 100 as score", "case when rand() > 0.9 then null else concat('user_', id) end as username"
+            "id",
+            "rand() * 100 as score",
+            "case when rand() > 0.9 then null else concat('user_', id) end as username",
         )
 
         # Create custom sampling config
@@ -132,7 +152,8 @@ class TestEndToEndProfiling:
         """Test different output formats for profile data."""
         # Create simple DataFrame
         df = spark_session.createDataFrame(
-            [(1, "A", 10.5), (2, "B", 20.0), (3, "C", 30.5)], ["id", "category", "value"]
+            [(1, "A", 10.5), (2, "B", 20.0), (3, "C", 30.5)],
+            ["id", "category", "value"],
         )
 
         profiler = DataFrameProfiler(df)
@@ -158,7 +179,13 @@ class TestEndToEndProfiling:
 
     def test_profile_edge_cases(self, spark_session):
         """Test profiling edge cases."""
-        from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DoubleType
+        from pyspark.sql.types import (
+            StructType,
+            StructField,
+            IntegerType,
+            StringType,
+            DoubleType,
+        )
 
         # Empty DataFrame
         empty_schema = StructType(
@@ -176,7 +203,9 @@ class TestEndToEndProfiling:
         assert all(col["total_count"] == 0 for col in profile["columns"].values())
 
         # Single row DataFrame
-        single_df = spark_session.createDataFrame([(1, "test", 42.0)], ["id", "text", "number"])
+        single_df = spark_session.createDataFrame(
+            [(1, "test", 42.0)], ["id", "text", "number"]
+        )
         profiler = DataFrameProfiler(single_df)
         profile = profiler.profile(output_format="dict")
 
@@ -196,7 +225,9 @@ class TestEndToEndProfiling:
         profiler = DataFrameProfiler(null_df)
         profile = profiler.profile(output_format="dict")
 
-        assert all(col["null_percentage"] == 100.0 for col in profile["columns"].values())
+        assert all(
+            col["null_percentage"] == 100.0 for col in profile["columns"].values()
+        )
 
     def test_performance_optimization_integration(self, spark_session):
         """Test integration of performance optimizations."""
@@ -235,7 +266,9 @@ class TestEndToEndProfiling:
 
         # Profile only specific columns
         profiler = DataFrameProfiler(df)
-        profile = profiler.profile(columns=["id", "category", "metric1"], output_format="dict")
+        profile = profiler.profile(
+            columns=["id", "category", "metric1"], output_format="dict"
+        )
 
         # Verify only selected columns are profiled
         assert set(profile["columns"].keys()) == {"id", "category", "metric1"}
@@ -280,7 +313,9 @@ class TestEndToEndProfiling:
     def test_memory_efficiency(self, spark_session):
         """Test memory efficiency with caching and cleanup."""
         # Create a DataFrame that would benefit from caching
-        df = spark_session.range(0, 50000).selectExpr("id", "id % 50 as category", "rand() * 1000 as value")
+        df = spark_session.range(0, 50000).selectExpr(
+            "id", "id % 50 as category", "rand() * 1000 as value"
+        )
 
         # Profile with caching
         profiler = DataFrameProfiler(df)

@@ -57,7 +57,9 @@ class DataFrameProfiler:
 
         # Apply sampling if needed
         if self.sampling_engine.should_sample(dataframe):
-            self.df, self.sampling_metadata = self.sampling_engine.create_sample(dataframe)
+            self.df, self.sampling_metadata = self.sampling_engine.create_sample(
+                dataframe
+            )
         else:
             self.df = dataframe
             # Create metadata for non-sampled case
@@ -78,7 +80,9 @@ class DataFrameProfiler:
 
         self.column_types = get_column_data_types(self.df)
         self.stats_computer = StatisticsComputer(self.df)
-        self.batch_computer = BatchStatisticsComputer(self.df) if optimize_for_large_datasets else None
+        self.batch_computer = (
+            BatchStatisticsComputer(self.df) if optimize_for_large_datasets else None
+        )
         self.optimize_for_large_datasets = optimize_for_large_datasets
 
     def profile(
@@ -117,12 +121,16 @@ class DataFrameProfiler:
 
         # Use batch processing for large datasets if enabled
         if self.optimize_for_large_datasets and self.batch_computer:
-            profile_result["columns"] = self.batch_computer.compute_all_columns_batch(columns)
+            profile_result["columns"] = self.batch_computer.compute_all_columns_batch(
+                columns
+            )
         else:
             # Standard column-by-column processing
             for column in columns:
                 profile_result["columns"][column] = self._profile_column(
-                    column, include_advanced=include_advanced, include_quality=include_quality
+                    column,
+                    include_advanced=include_advanced,
+                    include_quality=include_quality,
                 )
 
         return format_profile_output(profile_result, output_format)
@@ -135,11 +143,16 @@ class DataFrameProfiler:
         return {
             "total_rows": total_rows,
             "total_columns": total_columns,
-            "column_types": {col: str(dtype) for col, dtype in self.column_types.items()},
+            "column_types": {
+                col: str(dtype) for col, dtype in self.column_types.items()
+            },
         }
 
     def _profile_column(
-        self, column_name: str, include_advanced: bool = True, include_quality: bool = True
+        self,
+        column_name: str,
+        include_advanced: bool = True,
+        include_quality: bool = True,
     ) -> Dict[str, Any]:
         """
         Profile a single column.
@@ -161,7 +174,9 @@ class DataFrameProfiler:
 
         # Add type-specific statistics
         if isinstance(column_type, NumericType):
-            numeric_stats = self.stats_computer.compute_numeric_stats(column_name, advanced=include_advanced)
+            numeric_stats = self.stats_computer.compute_numeric_stats(
+                column_name, advanced=include_advanced
+            )
             column_profile.update(numeric_stats)
 
             # Add outlier statistics for numeric columns
@@ -171,7 +186,9 @@ class DataFrameProfiler:
 
         elif isinstance(column_type, StringType):
             string_stats = self.stats_computer.compute_string_stats(
-                column_name, top_n=10 if include_advanced else 0, pattern_detection=include_advanced
+                column_name,
+                top_n=10 if include_advanced else 0,
+                pattern_detection=include_advanced,
             )
             column_profile.update(string_stats)
 
@@ -182,7 +199,10 @@ class DataFrameProfiler:
         # Add data quality metrics if requested
         if include_quality:
             quality_stats = self.stats_computer.compute_data_quality_stats(
-                column_name, column_type="numeric" if isinstance(column_type, NumericType) else "string"
+                column_name,
+                column_type=(
+                    "numeric" if isinstance(column_type, NumericType) else "string"
+                ),
             )
             column_profile["quality"] = quality_stats
 
@@ -242,7 +262,9 @@ class DataFrameProfiler:
         if hasattr(df, "to_sql"):
             df.to_sql(name, con, **kwargs)
 
-    def format_output(self, format_type: str = "pandas") -> Union[pd.DataFrame, Dict[str, Any], str]:
+    def format_output(
+        self, format_type: str = "pandas"
+    ) -> Union[pd.DataFrame, Dict[str, Any], str]:
         """
         Get profile output in specified format.
 
@@ -266,7 +288,12 @@ class DataFrameProfiler:
         Returns:
             Basic profile results as dictionary
         """
-        result = self.profile(columns=columns, output_format="dict", include_advanced=False, include_quality=False)
+        result = self.profile(
+            columns=columns,
+            output_format="dict",
+            include_advanced=False,
+            include_quality=False,
+        )
         # Type assertion for mypy
         assert isinstance(result, dict)
         return result
@@ -281,7 +308,12 @@ class DataFrameProfiler:
         Returns:
             DataFrame with quality metrics for each column
         """
-        profile = self.profile(columns=columns, output_format="dict", include_advanced=False, include_quality=True)
+        profile = self.profile(
+            columns=columns,
+            output_format="dict",
+            include_advanced=False,
+            include_quality=True,
+        )
 
         # Type assertion for mypy
         assert isinstance(profile, dict)
@@ -290,7 +322,11 @@ class DataFrameProfiler:
         quality_data = []
         for col_name, col_stats in profile["columns"].items():
             if "quality" in col_stats:
-                quality_info = {"column": col_name, "data_type": col_stats["data_type"], **col_stats["quality"]}
+                quality_info = {
+                    "column": col_name,
+                    "data_type": col_stats["data_type"],
+                    **col_stats["quality"],
+                }
                 quality_data.append(quality_info)
 
         return pd.DataFrame(quality_data)
