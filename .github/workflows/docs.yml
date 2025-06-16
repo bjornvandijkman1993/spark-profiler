@@ -70,13 +70,6 @@ jobs:
       uses: DavidAnson/markdownlint-cli2-action@v18
       with:
         globs: '**/*.md'
-        config: |
-          {
-            "default": true,
-            "MD013": false,
-            "MD033": false,
-            "MD041": false
-          }
 
     - name: Check links in documentation
       uses: gaurav-nelson/github-action-markdown-link-check@v1
