@@ -54,3 +54,24 @@ spark-warehouse/
 
 # Temporary files
 # (none currently)
+
+# Security scan reports
+safety-report.json
+bandit-report.json
+secrets-scan.json
+secrets-report.json
+pip-audit-report.json
+sbom.json
+sbom.xml
+licenses.json
+licenses.md
+dependency-check-report.*
+.safety-cache/
+security-reports/
+reports/
+
+# OWASP Dependency Check
+.dependency-check/
+dependency-check-report.html
+dependency-check-report.xml
+dependency-check-report.json

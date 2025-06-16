@@ -109,14 +109,78 @@ jobs:
     - name: Install dependencies
       run: |
         uv sync --frozen --all-extras
+        uv add --dev pip-audit
 
     - name: Run safety check
-      run: uv run safety check --json
-      continue-on-error: true
+      id: safety
+      run: |
+        echo "## Safety Security Scan Results" >> $GITHUB_STEP_SUMMARY
+        uv run safety check --json --output safety-report.json || true
+        if [ -f safety-report.json ]; then
+          uv run python -c "import json; f=open('safety-report.json'); data=json.load(f); vulns=data.get('vulnerabilities', []); [print(f\"- {v.get('package_name', 'Unknown')} {v.get('analyzed_version', '')} - {v.get('vulnerability_id', '')}\") for v in vulns]; exit(1 if vulns else 0)"
+        fi
+
+    - name: Run pip-audit
+      id: pip-audit
+      run: |
+        echo "## Pip-audit Security Scan Results" >> $GITHUB_STEP_SUMMARY
+        uv run pip-audit --desc || true
 
     - name: Run bandit security scan
-      run: uv run bandit -r pyspark_analyzer/ -f json
-      continue-on-error: true
+      id: bandit
+      run: |
+        echo "## Bandit Security Scan Results" >> $GITHUB_STEP_SUMMARY
+        uv run bandit -r pyspark_analyzer/ -f json -o bandit-report.json || true
+        if [ -f bandit-report.json ]; then
+          jq -r '.metrics | "High: \(.["SEVERITY.HIGH"] + .["CONFIDENCE.HIGH"]), Medium: \(.["SEVERITY.MEDIUM"] + .["CONFIDENCE.MEDIUM"])"' bandit-report.json >> $GITHUB_STEP_SUMMARY || echo "Error parsing bandit report" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Run detect-secrets scan
+      run: |
+        echo "## Secrets Detection Results" >> $GITHUB_STEP_SUMMARY
+        uv run detect-secrets scan --baseline .secrets.baseline . > secrets-scan.json || true
+        if [ -s secrets-scan.json ]; then
+          echo "⚠️ Potential secrets detected. Please review the scan results." >> $GITHUB_STEP_SUMMARY
+          uv run detect-secrets audit .secrets.baseline || true
+        else
+          echo "✅ No secrets detected" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Generate SBOM (Software Bill of Materials)
+      run: |
+        echo "## SBOM Generation" >> $GITHUB_STEP_SUMMARY
+        uv run cyclonedx-py -r -i pyproject.toml -o sbom.json --format json
+        uv run cyclonedx-py -r -i pyproject.toml -o sbom.xml --format xml
+        echo "✅ Software Bill of Materials generated (JSON and XML formats)" >> $GITHUB_STEP_SUMMARY
+
+    - name: Check license compliance
+      run: |
+        echo "## License Compliance Check" >> $GITHUB_STEP_SUMMARY
+        uv run pip-licenses --format=json --output-file=licenses.json
+        uv run pip-licenses --format=markdown --output-file=licenses.md
+
+        # Check for problematic licenses
+        uv run pip-licenses --fail-on="GPL;LGPL;AGPL;CC-BY-SA" || {
+          echo "⚠️ Found potentially incompatible licenses" >> $GITHUB_STEP_SUMMARY
+          exit 0  # Don't fail the build, just warn
+        }
+
+        # Count licenses
+        jq -r '. | length as $total | "✅ Checked \($total) dependencies"' licenses.json >> $GITHUB_STEP_SUMMARY || echo "Error counting licenses" >> $GITHUB_STEP_SUMMARY
+
+    - name: Upload security reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-reports
+        path: |
+          safety-report.json
+          bandit-report.json
+          secrets-scan.json
+          sbom.json
+          sbom.xml
+          licenses.json
+          licenses.md
 
   examples:
     name: Test Examples

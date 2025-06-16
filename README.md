@@ -3,6 +3,7 @@
 [![CI](https://github.com/bjornvandijkman1993/pyspark-analyzer/workflows/CI/badge.svg)](https://github.com/bjornvandijkman1993/pyspark-analyzer/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/bjornvandijkman1993/pyspark-analyzer/branch/main/graph/badge.svg)](https://codecov.io/gh/bjornvandijkman1993/pyspark-analyzer)
 [![Documentation Status](https://readthedocs.org/projects/pyspark-analyzer/badge/?version=latest)](https://pyspark-analyzer.readthedocs.io/en/latest/?badge=latest)
+[![Security](https://github.com/bjornvandijkman1993/pyspark-analyzer/workflows/CodeQL/badge.svg)](https://github.com/bjornvandijkman1993/pyspark-analyzer/security)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://badge.fury.io/py/pyspark-analyzer.svg)](https://pypi.org/project/pyspark-analyzer/)
 [![Downloads](https://pepy.tech/badge/pyspark-analyzer)](https://pepy.tech/project/pyspark-analyzer)
@@ -217,6 +218,18 @@ Comprehensive documentation is available at **[pyspark-analyzer.readthedocs.io](
 - **[API Reference](https://pyspark-analyzer.readthedocs.io/en/latest/api_reference.html)** - Complete API documentation
 - **[Examples](https://pyspark-analyzer.readthedocs.io/en/latest/examples.html)** - Real-world usage examples
 
+## 🔒 Security
+
+This project takes security seriously. We employ multiple layers of security scanning:
+
+- **Dependency Scanning**: Safety and pip-audit check for known vulnerabilities
+- **Static Analysis**: Bandit scans for security issues in code
+- **CodeQL**: GitHub's semantic code analysis for security vulnerabilities
+- **Pre-commit Hooks**: Security checks before code is committed
+- **Automated Updates**: Dependabot keeps dependencies up-to-date
+
+For more information, see our [Security Policy](SECURITY.md).
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
@@ -226,6 +239,8 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+All pull requests are automatically scanned for security issues.
 
 ## 📄 License
 

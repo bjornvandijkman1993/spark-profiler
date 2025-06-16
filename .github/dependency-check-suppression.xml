@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <!--
+    This file contains suppressions for the OWASP Dependency Check.
+    Use this to suppress false positives or accepted risks.
+
+    Example suppression:
+    <suppress>
+        <notes>This is a false positive because...</notes>
+        <packageUrl regex="true">^pkg:pypi/some-package@.*$</packageUrl>
+        <cve>CVE-2021-12345</cve>
+    </suppress>
+    -->
+
+    <!-- Suppress false positives for test dependencies -->
+    <suppress>
+        <notes>Test dependencies are not used in production</notes>
+        <packageUrl regex="true">^pkg:pypi/pytest.*@.*$</packageUrl>
+        <cpe regex="true">.*</cpe>
+    </suppress>
+
+    <!-- Suppress Spark-related false positives that don't affect PySpark -->
+    <suppress>
+        <notes>Java/Scala Spark vulnerabilities don't directly affect PySpark Python code</notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.spark/.*$</packageUrl>
+        <vulnerabilityName regex="true">.*spark.*</vulnerabilityName>
+    </suppress>
+</suppressions>

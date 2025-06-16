@@ -1,0 +1,111 @@
+name: OWASP Dependency Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  dependency-check:
+    name: OWASP Dependency Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+
+    - name: Install dependencies
+      run: |
+        uv sync --frozen --all-extras
+
+    - name: Run OWASP Dependency Check
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: 'pyspark-analyzer'
+        path: '.'
+        format: 'ALL'
+        args: >
+          --enableRetired
+          --enableExperimental
+          --scan '**/*.py'
+          --scan '**/pyproject.toml'
+          --scan '**/uv.lock'
+          --suppression '.github/dependency-check-suppression.xml'
+        failBuildOnCVSS: 7
+
+    - name: Upload OWASP reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: owasp-dependency-check-reports
+        path: reports/
+
+    - name: Parse OWASP Results
+      if: always()
+      run: |
+        echo "## OWASP Dependency Check Results" >> $GITHUB_STEP_SUMMARY
+        if [ -f reports/dependency-check-report.json ]; then
+          jq -r '.dependencies | length as $total | map(select(.vulnerabilities)) | length as $vuln | "Total dependencies: \($total), Vulnerable: \($vuln)"' reports/dependency-check-report.json >> $GITHUB_STEP_SUMMARY || echo "Error parsing OWASP report" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Create/Update Issue for High Severity Vulnerabilities
+      if: failure() && github.event_name == 'schedule'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const title = 'OWASP Dependency Check: High Severity Vulnerabilities Found';
+          const body = `
+          The weekly OWASP Dependency Check scan has found high severity vulnerabilities.
+
+          Please review the [workflow run](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}) for details.
+
+          **Action Required:**
+          1. Review the OWASP Dependency Check report
+          2. Update vulnerable dependencies
+          3. Test the updates
+          4. Create a security patch release if needed
+          `;
+
+          // Check if issue already exists
+          const issues = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            labels: 'security,dependencies'
+          });
+
+          const existingIssue = issues.data.find(issue => issue.title === title);
+
+          if (existingIssue) {
+            // Update existing issue
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: existingIssue.number,
+              body: `New vulnerabilities detected in [workflow run](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})`
+            });
+          } else {
+            // Create new issue
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['security', 'dependencies', 'high-priority']
+            });
+          }

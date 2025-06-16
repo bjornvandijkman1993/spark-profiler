@@ -1,0 +1,12 @@
+# Bandit configuration file for pyspark-analyzer
+# https://bandit.readthedocs.io/en/latest/config.html
+
+[bandit]
+# Exclude test directories and virtual environments
+exclude = /tests,/venv,/.venv,/build,/dist
+
+# Test IDs to skip
+# B101: Test for use of assert - common in test code and data validation
+skips = B101
+
+# pragma: allowlist secret

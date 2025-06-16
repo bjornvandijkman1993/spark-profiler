@@ -1,0 +1,60 @@
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+    assignees:
+      - "bjornvandijkman1993"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "-"
+    allow:
+      - dependency-type: "all"
+    groups:
+      # Group all development dependencies together
+      dev-dependencies:
+        patterns:
+          - "pytest*"
+          - "black"
+          - "mypy"
+          - "ruff"
+          - "safety"
+          - "bandit"
+          - "pip-audit"
+          - "build"
+          - "twine"
+      # Group documentation dependencies
+      docs-dependencies:
+        patterns:
+          - "sphinx*"
+          - "myst-parser"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    assignees:
+      - "bjornvandijkman1993"
+    commit-message:
+      prefix: "ci"
+      include: "scope"

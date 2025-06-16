@@ -39,3 +39,17 @@ repos:
     hooks:
       - id: markdownlint-cli2
         args: ['--config', '.markdownlint.json']
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.10
+    hooks:
+      - id: bandit
+        args: ['-c', '.bandit', '-r', 'pyspark_analyzer/']
+        exclude: ^tests/
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: package.lock.json

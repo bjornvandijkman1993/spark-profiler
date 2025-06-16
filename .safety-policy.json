@@ -1,0 +1,36 @@
+{
+  "security": {
+    "ignore-vulnerabilities": {
+      "reason": "List of vulnerabilities to ignore with justification",
+      "vulnerabilities": [
+        {
+          "vulnerability-id": "",
+          "reason": "Example: This vulnerability doesn't affect our use case",
+          "expires": "2025-12-31"
+        }
+      ]
+    },
+    "ignore-unpinned-requirements": {
+      "reason": "We use flexible versioning for better compatibility",
+      "packages": ["pyspark", "pandas"]
+    },
+    "continue-on-vulnerability-error": false,
+    "auto-security-updates": true,
+    "alert-severity-threshold": "medium"
+  },
+  "policy": {
+    "project-name": "pyspark-analyzer",
+    "project-url": "https://github.com/bjornvandijkman1993/pyspark-analyzer",
+    "security-team-email": "bjornvandijkman@gmail.com",
+    "vulnerability-reporting": {
+      "preferred-method": "github-security-advisory",
+      "alternative-method": "email"
+    }
+  },
+  "scanning": {
+    "auto-scan-pull-requests": true,
+    "scan-on-commit": true,
+    "fail-on-severity": ["critical", "high"],
+    "warn-on-severity": ["medium"]
+  }
+}
