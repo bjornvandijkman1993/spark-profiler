@@ -36,7 +36,9 @@ source .env
 ### 3. Common Issues and Solutions
 
 #### Issue: "Could not find or load main class"
+
 **Solution**: Set JAVA_HOME properly
+
 ```bash
 # macOS
 export JAVA_HOME=$(/usr/libexec/java_home)
@@ -49,13 +51,17 @@ set JAVA_HOME=C:\Program Files\Java\jdk-17  # Adjust path as needed
 ```
 
 #### Issue: "Connection refused" or "Cannot connect to Java gateway"
+
 **Solution**: Set Spark local IP
+
 ```bash
 export SPARK_LOCAL_IP=127.0.0.1
 ```
 
 #### Issue: Tests fail with PySpark errors
+
 **Solution**: Ensure Python and PySpark versions are compatible
+
 ```bash
 # Check Python version
 python --version
@@ -80,6 +86,7 @@ export $(cat .env | xargs) && uv run pytest --cov=spark_profiler
 ### 5. Debugging PySpark Issues
 
 If tests still fail, enable PySpark debug logging:
+
 ```bash
 export SPARK_LOCAL_IP=127.0.0.1
 export PYSPARK_PYTHON=$(which python)
@@ -93,11 +100,13 @@ uv run pytest tests/test_profiler.py -v -s
 ### 6. Verify Installation
 
 Run the installation verification script:
+
 ```bash
 uv run python examples/installation_verification.py
 ```
 
 This will check:
+
 - Java installation and version
 - PySpark installation
 - Basic Spark functionality
@@ -105,6 +114,7 @@ This will check:
 ### 7. Clean Environment
 
 If all else fails, try a clean environment:
+
 ```bash
 # Remove existing virtual environment
 rm -rf .venv
@@ -125,6 +135,7 @@ uv run pytest
 ### ImportError: No module named 'spark_profiler'
 
 Make sure the package is installed in development mode:
+
 ```bash
 uv sync
 ```
@@ -136,6 +147,7 @@ PySpark types are not fully supported by mypy. This is expected and handled in t
 ### Performance test timeouts
 
 Large dataset tests may take longer. Increase timeout if needed:
+
 ```bash
 uv run pytest tests/test_performance.py -v --timeout=300
 ```
