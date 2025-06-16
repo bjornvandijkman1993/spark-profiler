@@ -3130,6 +3130,10 @@ dev = [
     { name = "pandas-stubs", version = "2.2.3.250527", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "pre-commit", version = "3.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "pre-commit", version = "4.2.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+    { name = "pytest", version = "8.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "pytest", version = "8.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+    { name = "pytest-cov", version = "5.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "pytest-cov", version = "6.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
     { name = "ruff" },
 ]
 
@@ -3163,6 +3167,8 @@ dev = [
     { name = "cyclonedx-bom", specifier = ">=5.5.0" },
     { name = "pandas-stubs", specifier = ">=2.0.3.230814" },
     { name = "pre-commit", specifier = ">=3.5.0" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-cov", specifier = ">=5.0.0" },
     { name = "ruff", specifier = ">=0.11.13" },
 ]
 

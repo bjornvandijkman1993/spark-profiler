@@ -55,33 +55,55 @@ class DataFrameProfiler:
         self.sampling_engine = SamplingDecisionEngine(sampling_config)
         self.sampling_metadata: Optional[SamplingMetadata] = None
 
+        # Count rows once to avoid multiple count() operations
+        original_size = dataframe.count()
+
         # Apply sampling if needed
-        if self.sampling_engine.should_sample(dataframe):
+        if self.sampling_engine.should_sample(dataframe, row_count=original_size):
             self.df, self.sampling_metadata = self.sampling_engine.create_sample(
-                dataframe
+                dataframe, original_size=original_size
             )
         else:
             self.df = dataframe
             # Create metadata for non-sampled case
-            original_size = dataframe.count()
-            self.sampling_metadata = SamplingMetadata(
-                original_size=original_size,
-                sample_size=original_size,
-                sampling_fraction=1.0,
-                strategy_used="none",
-                sampling_time=0.0,
-                quality_score=1.0,
-                is_sampled=False,
-            )
+
+            # Handle empty DataFrame case
+            if original_size == 0:
+                self.sampling_metadata = SamplingMetadata(
+                    original_size=0,
+                    sample_size=0,
+                    sampling_fraction=1.0,
+                    strategy_used="none",
+                    sampling_time=0.0,
+                    quality_score=1.0,
+                    is_sampled=False,
+                )
+            else:
+                self.sampling_metadata = SamplingMetadata(
+                    original_size=original_size,
+                    sample_size=original_size,
+                    sampling_fraction=1.0,
+                    strategy_used="none",
+                    sampling_time=0.0,
+                    quality_score=1.0,
+                    is_sampled=False,
+                )
 
         # Optimize DataFrame if requested (after sampling)
         if optimize_for_large_datasets:
             self.df = optimize_dataframe_for_profiling(self.df)
 
         self.column_types = get_column_data_types(self.df)
-        self.stats_computer = StatisticsComputer(self.df)
+        # Pass the sample size to avoid redundant count operations
+        self.stats_computer = StatisticsComputer(
+            self.df, total_rows=self.sampling_metadata.sample_size
+        )
         self.batch_computer = (
-            BatchStatisticsComputer(self.df) if optimize_for_large_datasets else None
+            BatchStatisticsComputer(
+                self.df, total_rows=self.sampling_metadata.sample_size
+            )
+            if optimize_for_large_datasets
+            else None
         )
         self.optimize_for_large_datasets = optimize_for_large_datasets
 
@@ -137,7 +159,8 @@ class DataFrameProfiler:
 
     def _get_overview(self) -> Dict[str, Any]:
         """Get overview statistics for the entire DataFrame."""
-        total_rows = self.df.count()
+        # Use cached row count from sampling metadata
+        total_rows = self.sampling_metadata.sample_size
         total_columns = len(self.df.columns)
 
         return {
@@ -166,6 +189,18 @@ class DataFrameProfiler:
             Dictionary containing column statistics
         """
         column_type = self.column_types[column_name]
+
+        # Handle empty DataFrame case
+        if self.sampling_metadata.sample_size == 0:
+            return {
+                "data_type": str(column_type),
+                "total_count": 0,
+                "non_null_count": 0,
+                "null_count": 0,
+                "null_percentage": 0.0,
+                "distinct_count": 0,
+                "distinct_percentage": 0.0,
+            }
 
         # Basic statistics for all columns
         basic_stats = self.stats_computer.compute_basic_stats(column_name)

@@ -30,15 +30,18 @@ from pyspark.sql.functions import (
 class StatisticsComputer:
     """Handles computation of various statistics for DataFrame columns."""
 
-    def __init__(self, dataframe: DataFrame):
+    def __init__(self, dataframe: DataFrame, total_rows: Optional[int] = None):
         """
         Initialize with a PySpark DataFrame.
 
         Args:
             dataframe: PySpark DataFrame to compute statistics for
+            total_rows: Cached row count to avoid recomputation
         """
         self.df = dataframe
-        self.total_rows: Optional[int] = None  # Lazy evaluation
+        self.total_rows: Optional[int] = (
+            total_rows  # Use provided count or lazy evaluation
+        )
 
     def _get_total_rows(self) -> int:
         """Get total row count (cached for performance)."""

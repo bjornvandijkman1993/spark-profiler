@@ -16,15 +16,17 @@ class BatchStatisticsComputer:
     to minimize the number of passes over the data.
     """
 
-    def __init__(self, dataframe: DataFrame):
+    def __init__(self, dataframe: DataFrame, total_rows: Optional[int] = None):
         """
         Initialize with a PySpark DataFrame.
 
         Args:
             dataframe: PySpark DataFrame to compute statistics for
+            total_rows: Cached row count to avoid recomputation
         """
         self.df = dataframe
         self.cache_enabled = False
+        self.total_rows = total_rows
 
     def enable_caching(self) -> None:
         """
@@ -167,7 +169,7 @@ class BatchStatisticsComputer:
         result = self.df.agg(*agg_exprs).collect()[0]
 
         # Extract results and compute derived metrics
-        total_rows = self.df.count()  # This should be cached
+        total_rows = self.total_rows if self.total_rows is not None else self.df.count()
         non_null_count = result[f"{column_name}_non_null_count"]
         null_count = result[f"{column_name}_null_count"]
         distinct_count = result[f"{column_name}_distinct_count"]
