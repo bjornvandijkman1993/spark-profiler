@@ -135,8 +135,8 @@ jobs:
     - name: Generate SBOM (Software Bill of Materials)
       run: |
         echo "## SBOM Generation" >> $GITHUB_STEP_SUMMARY
-        uv run cyclonedx-py -r -i pyproject.toml -o sbom.json --format json
-        uv run cyclonedx-py -r -i pyproject.toml -o sbom.xml --format xml
+        uv run cyclonedx-py environment -o sbom.json --format json
+        uv run cyclonedx-py environment -o sbom.xml --format xml
         echo "✅ Software Bill of Materials generated (JSON and XML formats)" >> $GITHUB_STEP_SUMMARY
 
     - name: Check license compliance
