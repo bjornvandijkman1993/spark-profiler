@@ -62,7 +62,8 @@ def verify_installation():
         # Test basic profiling
         print("\n🔍 Running basic profiling...")
         profiler = DataFrameProfiler(df)
-        profile = profiler.profile()
+        # Get profile as dictionary for easier access
+        profile = profiler.profile(output_format="dict")
 
         # Display results
         overview = profile["overview"]
@@ -72,7 +73,7 @@ def verify_installation():
 
         # Test specific column profiling
         print("\n🎯 Testing specific column profiling...")
-        numeric_profile = profiler.profile(columns=["age", "salary"])
+        numeric_profile = profiler.profile(columns=["age", "salary"], output_format="dict")
 
         for col_name, stats in numeric_profile["columns"].items():
             print(f"✅ {col_name}: min={stats.get('min')}, max={stats.get('max')}, mean={stats.get('mean', 0):.2f}")
@@ -80,9 +81,15 @@ def verify_installation():
         # Test performance optimization
         print("\n⚡ Testing performance optimization...")
         optimized_profiler = DataFrameProfiler(df, optimize_for_large_datasets=True)
-        optimized_profile = optimized_profiler.profile()
+        optimized_profile = optimized_profiler.profile(output_format="dict")
 
         print(f"✅ Optimized profiling completed for {len(optimized_profile['columns'])} columns")
+
+        # Test pandas output (new default)
+        print("\n🐼 Testing pandas output format...")
+        pandas_profile = profiler.profile()  # Default is pandas
+        print(f"✅ Pandas DataFrame shape: {pandas_profile.shape}")
+        print(f"✅ Columns in pandas output: {list(pandas_profile.columns)[:5]}...")
 
         # Test output formatting
         print("\n📄 Testing output formatting...")
