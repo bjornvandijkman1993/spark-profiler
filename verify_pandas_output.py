@@ -3,6 +3,7 @@ Simple verification script for pandas output functionality.
 This script tests the pandas output without requiring Spark/Java.
 """
 
+import os
 import pandas as pd
 from spark_profiler.utils import format_profile_output, _create_pandas_dataframe
 
@@ -152,6 +153,4 @@ print("  • Track statistics over time")
 print("  • Perform custom analysis using pandas operations")
 
 # Clean up
-import os
-
 os.remove("test_profile_output.csv")

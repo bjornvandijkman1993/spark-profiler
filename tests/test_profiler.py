@@ -26,7 +26,7 @@ class TestDataFrameProfiler:
     def test_profile_all_columns(self, sample_dataframe):
         """Test profiling all columns."""
         profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         assert "overview" in profile
         assert "columns" in profile
@@ -46,7 +46,7 @@ class TestDataFrameProfiler:
     def test_profile_specific_columns(self, sample_dataframe):
         """Test profiling specific columns."""
         profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile(columns=["id", "name"])
+        profile = profiler.profile(columns=["id", "name"], output_format="dict")
 
         assert len(profile["columns"]) == 2
         assert "id" in profile["columns"]
@@ -59,12 +59,12 @@ class TestDataFrameProfiler:
         profiler = DataFrameProfiler(sample_dataframe)
 
         with pytest.raises(ValueError, match="Columns not found"):
-            profiler.profile(columns=["nonexistent_column"])
+            profiler.profile(columns=["nonexistent_column"], output_format="dict")
 
     def test_numeric_column_stats(self, sample_dataframe):
         """Test statistics for numeric columns."""
         profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile(columns=["id", "salary"])
+        profile = profiler.profile(columns=["id", "salary"], output_format="dict")
 
         # Check numeric stats for 'id' column
         id_stats = profile["columns"]["id"]
@@ -83,7 +83,7 @@ class TestDataFrameProfiler:
     def test_string_column_stats(self, sample_dataframe):
         """Test statistics for string columns."""
         profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile(columns=["name"])
+        profile = profiler.profile(columns=["name"], output_format="dict")
 
         name_stats = profile["columns"]["name"]
         assert "min_length" in name_stats
@@ -154,7 +154,7 @@ class TestUtils:
     def test_format_profile_output_dict(self, sample_dataframe):
         """Test dictionary format output."""
         profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         formatted = format_profile_output(profile, format_type="dict")
         assert formatted == profile
@@ -162,7 +162,7 @@ class TestUtils:
     def test_format_profile_output_json(self, sample_dataframe):
         """Test JSON format output."""
         profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         formatted = format_profile_output(profile, format_type="json")
         assert isinstance(formatted, str)
@@ -172,7 +172,7 @@ class TestUtils:
     def test_format_profile_output_summary(self, sample_dataframe):
         """Test summary format output."""
         profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         formatted = format_profile_output(profile, format_type="summary")
         assert isinstance(formatted, str)
@@ -183,7 +183,7 @@ class TestUtils:
     def test_format_profile_output_invalid_format(self, sample_dataframe):
         """Test invalid format type."""
         profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         with pytest.raises(ValueError, match="Unsupported format type"):
             format_profile_output(profile, format_type="invalid_format")

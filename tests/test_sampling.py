@@ -195,7 +195,7 @@ class TestDataFrameProfilerSampling:
         # Use a lower threshold to trigger sampling
         config = SamplingConfig(performance_threshold=50000)
         profiler = DataFrameProfiler(large_dataframe, sampling_config=config)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         sampling_info = profile["sampling"]
         assert sampling_info["is_sampled"] is True
@@ -205,7 +205,7 @@ class TestDataFrameProfilerSampling:
     def test_no_sampling_small_dataset(self, small_dataframe):
         """Test no sampling with small dataset."""
         profiler = DataFrameProfiler(small_dataframe)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         sampling_info = profile["sampling"]
         assert sampling_info["is_sampled"] is False
@@ -215,7 +215,7 @@ class TestDataFrameProfilerSampling:
         """Test DataFrameProfiler with custom sampling config."""
         config = SamplingConfig(target_size=15000, seed=123, auto_sample=False)
         profiler = DataFrameProfiler(large_dataframe, sampling_config=config)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         sampling_info = profile["sampling"]
         assert sampling_info["is_sampled"] is True
@@ -225,7 +225,7 @@ class TestDataFrameProfilerSampling:
     def test_legacy_sample_fraction(self, large_dataframe):
         """Test legacy sample_fraction parameter."""
         profiler = DataFrameProfiler(large_dataframe, sample_fraction=0.05)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         sampling_info = profile["sampling"]
         assert sampling_info["is_sampled"] is True
@@ -242,7 +242,7 @@ class TestDataFrameProfilerSampling:
         """Test sampling combined with performance optimization."""
         config = SamplingConfig(target_size=10000, auto_sample=False)
         profiler = DataFrameProfiler(large_dataframe, sampling_config=config, optimize_for_large_datasets=True)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         sampling_info = profile["sampling"]
         assert sampling_info["is_sampled"] is True
@@ -252,7 +252,7 @@ class TestDataFrameProfilerSampling:
     def test_profile_structure_with_sampling(self, large_dataframe):
         """Test that profile structure includes sampling information."""
         profiler = DataFrameProfiler(large_dataframe)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         # Check required keys
         assert "overview" in profile

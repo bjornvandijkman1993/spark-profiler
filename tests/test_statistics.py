@@ -10,6 +10,8 @@ from pyspark.sql.types import (
     StringType,
     IntegerType,
     DateType,
+    DoubleType,
+    TimestampType,
 )
 
 from spark_profiler.statistics import StatisticsComputer
@@ -43,6 +45,12 @@ class TestStatisticsComputer:
 
     def test_compute_basic_stats(self, spark_session):
         """Test basic statistics computation."""
+        schema = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("fruit", StringType(), True),
+            ]
+        )
         data = [
             (1, "apple"),
             (2, "banana"),
@@ -52,7 +60,7 @@ class TestStatisticsComputer:
             (6, "banana"),
             (7, None),
         ]
-        df = spark_session.createDataFrame(data, ["id", "fruit"])
+        df = spark_session.createDataFrame(data, schema)
 
         computer = StatisticsComputer(df)
         stats = computer.compute_basic_stats("fruit")
@@ -66,8 +74,14 @@ class TestStatisticsComputer:
 
     def test_compute_basic_stats_all_nulls(self, spark_session):
         """Test basic statistics when all values are null."""
+        schema = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("value", StringType(), True),
+            ]
+        )
         data = [(1, None), (2, None), (3, None)]
-        df = spark_session.createDataFrame(data, ["id", "value"])
+        df = spark_session.createDataFrame(data, schema)
 
         computer = StatisticsComputer(df)
         stats = computer.compute_basic_stats("value")
@@ -91,8 +105,9 @@ class TestStatisticsComputer:
         assert stats["non_null_count"] == 100
         assert stats["null_count"] == 0
         assert stats["null_percentage"] == 0.0
-        assert stats["distinct_count"] == 100  # All unique
-        assert stats["distinct_percentage"] == 100.0
+        # Allow for approximation error (approx_count_distinct has 5% error)
+        assert 95 <= stats["distinct_count"] <= 105  # All unique with tolerance
+        assert stats["distinct_percentage"] >= 95.0  # Allow for approximation
 
     def test_compute_numeric_stats(self, spark_session):
         """Test numeric statistics computation."""
@@ -105,7 +120,7 @@ class TestStatisticsComputer:
         assert stats["min"] == 10.0
         assert stats["max"] == 100.0
         assert stats["mean"] == 55.0
-        assert stats["median"] == 55.0  # Middle of 10-100
+        assert stats["median"] == pytest.approx(55.0, rel=0.1)  # Middle of 10-100, allow approximation
         assert stats["q1"] == pytest.approx(30.0, 5)  # Approximate due to percentile_approx
         assert stats["q3"] == pytest.approx(80.0, 5)
         assert "std" in stats
@@ -113,8 +128,14 @@ class TestStatisticsComputer:
 
     def test_compute_numeric_stats_with_nulls(self, spark_session):
         """Test numeric statistics with null values."""
+        schema = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("value", DoubleType(), True),
+            ]
+        )
         data = [(1, 10.0), (2, 20.0), (3, None), (4, 40.0), (5, None)]
-        df = spark_session.createDataFrame(data, ["id", "value"])
+        df = spark_session.createDataFrame(data, schema)
 
         computer = StatisticsComputer(df)
         stats = computer.compute_numeric_stats("value")
@@ -140,6 +161,12 @@ class TestStatisticsComputer:
 
     def test_compute_string_stats(self, spark_session):
         """Test string statistics computation."""
+        schema = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("text", StringType(), True),
+            ]
+        )
         data = [
             (1, "short"),
             (2, "medium length"),
@@ -148,7 +175,7 @@ class TestStatisticsComputer:
             (5, None),
             (6, "x"),
         ]
-        df = spark_session.createDataFrame(data, ["id", "text"])
+        df = spark_session.createDataFrame(data, schema)
 
         computer = StatisticsComputer(df)
         stats = computer.compute_string_stats("text")
@@ -173,8 +200,14 @@ class TestStatisticsComputer:
 
     def test_compute_string_stats_with_nulls(self, spark_session):
         """Test string statistics with null values."""
+        schema = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("text", StringType(), True),
+            ]
+        )
         data = [(1, "hello"), (2, None), (3, "world"), (4, None)]
-        df = spark_session.createDataFrame(data, ["id", "text"])
+        df = spark_session.createDataFrame(data, schema)
 
         computer = StatisticsComputer(df)
         stats = computer.compute_string_stats("text")
@@ -187,13 +220,19 @@ class TestStatisticsComputer:
 
     def test_compute_temporal_stats_dates(self, spark_session):
         """Test temporal statistics for date columns."""
+        schema = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("date_col", DateType(), True),
+            ]
+        )
         data = [
             (1, date(2023, 1, 1)),
             (2, date(2023, 6, 15)),
             (3, date(2023, 12, 31)),
             (4, None),
         ]
-        df = spark_session.createDataFrame(data, ["id", "date_col"])
+        df = spark_session.createDataFrame(data, schema)
 
         computer = StatisticsComputer(df)
         stats = computer.compute_temporal_stats("date_col")
@@ -204,13 +243,19 @@ class TestStatisticsComputer:
 
     def test_compute_temporal_stats_timestamps(self, spark_session):
         """Test temporal statistics for timestamp columns."""
+        schema = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("timestamp_col", TimestampType(), True),
+            ]
+        )
         data = [
             (1, datetime(2023, 1, 1, 0, 0)),
             (2, datetime(2023, 1, 2, 12, 0)),
             (3, datetime(2023, 1, 3, 23, 59)),
             (4, None),
         ]
-        df = spark_session.createDataFrame(data, ["id", "timestamp_col"])
+        df = spark_session.createDataFrame(data, schema)
 
         computer = StatisticsComputer(df)
         stats = computer.compute_temporal_stats("timestamp_col")

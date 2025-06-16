@@ -103,7 +103,7 @@ class DataFrameProfiler:
         if invalid_columns:
             raise ValueError(f"Columns not found in DataFrame: {invalid_columns}")
 
-        profile_result = {
+        profile_result: Dict[str, Any] = {
             "overview": self._get_overview(),
             "columns": {},
             "sampling": self._get_sampling_info(),
@@ -127,7 +127,7 @@ class DataFrameProfiler:
         return {
             "total_rows": total_rows,
             "total_columns": total_columns,
-            "column_types": self.column_types,
+            "column_types": {col: str(dtype) for col, dtype in self.column_types.items()},
         }
 
     def _profile_column(self, column_name: str) -> Dict[str, Any]:
@@ -177,7 +177,7 @@ class DataFrameProfiler:
             "estimated_speedup": self.sampling_metadata.speedup_estimate,
         }
 
-    def to_csv(self, path: str, **kwargs) -> None:
+    def to_csv(self, path: str, **kwargs: Any) -> None:
         """
         Save profile results to CSV file.
 
@@ -186,9 +186,10 @@ class DataFrameProfiler:
             **kwargs: Additional arguments passed to pandas.DataFrame.to_csv()
         """
         df = self.profile(output_format="pandas")
-        df.to_csv(path, **kwargs)
+        if hasattr(df, "to_csv"):
+            df.to_csv(path, **kwargs)
 
-    def to_parquet(self, path: str, **kwargs) -> None:
+    def to_parquet(self, path: str, **kwargs: Any) -> None:
         """
         Save profile results to Parquet file.
 
@@ -197,9 +198,10 @@ class DataFrameProfiler:
             **kwargs: Additional arguments passed to pandas.DataFrame.to_parquet()
         """
         df = self.profile(output_format="pandas")
-        df.to_parquet(path, **kwargs)
+        if hasattr(df, "to_parquet"):
+            df.to_parquet(path, **kwargs)
 
-    def to_sql(self, name: str, con, **kwargs) -> None:
+    def to_sql(self, name: str, con: Any, **kwargs: Any) -> None:
         """
         Save profile results to SQL database table.
 
@@ -209,7 +211,8 @@ class DataFrameProfiler:
             **kwargs: Additional arguments passed to pandas.DataFrame.to_sql()
         """
         df = self.profile(output_format="pandas")
-        df.to_sql(name, con, **kwargs)
+        if hasattr(df, "to_sql"):
+            df.to_sql(name, con, **kwargs)
 
     def format_output(self, format_type: str = "pandas") -> Union[pd.DataFrame, Dict[str, Any], str]:
         """

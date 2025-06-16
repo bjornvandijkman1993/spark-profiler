@@ -43,11 +43,11 @@ def test_profiler_methods():
 def test_imports():
     """Test all modules can be imported."""
     try:
-        from spark_profiler import DataFrameProfiler, SamplingConfig, create_sampling_config
-        from spark_profiler.statistics import StatisticsComputer
-        from spark_profiler.performance import BatchStatisticsComputer, optimize_dataframe_for_profiling
-        from spark_profiler.utils import get_column_data_types, format_profile_output
-        from spark_profiler.sampling import RandomSamplingStrategy, SamplingDecisionEngine, SamplingMetadata
+        import spark_profiler
+        import spark_profiler.statistics  # noqa: F401
+        import spark_profiler.performance  # noqa: F401
+        import spark_profiler.utils  # noqa: F401
+        import spark_profiler.sampling  # noqa: F401
 
         print("✓ All imports successful")
     except ImportError as e:
@@ -73,7 +73,7 @@ def test_sampling_metadata():
     # Test properties
     assert metadata.reduction_ratio == 0.1
     assert metadata.speedup_estimate == 10.0
-    assert metadata.is_sampled == True  # Not was_sampled
+    assert metadata.is_sampled is True  # Not was_sampled
 
     print("✓ SamplingMetadata test passed")
 

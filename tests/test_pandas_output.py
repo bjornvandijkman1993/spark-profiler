@@ -104,7 +104,7 @@ class TestPandasOutput:
         assert df.attrs["overview"]["total_columns"] == 4
 
         # Check sampling metadata
-        assert df.attrs["sampling"]["is_sampled"] == False
+        assert df.attrs["sampling"]["is_sampled"] is False
 
         # Check timestamp
         assert isinstance(df.attrs["profiling_timestamp"], pd.Timestamp)
@@ -177,10 +177,14 @@ class TestPandasOutput:
         assert len(df_read) == 4
         assert "column_name" in df_read.columns
 
-        # Test to_parquet
+        # Test to_parquet (skip if pyarrow not installed)
         parquet_path = tmp_path / "profile.parquet"
-        profiler.to_parquet(str(parquet_path))
-        assert parquet_path.exists()
+        try:
+            profiler.to_parquet(str(parquet_path))
+            assert parquet_path.exists()
+        except ImportError:
+            # Skip parquet test if pyarrow not installed
+            pass
 
         # Test format_output
         df = profiler.format_output("pandas")
@@ -224,7 +228,7 @@ class TestPandasOutput:
         df = profiler.profile(output_format="pandas")
 
         # Check that sampling info is in metadata
-        assert df.attrs["sampling"]["is_sampled"] == True
+        assert df.attrs["sampling"]["is_sampled"] is True
         assert df.attrs["sampling"]["sampling_fraction"] == 0.5
         assert "quality_score" in df.attrs["sampling"]
 

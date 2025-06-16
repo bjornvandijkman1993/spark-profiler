@@ -3,6 +3,7 @@ Utility functions for the DataFrame profiler.
 """
 
 from typing import Dict, Any
+import pandas as pd
 from pyspark.sql import DataFrame
 from pyspark.sql.types import DataType
 
@@ -26,7 +27,7 @@ def format_profile_output(profile_data: Dict[str, Any], format_type: str = "dict
 
     Args:
         profile_data: Raw profile data dictionary
-        format_type: Output format ("dict", "json", "summary")
+        format_type: Output format ("dict", "json", "summary", "pandas")
 
     Returns:
         Formatted profile data
@@ -39,6 +40,8 @@ def format_profile_output(profile_data: Dict[str, Any], format_type: str = "dict
         return json.dumps(profile_data, indent=2, default=str)
     elif format_type == "summary":
         return _create_summary_report(profile_data)
+    elif format_type == "pandas":
+        return _create_pandas_dataframe(profile_data)
     else:
         raise ValueError(f"Unsupported format type: {format_type}")
 
@@ -110,3 +113,34 @@ def _create_summary_report(profile_data: Dict[str, Any]) -> str:
         report_lines.append("")
 
     return "\n".join(report_lines)
+
+
+def _create_pandas_dataframe(profile_data: Dict[str, Any]) -> pd.DataFrame:
+    """
+    Create a pandas DataFrame from profile data.
+
+    Args:
+        profile_data: Profile data dictionary
+
+    Returns:
+        pandas DataFrame with profile statistics
+    """
+    # Extract column statistics
+    columns_data = profile_data.get("columns", {})
+
+    # Convert to a format suitable for pandas
+    records = []
+    for col_name, stats in columns_data.items():
+        record = {"column_name": col_name}
+        record.update(stats)
+        records.append(record)
+
+    # Create DataFrame
+    df = pd.DataFrame(records)
+
+    # Add metadata to DataFrame.attrs
+    df.attrs["overview"] = profile_data.get("overview", {})
+    df.attrs["sampling"] = profile_data.get("sampling", {})
+    df.attrs["profiling_timestamp"] = pd.Timestamp.now()
+
+    return df

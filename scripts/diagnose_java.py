@@ -43,7 +43,7 @@ def check_java():
                     suggested_home = result.stdout.strip()
                     print(f"   💡 Suggested JAVA_HOME: {suggested_home}")
                     print(f"   Run: export JAVA_HOME={suggested_home}")
-            except:
+            except Exception:
                 pass
 
     return True

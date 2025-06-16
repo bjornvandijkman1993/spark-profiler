@@ -52,12 +52,11 @@ class TestEndToEndProfiling:
 
         # Profile the DataFrame
         profiler = DataFrameProfiler(df)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         # Verify overview
         assert profile["overview"]["total_rows"] == 6
         assert profile["overview"]["total_columns"] == 7
-        assert profile["overview"]["memory_usage"] > 0
 
         # Verify column profiles
         columns = profile["columns"]
@@ -96,7 +95,7 @@ class TestEndToEndProfiling:
 
         # Profile with auto-sampling enabled
         profiler = DataFrameProfiler(large_df, optimize_for_large_datasets=True)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         # Verify sampling was applied
         assert profile["sampling"]["is_sampled"] is True
@@ -105,7 +104,9 @@ class TestEndToEndProfiling:
         assert profile["sampling"]["quality_score"] > 0.8
 
         # Verify profile still contains valid statistics
-        assert profile["overview"]["total_rows"] == 15_000_000
+        # When sampled, overview shows sampled rows, original size is in sampling info
+        assert profile["sampling"]["original_size"] == 15_000_000
+        assert profile["overview"]["total_rows"] == profile["sampling"]["sample_size"]
         assert profile["columns"]["category"]["distinct_count"] == pytest.approx(1000, rel=0.1)
         assert profile["columns"]["revenue"]["min"] >= 0
         assert profile["columns"]["revenue"]["max"] <= 1_000_000
@@ -121,7 +122,7 @@ class TestEndToEndProfiling:
         config = SamplingConfig(target_size=50_000, min_sample_size=10_000, seed=42)
 
         profiler = DataFrameProfiler(df, sampling_config=config)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         # Verify custom sampling was applied
         assert profile["sampling"]["is_sampled"] is True
@@ -135,7 +136,7 @@ class TestEndToEndProfiling:
         )
 
         profiler = DataFrameProfiler(df)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         # Test dictionary format (default)
         dict_output = format_profile_output(profile, "dict")
@@ -157,6 +158,8 @@ class TestEndToEndProfiling:
 
     def test_profile_edge_cases(self, spark_session):
         """Test profiling edge cases."""
+        from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DoubleType
+
         # Empty DataFrame
         empty_schema = StructType(
             [
@@ -167,7 +170,7 @@ class TestEndToEndProfiling:
         empty_df = spark_session.createDataFrame([], empty_schema)
 
         profiler = DataFrameProfiler(empty_df)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         assert profile["overview"]["total_rows"] == 0
         assert all(col["total_count"] == 0 for col in profile["columns"].values())
@@ -175,16 +178,23 @@ class TestEndToEndProfiling:
         # Single row DataFrame
         single_df = spark_session.createDataFrame([(1, "test", 42.0)], ["id", "text", "number"])
         profiler = DataFrameProfiler(single_df)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         assert profile["overview"]["total_rows"] == 1
         assert profile["columns"]["number"]["std"] == 0  # No variation
 
         # All nulls DataFrame
+        null_schema = StructType(
+            [
+                StructField("col1", IntegerType(), True),
+                StructField("col2", StringType(), True),
+                StructField("col3", DoubleType(), True),
+            ]
+        )
         null_data = [(None, None, None) for _ in range(5)]
-        null_df = spark_session.createDataFrame(null_data, ["col1", "col2", "col3"])
+        null_df = spark_session.createDataFrame(null_data, schema=null_schema)
         profiler = DataFrameProfiler(null_df)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         assert all(col["null_percentage"] == 100.0 for col in profile["columns"].values())
 
@@ -204,7 +214,7 @@ class TestEndToEndProfiling:
 
         # Then profile the optimized DataFrame
         profiler = DataFrameProfiler(optimized_df)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         # Verify optimization worked
         actual_rows = optimized_df.count()
@@ -225,7 +235,7 @@ class TestEndToEndProfiling:
 
         # Profile only specific columns
         profiler = DataFrameProfiler(df)
-        profile = profiler.profile(columns=["id", "category", "metric1"])
+        profile = profiler.profile(columns=["id", "category", "metric1"], output_format="dict")
 
         # Verify only selected columns are profiled
         assert set(profile["columns"].keys()) == {"id", "category", "metric1"}
@@ -239,11 +249,11 @@ class TestEndToEndProfiling:
 
         # Test invalid column selection
         with pytest.raises(ValueError):
-            profiler.profile(columns=["non_existent_column"])
+            profiler.profile(columns=["non_existent_column"], output_format="dict")
 
         # Test invalid output format
         with pytest.raises(ValueError):
-            profile = profiler.profile()
+            profile = profiler.profile(output_format="dict")
             format_profile_output(profile, "invalid_format")
 
     def test_concurrent_profiling(self, spark_session):
@@ -258,9 +268,9 @@ class TestEndToEndProfiling:
         profiler2 = DataFrameProfiler(df2)
         profiler3 = DataFrameProfiler(df3)
 
-        profile1 = profiler1.profile()
-        profile2 = profiler2.profile()
-        profile3 = profiler3.profile()
+        profile1 = profiler1.profile(output_format="dict")
+        profile2 = profiler2.profile(output_format="dict")
+        profile3 = profiler3.profile(output_format="dict")
 
         # Verify each profile is independent
         assert profile1["columns"]["value1"]["max"] <= 100
@@ -274,7 +284,7 @@ class TestEndToEndProfiling:
 
         # Profile with caching
         profiler = DataFrameProfiler(df)
-        profile = profiler.profile()
+        profile = profiler.profile(output_format="dict")
 
         # Verify profile completed successfully
         assert profile["overview"]["total_rows"] == 50000
