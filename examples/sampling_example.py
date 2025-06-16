@@ -45,7 +45,7 @@ def create_large_sample_data():
                 i,
                 f"{names[i % len(names)]} {i}",
                 25 + (i % 40),  # Ages 25-64
-                50000 + (i % 50000),  # Salaries 50k-100k
+                50000.0 + (i % 50000),  # Salaries 50k-100k
                 departments[i % len(departments)],
                 datetime(2020 + (i % 4), ((i % 12) + 1), ((i % 28) + 1)),
             )
