@@ -3078,7 +3078,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/9d/0e/5b38d51f1b1c2618c
 
 [[package]]
 name = "pyspark-analyzer"
-version = "0.1.2"
+version = "0.1.4"
 source = { editable = "." }
 dependencies = [
     { name = "pandas", version = "2.0.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
@@ -3125,12 +3125,9 @@ dev = [
     { name = "bump2version" },
     { name = "cyclonedx-bom", version = "5.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "cyclonedx-bom", version = "6.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-<<<<<<< HEAD
-=======
     { name = "pandas-stubs", version = "2.0.3.230814", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "pandas-stubs", version = "2.2.2.240807", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*'" },
     { name = "pandas-stubs", version = "2.2.3.250527", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
->>>>>>> 604620b (fix: resolve all mypy type checking errors)
     { name = "pre-commit", version = "3.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "pre-commit", version = "4.2.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
     { name = "ruff" },
@@ -3164,10 +3161,7 @@ provides-extras = ["dev", "docs"]
 dev = [
     { name = "bump2version", specifier = ">=1.0.1" },
     { name = "cyclonedx-bom", specifier = ">=5.5.0" },
-<<<<<<< HEAD
-=======
     { name = "pandas-stubs", specifier = ">=2.0.3.230814" },
->>>>>>> 604620b (fix: resolve all mypy type checking errors)
     { name = "pre-commit", specifier = ">=3.5.0" },
     { name = "ruff", specifier = ">=0.11.13" },
 ]
@@ -4584,8 +4578,6 @@ wheels = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-=======
 name = "types-pytz"
 version = "2024.2.0.20241221"
 source = { registry = "https://pypi.org/simple" }
@@ -4614,7 +4606,6 @@ wheels = [
 ]
 
 [[package]]
->>>>>>> 604620b (fix: resolve all mypy type checking errors)
 name = "typing-extensions"
 version = "4.13.2"
 source = { registry = "https://pypi.org/simple" }
