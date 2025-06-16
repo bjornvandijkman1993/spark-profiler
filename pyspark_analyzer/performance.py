@@ -5,6 +5,7 @@ Performance optimization utilities for large dataset profiling.
 from typing import Dict, Any, List, Optional
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col
+from pyspark.sql.types import DataType
 
 
 class BatchStatisticsComputer:
@@ -84,7 +85,7 @@ class BatchStatisticsComputer:
             self.disable_caching()
 
     def _compute_column_stats_optimized(
-        self, column_name: str, column_type: str
+        self, column_name: str, column_type: DataType
     ) -> Dict[str, Any]:
         """
         Compute optimized statistics for a single column.
