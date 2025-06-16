@@ -43,6 +43,10 @@ jobs:
       run: |
         uv run isort spark_profiler/ tests/ examples/ --profile black
 
+    - name: Run ruff formatting fixes
+      run: |
+        uv run ruff check spark_profiler/ tests/ examples/ --fix --exit-zero
+
     - name: Check for changes
       id: verify-changed-files
       run: |
@@ -58,5 +62,5 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add .
-        git commit -m "🤖 Auto-format code with black and isort" || exit 0
+        git commit -m "🤖 Auto-format code with black, isort, and ruff" || exit 0
         git push

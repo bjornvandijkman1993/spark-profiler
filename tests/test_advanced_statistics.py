@@ -4,7 +4,6 @@ Tests for advanced statistics functionality.
 
 import pytest
 from datetime import date
-from pyspark.sql import SparkSession
 from pyspark.sql.types import (
     StructType,
     StructField,
@@ -19,16 +18,7 @@ from spark_profiler import DataFrameProfiler
 from spark_profiler.statistics import StatisticsComputer
 
 
-@pytest.fixture(scope="module")
-def spark_session():
-    """Create a SparkSession for tests."""
-    return (
-        SparkSession.builder.appName("test_advanced_statistics")
-        .master("local[*]")
-        .config("spark.sql.adaptive.enabled", "true")
-        .config("spark.sql.adaptive.coalescePartitions.enabled", "true")
-        .getOrCreate()
-    )
+# Using spark_session fixture from conftest.py
 
 
 class TestAdvancedNumericStatistics:

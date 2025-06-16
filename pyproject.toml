@@ -46,7 +46,6 @@ dev = [
     "pytest-cov>=2.0.0",
     "black>=22.0.0",
     "isort>=5.0.0",
-    "flake8>=4.0.0",
     "mypy>=0.900",
     "safety>=2.0.0",
     "bandit[toml]>=1.7.0",
@@ -113,9 +112,9 @@ warn_unused_ignores = true
 module = "pyspark.*"
 ignore_missing_imports = true
 
-[tool.flake8]
-max-line-length = 88
-extend-ignore = ["E203", "W503"]
+[tool.ruff]
+line-length = 88
+target-version = "py38"
 exclude = [
     ".git",
     "__pycache__",
@@ -125,6 +124,11 @@ exclude = [
     "dist",
     "*.egg-info"
 ]
+
+[tool.ruff.lint]
+# Start with basic flake8-equivalent rules
+select = ["E", "F", "W"]
+ignore = ["E203", "E501"]  # E501 is line length, handled by formatter
 
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".venv"]
@@ -162,4 +166,5 @@ sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 [dependency-groups]
 dev = [
     "pre-commit>=3.5.0",
+    "ruff>=0.11.13",
 ]

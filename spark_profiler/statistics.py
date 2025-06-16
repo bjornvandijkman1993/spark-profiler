@@ -480,6 +480,7 @@ class StatisticsComputer:
                     "single_char_count": quality_result["single_char_count"],
                 }
             )
+        # For other types (arrays, structs, etc.), we only have basic quality metrics
 
         # Calculate overall quality score (0-1)
         quality_score = quality_metrics["completeness"]

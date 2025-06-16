@@ -198,11 +198,18 @@ class DataFrameProfiler:
 
         # Add data quality metrics if requested
         if include_quality:
+            # Determine quality check type based on column type
+            if isinstance(column_type, NumericType):
+                quality_type = "numeric"
+            elif isinstance(column_type, StringType):
+                quality_type = "string"
+            else:
+                # For complex types (arrays, structs, etc.), skip type-specific quality checks
+                quality_type = "other"
+
             quality_stats = self.stats_computer.compute_data_quality_stats(
                 column_name,
-                column_type=(
-                    "numeric" if isinstance(column_type, NumericType) else "string"
-                ),
+                column_type=quality_type,
             )
             column_profile["quality"] = quality_stats
 

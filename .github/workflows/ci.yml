@@ -81,8 +81,8 @@ jobs:
     - name: Run black format check
       run: uv run black --check --diff spark_profiler/ tests/ examples/
 
-    - name: Run flake8 linting
-      run: uv run flake8 spark_profiler/ tests/ examples/
+    - name: Run ruff linting
+      run: uv run ruff check spark_profiler/ tests/ examples/
 
     - name: Run mypy type checking
       run: uv run mypy spark_profiler/
