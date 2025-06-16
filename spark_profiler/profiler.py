@@ -82,7 +82,11 @@ class DataFrameProfiler:
         self.optimize_for_large_datasets = optimize_for_large_datasets
 
     def profile(
-        self, columns: Optional[List[str]] = None, output_format: str = "pandas"
+        self,
+        columns: Optional[List[str]] = None,
+        output_format: str = "pandas",
+        include_advanced: bool = True,
+        include_quality: bool = True,
     ) -> Union[pd.DataFrame, Dict[str, Any], str]:
         """
         Generate a comprehensive profile of the DataFrame.
@@ -91,6 +95,8 @@ class DataFrameProfiler:
             columns: List of specific columns to profile. If None, profiles all columns.
             output_format: Output format ("pandas", "dict", "json", "summary")
                           Defaults to "pandas" for easy analysis.
+            include_advanced: Include advanced statistics (skewness, kurtosis, outliers, etc.)
+            include_quality: Include data quality metrics
 
         Returns:
             Profile results in requested format
@@ -115,7 +121,9 @@ class DataFrameProfiler:
         else:
             # Standard column-by-column processing
             for column in columns:
-                profile_result["columns"][column] = self._profile_column(column)
+                profile_result["columns"][column] = self._profile_column(
+                    column, include_advanced=include_advanced, include_quality=include_quality
+                )
 
         return format_profile_output(profile_result, output_format)
 
@@ -130,12 +138,16 @@ class DataFrameProfiler:
             "column_types": {col: str(dtype) for col, dtype in self.column_types.items()},
         }
 
-    def _profile_column(self, column_name: str) -> Dict[str, Any]:
+    def _profile_column(
+        self, column_name: str, include_advanced: bool = True, include_quality: bool = True
+    ) -> Dict[str, Any]:
         """
         Profile a single column.
 
         Args:
             column_name: Name of the column to profile
+            include_advanced: Include advanced statistics
+            include_quality: Include data quality metrics
 
         Returns:
             Dictionary containing column statistics
@@ -149,14 +161,30 @@ class DataFrameProfiler:
 
         # Add type-specific statistics
         if isinstance(column_type, NumericType):
-            numeric_stats = self.stats_computer.compute_numeric_stats(column_name)
+            numeric_stats = self.stats_computer.compute_numeric_stats(column_name, advanced=include_advanced)
             column_profile.update(numeric_stats)
+
+            # Add outlier statistics for numeric columns
+            if include_advanced:
+                outlier_stats = self.stats_computer.compute_outlier_stats(column_name)
+                column_profile["outliers"] = outlier_stats
+
         elif isinstance(column_type, StringType):
-            string_stats = self.stats_computer.compute_string_stats(column_name)
+            string_stats = self.stats_computer.compute_string_stats(
+                column_name, top_n=10 if include_advanced else 0, pattern_detection=include_advanced
+            )
             column_profile.update(string_stats)
+
         elif isinstance(column_type, (TimestampType, DateType)):
             temporal_stats = self.stats_computer.compute_temporal_stats(column_name)
             column_profile.update(temporal_stats)
+
+        # Add data quality metrics if requested
+        if include_quality:
+            quality_stats = self.stats_computer.compute_data_quality_stats(
+                column_name, column_type="numeric" if isinstance(column_type, NumericType) else "string"
+            )
+            column_profile["quality"] = quality_stats
 
         return column_profile
 
@@ -227,3 +255,42 @@ class DataFrameProfiler:
             Profile results in requested format
         """
         return self.profile(output_format=format_type)
+
+    def quick_profile(self, columns: Optional[List[str]] = None) -> Dict[str, Any]:
+        """
+        Generate a quick profile without advanced statistics for performance.
+
+        Args:
+            columns: List of specific columns to profile. If None, profiles all columns.
+
+        Returns:
+            Basic profile results as dictionary
+        """
+        result = self.profile(columns=columns, output_format="dict", include_advanced=False, include_quality=False)
+        # Type assertion for mypy
+        assert isinstance(result, dict)
+        return result
+
+    def quality_report(self, columns: Optional[List[str]] = None) -> pd.DataFrame:
+        """
+        Generate a data quality report for specified columns.
+
+        Args:
+            columns: List of specific columns to analyze. If None, analyzes all columns.
+
+        Returns:
+            DataFrame with quality metrics for each column
+        """
+        profile = self.profile(columns=columns, output_format="dict", include_advanced=False, include_quality=True)
+
+        # Type assertion for mypy
+        assert isinstance(profile, dict)
+
+        # Extract quality metrics into a summary
+        quality_data = []
+        for col_name, col_stats in profile["columns"].items():
+            if "quality" in col_stats:
+                quality_info = {"column": col_name, "data_type": col_stats["data_type"], **col_stats["quality"]}
+                quality_data.append(quality_info)
+
+        return pd.DataFrame(quality_data)
