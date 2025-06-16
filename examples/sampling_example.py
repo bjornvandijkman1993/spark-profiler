@@ -85,7 +85,7 @@ def main():
 
     # Custom sampling with specific target size
     custom_config = SamplingConfig(
-        target_size=5000,
+        target_size=10000,
         seed=42,
         auto_sample=False,  # Force sampling even for smaller datasets
     )
