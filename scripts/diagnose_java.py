@@ -3,7 +3,7 @@
 
 import os
 import sys
-import subprocess
+import subprocess  # nosec B404
 import platform
 
 
@@ -13,7 +13,9 @@ def check_java():
 
     # Check if java command exists
     try:
-        result = subprocess.run(["java", "-version"], capture_output=True, text=True)
+        result = subprocess.run(
+            ["java", "-version"], capture_output=True, text=True
+        )  # nosec B607, B603
         if result.returncode == 0:
             print("✅ Java is installed")
             print(f"   Version info: {result.stderr.strip().split('\\n')[0]}")
@@ -40,13 +42,14 @@ def check_java():
             try:
                 result = subprocess.run(
                     ["/usr/libexec/java_home"], capture_output=True, text=True
-                )
+                )  # nosec B603
                 if result.returncode == 0:
                     suggested_home = result.stdout.strip()
                     print(f"   💡 Suggested JAVA_HOME: {suggested_home}")
                     print(f"   Run: export JAVA_HOME={suggested_home}")
             except Exception:
-                pass
+                # If java_home command fails, it's likely not on macOS or command not available
+                print("   ⚠️  Could not determine Java home location automatically")
 
     return True
 

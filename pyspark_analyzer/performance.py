@@ -221,7 +221,9 @@ class BatchStatisticsComputer:
                 try:
                     date_range_days = (max_date - min_date).days
                 except (AttributeError, TypeError):
-                    pass
+                    # Log the error or handle it appropriately
+                    # For now, we'll set date_range_days to None to indicate calculation failed
+                    date_range_days = None
 
             stats.update(
                 {
