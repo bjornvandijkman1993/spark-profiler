@@ -3,8 +3,24 @@ name: CI
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'pyspark_analyzer/**'
+      - 'tests/**'
+      - 'examples/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/ci.yml'
+      - '.github/actions/**'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'pyspark_analyzer/**'
+      - 'tests/**'
+      - 'examples/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/ci.yml'
+      - '.github/actions/**'
 
 jobs:
   test:

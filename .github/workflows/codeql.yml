@@ -3,8 +3,14 @@ name: "CodeQL"
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'pyspark_analyzer/**'
+      - '.github/workflows/codeql.yml'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'pyspark_analyzer/**'
+      - '.github/workflows/codeql.yml'
   schedule:
     - cron: '30 5 * * 1'  # Run every Monday at 5:30 AM UTC
 
