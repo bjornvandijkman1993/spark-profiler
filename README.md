@@ -4,7 +4,8 @@
 [![codecov](https://codecov.io/gh/bjornvandijkman1993/spark-profiler/branch/main/graph/badge.svg)](https://codecov.io/gh/bjornvandijkman1993/spark-profiler)
 [![Documentation Status](https://readthedocs.org/projects/spark-profiler/badge/?version=latest)](https://spark-profiler.readthedocs.io/en/latest/?badge=latest)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyPI version](https://badge.fury.io/py/spark-profiler.svg)](https://badge.fury.io/py/spark-profiler)
+[![PyPI version](https://badge.fury.io/py/spark-profiler.svg)](https://pypi.org/project/spark-profiler/)
+[![Downloads](https://pepy.tech/badge/spark-profiler)](https://pepy.tech/project/spark-profiler)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A comprehensive PySpark DataFrame profiler for generating detailed statistics and data quality reports with intelligent sampling capabilities for large-scale datasets.
@@ -31,10 +32,28 @@ A comprehensive PySpark DataFrame profiler for generating detailed statistics an
   - Ubuntu/Debian: `sudo apt-get install openjdk-11-jdk`
   - Windows: Download from [Oracle](https://www.oracle.com/java/technologies/downloads/) or [OpenJDK](https://adoptium.net/)
 
-## Installation
+## 📦 Installation
+
+### From PyPI (Recommended)
 
 ```bash
 pip install spark-profiler
+```
+
+### From Source
+
+```bash
+git clone https://github.com/bjornvandijkman1993/spark-profiler.git
+cd spark-profiler
+pip install -e .
+```
+
+### Using uv (for development)
+
+```bash
+git clone https://github.com/bjornvandijkman1993/spark-profiler.git
+cd spark-profiler
+uv sync
 ```
 
 ### Basic Usage

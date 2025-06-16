@@ -8,10 +8,24 @@ dependencies = [
     "pandas>=1.0.0",
 ]
 authors = [
-    {name = "Spark Profiler Contributors"}
+    {name = "Spark Profiler Contributors", email = "bjornvandijkman1993@gmail.com"}
+]
+maintainers = [
+    {name = "Björn van Dijkman", email = "bjornvandijkman1993@gmail.com"}
 ]
 readme = "README.md"
 license = {text = "MIT"}
+keywords = [
+    "pyspark",
+    "spark",
+    "data-profiling",
+    "data-quality",
+    "dataframe",
+    "statistics",
+    "data-analysis",
+    "big-data",
+    "apache-spark"
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
