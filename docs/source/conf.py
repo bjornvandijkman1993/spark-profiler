@@ -5,7 +5,6 @@ Configuration file for the Sphinx documentation builder.
 import os
 import sys
 from datetime import datetime
-from typing import List
 
 # Add the project root to the Python path
 sys.path.insert(0, os.path.abspath("../.."))
@@ -38,9 +37,6 @@ myst_enable_extensions = [
 
 # Add any paths that contain templates here
 templates_path = ["_templates"]
-
-# List of patterns to exclude
-exclude_patterns: List[str] = []
 
 # Autodoc configuration
 autodoc_default_options = {

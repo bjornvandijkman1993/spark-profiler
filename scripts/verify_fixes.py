@@ -13,7 +13,9 @@ sys.path.insert(0, str(project_root))
 
 def test_sampling_config():
     """Test SamplingConfig doesn't have confidence_level."""
-    from pyspark_analyzer.sampling import SamplingConfig
+    import pyspark_analyzer.sampling
+
+    SamplingConfig = pyspark_analyzer.sampling.SamplingConfig
 
     config = SamplingConfig(target_size=50_000, min_sample_size=10_000, seed=42)
 
@@ -30,11 +32,12 @@ def test_sampling_config():
 
 
 def test_profiler_methods():
-    """Test DataFrameProfiler has get_profile method."""
-    from pyspark_analyzer.profiler import DataFrameProfiler
+    """Test DataFrameProfiler has profile method."""
+    import pyspark_analyzer.profiler
+
+    DataFrameProfiler = pyspark_analyzer.profiler.DataFrameProfiler
 
     # Check method exists
-    assert hasattr(DataFrameProfiler, "get_profile")
     assert hasattr(DataFrameProfiler, "profile")
 
     print("✓ DataFrameProfiler methods test passed")
@@ -44,6 +47,7 @@ def test_imports():
     """Test all modules can be imported."""
     try:
         import pyspark_analyzer
+        import pyspark_analyzer.profiler  # noqa: F401
         import pyspark_analyzer.statistics  # noqa: F401
         import pyspark_analyzer.performance  # noqa: F401
         import pyspark_analyzer.utils  # noqa: F401
@@ -58,7 +62,9 @@ def test_imports():
 
 def test_sampling_metadata():
     """Test SamplingMetadata structure."""
-    from pyspark_analyzer.sampling import SamplingMetadata
+    import pyspark_analyzer.sampling
+
+    SamplingMetadata = pyspark_analyzer.sampling.SamplingMetadata
 
     metadata = SamplingMetadata(
         original_size=100000,
