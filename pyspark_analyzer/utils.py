@@ -2,7 +2,7 @@
 Utility functions for the DataFrame profiler.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Union
 import pandas as pd
 from pyspark.sql import DataFrame
 from pyspark.sql.types import DataType
@@ -23,7 +23,7 @@ def get_column_data_types(dataframe: DataFrame) -> Dict[str, DataType]:
 
 def format_profile_output(
     profile_data: Dict[str, Any], format_type: str = "dict"
-) -> Any:
+) -> Union[pd.DataFrame, Dict[str, Any], str]:
     """
     Format the profile output in different formats.
 

@@ -2,7 +2,7 @@
 Statistics computation functions for DataFrame profiling.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import (
     col,
@@ -38,12 +38,13 @@ class StatisticsComputer:
             dataframe: PySpark DataFrame to compute statistics for
         """
         self.df = dataframe
-        self.total_rows = None  # Lazy evaluation
+        self.total_rows: Optional[int] = None  # Lazy evaluation
 
     def _get_total_rows(self) -> int:
         """Get total row count (cached for performance)."""
         if self.total_rows is None:
             self.total_rows = self.df.count()
+        assert self.total_rows is not None  # Type narrowing for mypy
         return self.total_rows
 
     def compute_basic_stats(self, column_name: str) -> Dict[str, Any]:

@@ -23,7 +23,7 @@ class SamplingConfig:
     auto_sample: bool = True
     performance_threshold: int = 10_000_000
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate configuration after initialization."""
         if self.target_size and self.target_fraction:
             raise ValueError("Cannot specify both target_size and target_fraction")
