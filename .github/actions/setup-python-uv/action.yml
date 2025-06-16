@@ -1,0 +1,48 @@
+name: 'Setup Python with uv'
+description: 'Set up Python and uv package manager with caching'
+inputs:
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.11'
+  install-extras:
+    description: 'Install extras (dev, docs, all-extras)'
+    required: false
+    default: ''
+  additional-packages:
+    description: 'Additional packages to install with uv add --dev'
+    required: false
+    default: ''
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        if [ "${{ inputs.install-extras }}" = "all-extras" ]; then
+          uv sync --frozen --all-extras
+        elif [ "${{ inputs.install-extras }}" = "dev" ]; then
+          uv sync --frozen --extra dev
+        elif [ "${{ inputs.install-extras }}" = "docs" ]; then
+          uv sync --frozen --extra docs
+        elif [ -n "${{ inputs.install-extras }}" ]; then
+          uv sync --frozen --extra "${{ inputs.install-extras }}"
+        else
+          uv sync --frozen
+        fi
+
+        # Install additional packages if specified
+        if [ -n "${{ inputs.additional-packages }}" ]; then
+          uv add --dev ${{ inputs.additional-packages }}
+        fi

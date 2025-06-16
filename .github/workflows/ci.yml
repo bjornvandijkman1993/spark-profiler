@@ -19,26 +19,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+    - name: Setup Python and uv
+      uses: ./.github/actions/setup-python-uv
       with:
         python-version: ${{ matrix.python-version }}
+        install-extras: all-extras
 
-    - name: Set up Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v4
-      with:
-        enable-cache: true
-        cache-dependency-glob: "uv.lock"
-
-    - name: Install dependencies
-      run: |
-        uv sync --frozen --all-extras
+    - name: Setup Java for Spark
+      uses: ./.github/actions/setup-java-spark
 
     - name: Verify installation
       run: uv run python examples/installation_verification.py
@@ -63,20 +51,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - name: Setup Python and uv
+      uses: ./.github/actions/setup-python-uv
       with:
         python-version: "3.11"
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v4
-      with:
-        enable-cache: true
-        cache-dependency-glob: "uv.lock"
-
-    - name: Install dependencies
-      run: |
-        uv sync --frozen --all-extras
+        install-extras: all-extras
 
     - name: Run black format check
       run: uv run black --check --diff pyspark_analyzer/ tests/ examples/
@@ -95,21 +74,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - name: Setup Python and uv
+      uses: ./.github/actions/setup-python-uv
       with:
         python-version: "3.11"
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v4
-      with:
-        enable-cache: true
-        cache-dependency-glob: "uv.lock"
-
-    - name: Install dependencies
-      run: |
-        uv sync --frozen --all-extras
-        uv add --dev pip-audit
+        install-extras: all-extras
+        additional-packages: "pip-audit cyclonedx-bom"
 
     - name: Run safety check
       id: safety
@@ -189,26 +159,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - name: Setup Python and uv
+      uses: ./.github/actions/setup-python-uv
       with:
         python-version: "3.11"
 
-    - name: Set up Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v4
-      with:
-        enable-cache: true
-        cache-dependency-glob: "uv.lock"
-
-    - name: Install dependencies
-      run: |
-        uv sync --frozen
+    - name: Setup Java for Spark
+      uses: ./.github/actions/setup-java-spark
 
     - name: Test basic usage example
       run: uv run python examples/basic_usage.py

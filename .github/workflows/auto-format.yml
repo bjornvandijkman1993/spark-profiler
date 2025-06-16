@@ -1,10 +1,11 @@
 name: Auto Format
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
+    paths:
+      - '**.py'
+      - 'pyproject.toml'
 
 jobs:
   format:
@@ -20,20 +21,11 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         ref: ${{ github.head_ref }}
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - name: Setup Python and uv
+      uses: ./.github/actions/setup-python-uv
       with:
         python-version: "3.11"
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v4
-      with:
-        enable-cache: true
-        cache-dependency-glob: "uv.lock"
-
-    - name: Install formatting tools
-      run: |
-        uv sync --frozen --all-extras
+        install-extras: all-extras
 
     - name: Run black formatting
       run: |

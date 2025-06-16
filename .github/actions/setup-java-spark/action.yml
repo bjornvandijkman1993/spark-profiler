@@ -1,0 +1,19 @@
+name: 'Setup Java for Spark'
+description: 'Set up Java for Apache Spark compatibility'
+inputs:
+  java-version:
+    description: 'Java version to use'
+    required: false
+    default: '17'
+  distribution:
+    description: 'Java distribution'
+    required: false
+    default: 'temurin'
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Java ${{ inputs.java-version }}
+      uses: actions/setup-java@v4
+      with:
+        distribution: ${{ inputs.distribution }}
+        java-version: ${{ inputs.java-version }}
