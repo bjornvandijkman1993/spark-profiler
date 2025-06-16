@@ -67,7 +67,7 @@ def main():
 
     # Default profiler with auto-sampling
     profiler = DataFrameProfiler(df)
-    profile = profiler.profile()
+    profile = profiler.profile(output_format="dict")  # Get as dictionary
 
     sampling_info = profile["sampling"]
     print(f"Sampling applied: {sampling_info['is_sampled']}")
@@ -91,7 +91,7 @@ def main():
     )
 
     profiler_custom = DataFrameProfiler(df, sampling_config=custom_config)
-    profile_custom = profiler_custom.profile()
+    profile_custom = profiler_custom.profile(output_format="dict")
 
     sampling_info = profile_custom["sampling"]
     print("Custom sampling results:")
@@ -109,7 +109,7 @@ def main():
     )  # 2% sample
 
     profiler_fraction = DataFrameProfiler(df, sampling_config=fraction_config)
-    profile_fraction = profiler_fraction.profile()
+    profile_fraction = profiler_fraction.profile(output_format="dict")
 
     sampling_info = profile_fraction["sampling"]
     print("Fraction-based sampling results:")
@@ -130,14 +130,14 @@ def main():
     profiler_full = DataFrameProfiler(
         df, sampling_config=SamplingConfig(auto_sample=False)
     )
-    profile_full = profiler_full.profile()
+    profile_full = profiler_full.profile(output_format="dict")
     full_time = time.time() - start_time
 
     # Time sampled profiling
     print("⏱️  Timing sampled profiling...")
     start_time = time.time()
     profiler_sampled = DataFrameProfiler(df)  # Auto-sampling enabled
-    profile_sampled = profiler_sampled.profile()
+    profile_sampled = profiler_sampled.profile(output_format="dict")
     sampled_time = time.time() - start_time
 
     print("\nPerformance Results:")
@@ -162,7 +162,7 @@ def main():
 
     # Show legacy sample_fraction parameter still works
     profiler_legacy = DataFrameProfiler(df, sample_fraction=0.01)
-    profile_legacy = profiler_legacy.profile()
+    profile_legacy = profiler_legacy.profile(output_format="dict")
 
     sampling_info = profile_legacy["sampling"]
     print("Legacy sample_fraction=0.01 results:")

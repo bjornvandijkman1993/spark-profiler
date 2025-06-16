@@ -60,7 +60,9 @@ def main():
 
     # Create profiler and generate profile
     profiler = DataFrameProfiler(df)
-    profile = profiler.profile()
+    profile = profiler.profile(
+        output_format="dict"
+    )  # Get as dictionary for easier access
 
     # Display overview
     overview = profile["overview"]
@@ -109,7 +111,7 @@ def main():
     print("=" * 60)
 
     # Profile only specific columns
-    numeric_profile = profiler.profile(columns=["age", "salary"])
+    numeric_profile = profiler.profile(columns=["age", "salary"], output_format="dict")
     print("\nNumeric columns only:")
     for col_name, stats in numeric_profile["columns"].items():
         print(
