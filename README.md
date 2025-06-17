@@ -27,9 +27,9 @@ A comprehensive PySpark DataFrame profiler for generating detailed statistics an
 ### Prerequisites
 
 - Python >=3.8
-- Java 8 or 11 (required for PySpark)
-  - macOS: `brew install openjdk@11`
-  - Ubuntu/Debian: `sudo apt-get install openjdk-11-jdk`
+- Java 17+ (required for PySpark)
+  - macOS: `brew install openjdk@17`
+  - Ubuntu/Debian: `sudo apt-get install openjdk-17-jdk`
   - Windows: Download from [Oracle](https://www.oracle.com/java/technologies/downloads/) or [OpenJDK](https://adoptium.net/)
 
 ## 📦 Installation
@@ -157,7 +157,24 @@ Check out the [examples](./examples/) directory for comprehensive usage examples
 
 ## 🧪 Development
 
-### Setup
+### Setup with uv (Recommended)
+
+```bash
+# Install uv (ultra-fast Python package installer)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone the repository
+git clone https://github.com/bjornvandijkman1993/pyspark-analyzer.git
+cd pyspark-analyzer
+
+# Create virtual environment and install dependencies
+uv sync --all-extras
+
+# Verify installation
+uv run python examples/installation_verification.py
+```
+
+### Traditional Setup
 
 ```bash
 # Clone the repository
@@ -178,13 +195,18 @@ python examples/installation_verification.py
 ### Testing
 
 ```bash
-# Run tests
+# Using Makefile (handles Java setup automatically)
+make test                # Run all tests
+make test-cov           # Run tests with coverage
+make test-quick         # Run tests (stop on first failure)
+
+# Using uv directly (requires .env file)
+source .env && uv run pytest
+source .env && uv run pytest --cov=pyspark_analyzer
+
+# Traditional pytest
 pytest
-
-# Run tests with coverage
 pytest --cov=pyspark_analyzer
-
-# Run specific test file
 pytest tests/test_sampling.py -v
 ```
 
@@ -192,20 +214,30 @@ pytest tests/test_sampling.py -v
 
 ```bash
 # Format code
-black pyspark_analyzer/ tests/ examples/
+uv run black pyspark_analyzer/ tests/ examples/
+# or: black pyspark_analyzer/ tests/ examples/
 
-# Lint code
-flake8 pyspark_analyzer/
+# Lint code (using ruff)
+uv run ruff check pyspark_analyzer/
+# or: ruff check pyspark_analyzer/
 
 # Type checking
-mypy pyspark_analyzer/
+uv run mypy pyspark_analyzer/
+# or: mypy pyspark_analyzer/
+
+# Security scanning
+uv run bandit -c .bandit -r pyspark_analyzer/
+# or: bandit -c .bandit -r pyspark_analyzer/
+
+# Run all pre-commit hooks
+pre-commit run --all-files
 ```
 
 ## 📋 Requirements
 
 - **Python**: 3.8+
 - **PySpark**: 3.0.0+
-- **Java**: 11+ (required by PySpark)
+- **Java**: 17+ (required by PySpark)
 
 ## 📚 Documentation
 
@@ -223,6 +255,7 @@ This project takes security seriously. We employ multiple layers of security sca
 
 - **Dependency Scanning**: Safety and pip-audit check for known vulnerabilities
 - **Static Analysis**: Bandit scans for security issues in code
+- **Secret Detection**: detect-secrets prevents secrets from being committed
 - **CodeQL**: GitHub's semantic code analysis for security vulnerabilities
 - **Pre-commit Hooks**: Security checks before code is committed
 - **Automated Updates**: Dependabot keeps dependencies up-to-date
