@@ -1,6 +1,6 @@
 [project]
 name = "pyspark-analyzer"
-version = "0.1.5"
+version = "0.1.6"
 description = "A comprehensive PySpark DataFrame profiler for generating detailed statistics and data quality reports"
 requires-python = ">=3.8"
 dependencies = [
