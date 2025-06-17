@@ -235,32 +235,6 @@ class SamplingDecisionEngine:
         """Create a sample of the DataFrame with metadata."""
         return self.strategy.sample(df, self.config, original_size=original_size)
 
-    def recommend_config(
-        self, df: DataFrame, use_case: str = "balanced", row_count: Optional[int] = None
-    ) -> SamplingConfig:
-        """Recommend sampling configuration based on use case."""
-        if row_count is None:
-            row_count = df.count()
-
-        if use_case == "fast":
-            # Fast exploration - smaller samples
-            return SamplingConfig(
-                target_fraction=0.001 if row_count > 1_000_000 else 0.01,
-                auto_sample=True,
-                performance_threshold=100_000,
-            )
-        elif use_case == "accurate":
-            # High accuracy - larger samples
-            return SamplingConfig(
-                max_sample_size=5_000_000,
-                min_sample_size=100_000,
-                auto_sample=True,
-                performance_threshold=5_000_000,
-            )
-        else:  # balanced
-            # Default balanced approach
-            return SamplingConfig()
-
 
 def create_sampling_config(
     strategy: str = "random",
