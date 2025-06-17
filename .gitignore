@@ -79,5 +79,9 @@ dependency-check-report.json
 # Semantic Release
 .semantic-release-version
 
+<<<<<<< Updated upstream
 # Markdown files
+=======
+# Project planning files
+>>>>>>> Stashed changes
 project_files/

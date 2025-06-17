@@ -18,9 +18,6 @@ from pyspark_analyzer import DataFrameProfiler
 from pyspark_analyzer.statistics import StatisticsComputer
 
 
-# Using spark_session fixture from conftest.py
-
-
 class TestAdvancedNumericStatistics:
     """Test advanced numeric statistics computation."""
 

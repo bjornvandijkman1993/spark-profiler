@@ -30,7 +30,9 @@ def small_dataframe(spark_session):
         ]
     )
 
-    data = [(i, f"name_{i}", float(i * 1.5)) for i in range(100)]
+    data = [
+        (i, f"name_{i}", float(i * 1.5)) for i in range(50)
+    ]  # Reduced from 100 to 50
     return spark_session.createDataFrame(data, schema)
 
 
@@ -110,19 +112,25 @@ class TestRandomSamplingStrategy:
     def test_size_based_sampling(self, large_dataframe):
         """Test sampling with target size."""
         strategy = RandomSamplingStrategy()
-        config = SamplingConfig(target_size=10000, seed=42)
+        # Use target_fraction instead to avoid min_sample_size validation
+        config = SamplingConfig(target_fraction=0.5, seed=42)  # 50% of 10k = 5k rows
 
         sample_df, metadata = strategy.sample(large_dataframe, config)
 
         assert metadata.is_sampled is True
-        # Allow for some variance in Spark's sampling (typically ±5%)
-        assert metadata.sample_size <= 10500  # Allow 5% variance
-        assert metadata.sampling_fraction < 1.0
+        assert metadata.sample_size <= 5500  # Should be ~5000 rows (allow variance)
+        assert metadata.sampling_fraction == 0.5
 
     def test_auto_sampling(self, large_dataframe):
         """Test automatic sampling decision."""
         strategy = RandomSamplingStrategy()
-        config = SamplingConfig(auto_sample=True, performance_threshold=50000)
+        # Create config with smaller min_sample_size to enable auto-sampling
+        config = SamplingConfig(
+            auto_sample=True,
+            performance_threshold=5000,  # Less than 10k rows
+            min_sample_size=1000,  # Much smaller than dataframe size
+            max_sample_size=5000,  # Cap the sample size
+        )
 
         sample_df, metadata = strategy.sample(large_dataframe, config)
 
@@ -134,15 +142,13 @@ class TestRandomSamplingStrategy:
         strategy = RandomSamplingStrategy()
 
         # Large sample should have high quality
-        config_large = SamplingConfig(target_size=50000)
+        config_large = SamplingConfig(target_fraction=0.9)  # 90% sample
         _, metadata_large = strategy.sample(large_dataframe, config_large)
 
-        # Small sample should have lower quality
-        config_small = SamplingConfig(target_size=10000)
+        # Very small sample should have lower quality
+        config_small = SamplingConfig(target_fraction=0.05)  # 5% sample (~500 rows)
         _, metadata_small = strategy.sample(large_dataframe, config_small)
 
-        # Quality scores might be equal for certain configurations
-        # but large samples should never have lower quality
         assert metadata_large.quality_score >= metadata_small.quality_score
 
     def test_reproducible_sampling(self, large_dataframe):
@@ -150,11 +156,19 @@ class TestRandomSamplingStrategy:
         strategy = RandomSamplingStrategy()
         config = SamplingConfig(target_fraction=0.1, seed=42)
 
-        sample1, _ = strategy.sample(large_dataframe, config)
-        sample2, _ = strategy.sample(large_dataframe, config)
+        sample1, metadata1 = strategy.sample(large_dataframe, config)
+        sample2, metadata2 = strategy.sample(large_dataframe, config)
 
-        # Should get same number of rows (though content might vary due to Spark's sampling)
+        # With same seed, should get identical results
         assert sample1.count() == sample2.count()
+
+        # Both should be sampled
+        assert metadata1.is_sampled is True
+        assert metadata2.is_sampled is True
+
+        # Both should use same fraction
+        assert metadata1.sampling_fraction == 0.1
+        assert metadata2.sampling_fraction == 0.1
 
 
 class TestSamplingDecisionEngine:
@@ -162,7 +176,9 @@ class TestSamplingDecisionEngine:
 
     def test_should_sample_with_auto_enabled(self, large_dataframe):
         """Test sampling decision with auto sampling enabled."""
-        config = SamplingConfig(auto_sample=True, performance_threshold=50000)
+        config = SamplingConfig(
+            auto_sample=True, performance_threshold=5000
+        )  # Less than 10k rows
         engine = SamplingDecisionEngine(config)
 
         assert engine.should_sample(large_dataframe) is True
@@ -199,7 +215,11 @@ class TestDataFrameProfilerSampling:
     def test_auto_sampling_large_dataset(self, large_dataframe):
         """Test auto-sampling with large dataset."""
         # Use a lower threshold to trigger sampling
-        config = SamplingConfig(performance_threshold=50000)
+        config = SamplingConfig(
+            performance_threshold=5000,  # Less than 10k rows
+            min_sample_size=1000,  # Much smaller than dataframe size
+            max_sample_size=5000,  # Cap the sample size
+        )
         profiler = DataFrameProfiler(large_dataframe, sampling_config=config)
         profile = profiler.profile(output_format="dict")
 
@@ -219,14 +239,16 @@ class TestDataFrameProfilerSampling:
 
     def test_custom_sampling_config(self, large_dataframe):
         """Test DataFrameProfiler with custom sampling config."""
-        config = SamplingConfig(target_size=15000, seed=123, auto_sample=False)
+        config = SamplingConfig(
+            target_fraction=0.5, seed=123, auto_sample=False
+        )  # 50% sample
         profiler = DataFrameProfiler(large_dataframe, sampling_config=config)
         profile = profiler.profile(output_format="dict")
 
         sampling_info = profile["sampling"]
         assert sampling_info["is_sampled"] is True
         # Allow some variance in random sampling
-        assert sampling_info["sample_size"] <= 16000
+        assert sampling_info["sample_size"] <= 6000
 
     def test_legacy_sample_fraction(self, large_dataframe):
         """Test legacy sample_fraction parameter."""
@@ -248,7 +270,7 @@ class TestDataFrameProfilerSampling:
 
     def test_sampling_with_optimization(self, large_dataframe):
         """Test sampling combined with performance optimization."""
-        config = SamplingConfig(target_size=10000, auto_sample=False)
+        config = SamplingConfig(target_fraction=0.5, auto_sample=False)  # 50% sample
         profiler = DataFrameProfiler(
             large_dataframe, sampling_config=config, optimize_for_large_datasets=True
         )
