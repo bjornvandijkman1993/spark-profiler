@@ -1,8 +1,9 @@
 # Bandit configuration file for pyspark-analyzer
 # https://bandit.readthedocs.io/en/latest/config.html
 
-exclude:
+exclude_dirs:
   - /tests
+  - /examples
   - /venv
   - /.venv
   - /build
@@ -10,5 +11,7 @@ exclude:
 
 # Test IDs to skip
 # B101: Test for use of assert - common in test code and data validation
+# B311: Standard pseudo-random generators - OK for example/demo code
 skips:
   - B101
+  - B311
