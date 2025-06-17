@@ -12,7 +12,7 @@ def optimize_dataframe_for_profiling(
     row_count: Optional[int] = None,
 ) -> DataFrame:
     """
-    Optimize DataFrame for profiling operations.
+    Optimize DataFrame for profiling operations with lazy evaluation support.
 
     Args:
         df: Input DataFrame
@@ -24,13 +24,14 @@ def optimize_dataframe_for_profiling(
     """
     optimized_df = df
 
-    # Sample if requested
+    # Sample if requested (note: sampling is now handled by SamplingDecisionEngine)
     if sample_fraction and 0 < sample_fraction < 1.0:
         optimized_df = optimized_df.sample(fraction=sample_fraction, seed=42)
         # If we sampled, the row count needs to be recalculated
         row_count = None
 
     # Use adaptive partitioning for better performance
+    # Pass row_count to avoid unnecessary count operations in lazy evaluation context
     optimized_df = _adaptive_partition(optimized_df, row_count)
 
     return optimized_df
@@ -56,9 +57,8 @@ def _adaptive_partition(df: DataFrame, row_count: Optional[int] = None) -> DataF
     spark = df.sparkSession
 
     # Check if AQE is enabled - if so, let Spark handle partition optimization
-    aqe_enabled = (
-        spark.conf.get("spark.sql.adaptive.enabled", "false").lower() == "true"
-    )
+    aqe_setting = spark.conf.get("spark.sql.adaptive.enabled", "false")
+    aqe_enabled = aqe_setting.lower() == "true" if aqe_setting else False
     if aqe_enabled:
         # With AQE enabled, Spark will automatically optimize partitions
         # We only need to handle extreme cases
@@ -76,7 +76,10 @@ def _adaptive_partition(df: DataFrame, row_count: Optional[int] = None) -> DataF
 
     # Get cluster configuration hints
     default_parallelism = spark.sparkContext.defaultParallelism
-    shuffle_partitions = int(spark.conf.get("spark.sql.shuffle.partitions", "200"))
+    shuffle_partitions_setting = spark.conf.get("spark.sql.shuffle.partitions", "200")
+    shuffle_partitions = (
+        int(shuffle_partitions_setting) if shuffle_partitions_setting else 200
+    )
 
     # Optimal partition size targets (in bytes)
     # These are based on Spark best practices
