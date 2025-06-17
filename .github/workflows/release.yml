@@ -84,7 +84,7 @@ jobs:
         python-version: "3.11"
 
     - name: Wait for PyPI availability
-      run: sleep 60  # Wait 60 seconds for package to be available on PyPI
+      run: sleep 120
 
     - name: Install and verify package
       run: |
