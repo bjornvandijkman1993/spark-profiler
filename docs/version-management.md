@@ -4,34 +4,6 @@ This document describes how version management works in the pyspark-analyzer pro
 
 ## Current Setup
 
-The project uses `bump2version` for automated version management. Version numbers are synchronized across:
-- `pyproject.toml` - Package metadata
-- `pyspark_analyzer/__init__.py` - Runtime version
-- `.bumpversion.cfg` - Version management configuration
-
-## Manual Version Bumping
-
-### Using the Script (Recommended)
-```bash
-# Bump patch version (0.1.1 -> 0.1.2)
-python scripts/bump_version.py patch
-
-# Bump minor version (0.1.1 -> 0.2.0)
-python scripts/bump_version.py minor
-
-# Bump major version (0.1.1 -> 1.0.0)
-python scripts/bump_version.py major
-```
-
-### Using bump2version Directly
-```bash
-# Make sure you have bump2version installed
-uv sync --frozen
-
-# Bump version
-uv run bump2version patch  # or minor, major
-```
-
 ## Automated Version Bumping
 
 Use the GitHub Actions workflow:
@@ -40,16 +12,6 @@ Use the GitHub Actions workflow:
 2. Click "Run workflow"
 3. Select bump type (patch/minor/major)
 4. The workflow will create a PR with the version changes
-
-## Release Process
-
-1. **Bump Version**: Use one of the methods above
-2. **Push Changes**:
-   ```bash
-   git push && git push --tags
-   ```
-3. **Automatic Release**: The release workflow triggers on new tags
-4. **Verification**: The workflow includes post-publish verification
 
 ## Version Numbering
 

@@ -9,7 +9,7 @@ from pyspark.sql.types import NumericType, StringType, TimestampType, DateType
 
 from .statistics import StatisticsComputer
 from .utils import get_column_data_types, format_profile_output
-from .performance import BatchStatisticsComputer, optimize_dataframe_for_profiling
+from .performance import optimize_dataframe_for_profiling
 from .sampling import SamplingConfig, SamplingDecisionEngine, SamplingMetadata
 
 
@@ -91,19 +91,14 @@ class DataFrameProfiler:
 
         # Optimize DataFrame if requested (after sampling)
         if optimize_for_large_datasets:
-            self.df = optimize_dataframe_for_profiling(self.df)
+            self.df = optimize_dataframe_for_profiling(
+                self.df, row_count=self.sampling_metadata.sample_size
+            )
 
         self.column_types = get_column_data_types(self.df)
         # Pass the sample size to avoid redundant count operations
         self.stats_computer = StatisticsComputer(
             self.df, total_rows=self.sampling_metadata.sample_size
-        )
-        self.batch_computer = (
-            BatchStatisticsComputer(
-                self.df, total_rows=self.sampling_metadata.sample_size
-            )
-            if optimize_for_large_datasets
-            else None
         )
         self.optimize_for_large_datasets = optimize_for_large_datasets
 
@@ -142,8 +137,8 @@ class DataFrameProfiler:
         }
 
         # Use batch processing for large datasets if enabled
-        if self.optimize_for_large_datasets and self.batch_computer:
-            profile_result["columns"] = self.batch_computer.compute_all_columns_batch(
+        if self.optimize_for_large_datasets:
+            profile_result["columns"] = self.stats_computer.compute_all_columns_batch(
                 columns
             )
         else:

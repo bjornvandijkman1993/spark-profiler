@@ -8,6 +8,8 @@ This example shows how to:
 4. Compare profiles between datasets
 """
 
+# flake8: noqa: S311
+
 from datetime import datetime
 from pyspark.sql import SparkSession
 from pyspark.sql.types import (
@@ -33,14 +35,24 @@ def create_sample_data(spark, num_rows=10000):
 
     for i in range(num_rows):
         # Some nulls to make it realistic
-        customer_id = i + 1 if random.random() > 0.02 else None
+        customer_id = i + 1 if random.random() > 0.02 else None  # nosec B311
         product_name = (
-            f"Product_{random.randint(1, 100)}" if random.random() > 0.01 else None
+            f"Product_{random.randint(1, 100)}"
+            if random.random() > 0.01
+            else None  # nosec B311
         )
-        category = random.choice(categories) if random.random() > 0.05 else None
-        price = round(random.uniform(10, 500), 2) if random.random() > 0.03 else None
-        quantity = random.randint(1, 10) if random.random() > 0.02 else None
-        order_date = datetime.now() - timedelta(days=random.randint(0, 365))
+        category = (
+            random.choice(categories) if random.random() > 0.05 else None
+        )  # nosec B311
+        price = (
+            round(random.uniform(10, 500), 2) if random.random() > 0.03 else None
+        )  # nosec B311
+        quantity = (
+            random.randint(1, 10) if random.random() > 0.02 else None
+        )  # nosec B311
+        order_date = datetime.now() - timedelta(
+            days=random.randint(0, 365)
+        )  # nosec B311
 
         data.append((customer_id, product_name, category, price, quantity, order_date))
 

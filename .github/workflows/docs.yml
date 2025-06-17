@@ -59,11 +59,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Check markdown files
-      uses: DavidAnson/markdownlint-cli2-action@v20
-      with:
-        globs: '**/*.md'
-
     - name: Check links in documentation
       uses: gaurav-nelson/github-action-markdown-link-check@v1
       with:

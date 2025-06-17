@@ -2,6 +2,8 @@
 Demonstration of advanced statistics features in pyspark-analyzer.
 """
 
+# flake8: noqa: S311
+
 from pyspark.sql import SparkSession
 from pyspark.sql.types import (
     StructType,
@@ -46,7 +48,7 @@ def create_sample_data(spark):
         elif i % 30 == 0:
             product = f"PRODUCT_{i}"  # Uppercase pattern
         else:
-            product = random.choice(fruits[:-2])  # Exclude None and empty
+            product = random.choice(fruits[:-2])  # Exclude None and empty  # nosec B311
 
         # Price (with outliers and special values)
         if i % 200 == 0:
@@ -63,7 +65,7 @@ def create_sample_data(spark):
 
         # Email (with patterns)
         if i % 20 == 0:
-            email = random.choice(emails)
+            email = random.choice(emails)  # nosec B311
         else:
             email = f"customer{i}@example.com"
 
@@ -75,9 +77,11 @@ def create_sample_data(spark):
 
         # Quantity (for demonstrating skewness)
         if i < 50:
-            quantity = random.randint(100, 200)  # High values for skewness
+            quantity = random.randint(
+                100, 200
+            )  # High values for skewness  # nosec B311
         else:
-            quantity = random.randint(1, 10)
+            quantity = random.randint(1, 10)  # nosec B311
 
         data.append((row_id, product, price, email, order_date, quantity))
 

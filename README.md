@@ -21,6 +21,7 @@ A comprehensive PySpark DataFrame profiler for generating detailed statistics an
 - **🔍 Quality Monitoring**: Statistical quality scores and confidence reporting
 - **🎨 Flexible Output**: Dictionary, JSON, and human-readable summary formats
 - **📈 Large Dataset Support**: Intelligent caching, partitioning, and sampling options
+- **🎯 Adaptive Partitioning**: Smart partition optimization considering AQE, data size, and cluster configuration
 
 ## 🚀 Quick Start
 
@@ -146,6 +147,11 @@ profile = profiler.profile()
 - **Batch Aggregations**: Minimize data scans with combined operations
 - **Approximate Functions**: Fast distinct counts and percentile computations
 - **Smart Caching**: Intelligent caching for multiple operations
+- **Adaptive Partitioning**: Dynamic partition optimization based on:
+  - Data size and row count estimation
+  - Cluster configuration (parallelism, shuffle partitions)
+  - Spark's Adaptive Query Execution (AQE) status
+  - Avoids repartitioning overhead when not beneficial
 
 ## 📚 Examples
 
@@ -154,6 +160,7 @@ Check out the [examples](./examples/) directory for comprehensive usage examples
 - [`installation_verification.py`](./examples/installation_verification.py) - Verify your installation
 - [`basic_usage.py`](./examples/basic_usage.py) - Complete usage demonstration
 - [`sampling_example.py`](./examples/sampling_example.py) - Advanced sampling features
+- [`adaptive_partitioning_demo.py`](./examples/adaptive_partitioning_demo.py) - Partition optimization demonstration
 
 ## 🧪 Development
 

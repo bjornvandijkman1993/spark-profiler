@@ -14,9 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * correct tool version configurations after semantic-release ([eb1161f](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/eb1161f6bb997ea94d714e63ee54c9d20cc091fd))
 
 ## [0.2.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v0.1.6...v0.2.0) (2025-06-17)
-
 ### Bug Fixes
-
 * replace PyPI badge with shields.io for better reliability ([41f0645](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/41f0645dbcb6277814fbcd7ebc3765c90957d7dd))
 * update Codecov configuration to match official documentation ([b1f6552](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/b1f6552cfca5b2fc288b279150e81cc85a12e42e))
 
