@@ -126,12 +126,20 @@ class RandomSamplingStrategy(SamplingStrategy):
 
         return sample_df, metadata
 
-    def estimate_quality(self, original_df: DataFrame, sample_df: DataFrame) -> float:
+    def estimate_quality(
+        self,
+        original_df: DataFrame,
+        sample_df: DataFrame,
+        original_size: Optional[int] = None,
+        sample_size: Optional[int] = None,
+    ) -> float:
         """Estimate sampling quality using statistical measures."""
         # For random sampling, quality is primarily based on sample size
         # More sophisticated quality estimation could be added here
-        original_size = original_df.count()
-        sample_size = sample_df.count()
+        if original_size is None:
+            original_size = original_df.count()
+        if sample_size is None:
+            sample_size = sample_df.count()
 
         if sample_size >= original_size:
             return 1.0
@@ -228,10 +236,11 @@ class SamplingDecisionEngine:
         return self.strategy.sample(df, self.config, original_size=original_size)
 
     def recommend_config(
-        self, df: DataFrame, use_case: str = "balanced"
+        self, df: DataFrame, use_case: str = "balanced", row_count: Optional[int] = None
     ) -> SamplingConfig:
         """Recommend sampling configuration based on use case."""
-        row_count = df.count()
+        if row_count is None:
+            row_count = df.count()
 
         if use_case == "fast":
             # Fast exploration - smaller samples

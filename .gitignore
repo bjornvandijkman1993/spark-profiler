@@ -78,3 +78,6 @@ dependency-check-report.json
 
 # Semantic Release
 .semantic-release-version
+
+# Markdown files
+project_files/

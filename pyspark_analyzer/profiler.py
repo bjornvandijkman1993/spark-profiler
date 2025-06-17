@@ -91,7 +91,9 @@ class DataFrameProfiler:
 
         # Optimize DataFrame if requested (after sampling)
         if optimize_for_large_datasets:
-            self.df = optimize_dataframe_for_profiling(self.df)
+            self.df = optimize_dataframe_for_profiling(
+                self.df, row_count=self.sampling_metadata.sample_size
+            )
 
         self.column_types = get_column_data_types(self.df)
         # Pass the sample size to avoid redundant count operations
