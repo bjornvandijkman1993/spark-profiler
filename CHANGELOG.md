@@ -1,3 +1,16 @@
+# [0.2.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v0.1.6...v0.2.0) (2025-06-17)
+
+
+### Bug Fixes
+
+* replace PyPI badge with shields.io for better reliability ([41f0645](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/41f0645dbcb6277814fbcd7ebc3765c90957d7dd))
+* update Codecov configuration to match official documentation ([b1f6552](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/b1f6552cfca5b2fc288b279150e81cc85a12e42e))
+
+
+### Features
+
+* add official Python 3.13 support ([5fa4074](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/5fa4074abf159110ed4e8f2c9823b922af30185b))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
