@@ -2,6 +2,7 @@
 
 import os
 import pytest
+from unittest.mock import Mock
 from pyspark.sql import SparkSession
 
 
@@ -54,8 +55,8 @@ def sample_dataframe(spark_session):
 @pytest.fixture
 def large_dataframe(spark_session):
     """Create a large DataFrame for testing sampling."""
-    # Create a DataFrame with 100k rows
-    return spark_session.range(0, 100000).selectExpr(
+    # Create a DataFrame with 10k rows (reduced from 100k for faster tests)
+    return spark_session.range(0, 10000).selectExpr(
         "id",
         "id % 100 as category",
         "rand() * 1000 as value",
@@ -89,3 +90,45 @@ def simple_dataframe(spark_session):
     ]
     columns = ["id", "name", "value"]
     return spark_session.createDataFrame(data, columns)
+
+
+@pytest.fixture
+def mock_agg_result():
+    """Create a mock aggregation result for testing."""
+    mock_row = Mock()
+    mock_row.__getitem__ = Mock(
+        side_effect=lambda x: {
+            "total_count": 5,
+            "non_null_count": 4,
+            "null_count": 1,
+            "distinct_count": 3,
+            "min": 10.0,
+            "max": 100.0,
+            "mean": 55.0,
+            "std": 30.28,
+            "median": 55.0,
+            "q1": 30.0,
+            "q3": 80.0,
+            "min_length": 0,
+            "max_length": 23,
+            "avg_length": 8.4,
+            "empty_count": 1,
+        }.get(x, 0)
+    )
+
+    mock_result = Mock()
+    mock_result.collect.return_value = [mock_row]
+    return mock_result
+
+
+@pytest.fixture
+def mock_dataframe():
+    """Create a mock DataFrame for testing without Spark operations."""
+    mock_df = Mock()
+    mock_df.count.return_value = 5
+    mock_df.columns = ["id", "name", "value"]
+    mock_df.schema = Mock()
+    mock_df.schema.__getitem__ = Mock()
+    mock_df.cache.return_value = mock_df
+    mock_df.unpersist.return_value = mock_df
+    return mock_df

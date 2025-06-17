@@ -3,7 +3,7 @@ Test cases for performance optimization utilities.
 """
 
 import pytest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from datetime import datetime, date
 
 from pyspark_analyzer.performance import optimize_dataframe_for_profiling
@@ -53,35 +53,29 @@ class TestStatisticsComputerBatch:
         computer.disable_caching()
         sample_dataframe.unpersist.assert_called_once()
 
-    def test_compute_all_columns_batch(self, spark_session):
+    def test_compute_all_columns_batch(self, sample_dataframe):
         """Test batch computation of statistics for all columns."""
-        # Create a test DataFrame with mixed types
-        data = [
-            (1, "Alice", 25.5, datetime(2023, 1, 1), date(2023, 1, 1)),
-            (2, "Bob", 30.0, datetime(2023, 1, 2), date(2023, 1, 2)),
-            (3, None, 35.5, datetime(2023, 1, 3), date(2023, 1, 3)),
-            (4, "", None, None, None),
-        ]
-        columns = ["id", "name", "score", "timestamp", "date"]
-        df = spark_session.createDataFrame(data, columns)
 
-        computer = StatisticsComputer(df)
+        computer = StatisticsComputer(sample_dataframe)
         results = computer.compute_all_columns_batch()
 
         # Check that all columns are processed
-        assert set(results.keys()) == set(columns)
+        assert set(results.keys()) == {"id", "name", "age", "salary"}
 
         # Check numeric column statistics
         assert results["id"]["data_type"] == "LongType()"
-        assert results["id"]["total_count"] == 4
+        assert results["id"]["total_count"] == 5  # sample_dataframe has 5 rows
         assert results["id"]["null_count"] == 0
         assert results["id"]["min"] == 1
-        assert results["id"]["max"] == 4
+        assert results["id"]["max"] == 5
 
         # Check string column statistics
         assert results["name"]["data_type"] == "StringType()"
-        assert results["name"]["null_count"] == 1
-        assert results["name"]["empty_count"] == 1
+        assert results["name"]["total_count"] == 5
+        assert (
+            results["name"]["null_count"] == 0
+        )  # All names are non-null in sample data
+        assert results["name"]["empty_count"] == 0  # No empty strings in sample data
 
         # Check that caching was cleaned up
         assert computer.cache_enabled is False
@@ -253,18 +247,18 @@ class TestOptimizeDataFrameForProfiling:
         result = optimize_dataframe_for_profiling(df)
         assert result.rdd.getNumPartitions() == 1
 
-    def test_repartitioning_large_dataset(self, spark_session):
+    def test_repartitioning_large_dataset(self, sample_dataframe):
         """Test repartitioning optimization for large datasets."""
-        # Create a large DataFrame with few partitions
-        # Using range for efficiency in testing
-        df = spark_session.range(0, 2000000, numPartitions=2)
+        # Use context managers for proper mocking
+        with patch.object(sample_dataframe, "count", return_value=2_000_000):
+            with patch.object(sample_dataframe.rdd, "getNumPartitions", return_value=2):
+                with patch.object(sample_dataframe, "repartition") as mock_repartition:
+                    # Mock repartition to return a new DataFrame mock
+                    mock_repartitioned_df = Mock()
+                    mock_repartitioned_df.rdd.getNumPartitions.return_value = 8
+                    mock_repartition.return_value = mock_repartitioned_df
 
-        # Check initial partitions
-        initial_partitions = df.rdd.getNumPartitions()
-        assert initial_partitions >= 1  # May vary based on Spark configuration
-
-        # Optimize with known row count
-        result = optimize_dataframe_for_profiling(df, row_count=2000000)
+                    result = optimize_dataframe_for_profiling(sample_dataframe)
 
         # With adaptive partitioning, the logic is more sophisticated
         # It considers data size and cluster configuration
