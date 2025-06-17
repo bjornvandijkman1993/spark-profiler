@@ -1,0 +1,105 @@
+name: Semantic Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write  # For PyPI trusted publishing
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install semantic-release
+      run: |
+        npm install -g semantic-release@23
+        npm install -g @semantic-release/changelog@6
+        npm install -g @semantic-release/git@10
+        npm install -g @semantic-release/exec@6
+
+    - name: Setup Python and uv
+      uses: ./.github/actions/setup-python-uv
+      with:
+        python-version: "3.11"
+        install-extras: all-extras
+
+    - name: Setup Java for Spark
+      uses: ./.github/actions/setup-java-spark
+
+    - name: Run tests
+      run: uv run pytest tests/ -v
+
+    - name: Run semantic-release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        # Set git config for semantic-release
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+        # Run semantic-release
+        npx semantic-release
+
+    - name: Get release info
+      id: release
+      run: |
+        if [ -f .semantic-release-version ]; then
+          echo "version=$(cat .semantic-release-version)" >> $GITHUB_OUTPUT
+          echo "released=true" >> $GITHUB_OUTPUT
+        else
+          echo "released=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Build and publish to PyPI
+      if: steps.release.outputs.released == 'true'
+      run: |
+        # Build the package
+        uv build
+
+        # Check the package
+        uv run twine check dist/*
+
+        # Publish to PyPI using trusted publishing
+        uv run twine upload dist/* --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
+
+    - name: Verify PyPI publication
+      if: steps.release.outputs.released == 'true'
+      run: |
+        VERSION=${{ steps.release.outputs.version }}
+        echo "Waiting for PyPI to process the upload..."
+        sleep 120
+
+        # Create clean virtual environment
+        python -m venv test_env
+        source test_env/bin/activate
+
+        # Install the package
+        pip install pyspark-analyzer==$VERSION
+
+        # Verify import and version
+        python -c "import pyspark_analyzer; assert pyspark_analyzer.__version__ == '$VERSION', f'Version mismatch: {pyspark_analyzer.__version__} != $VERSION'"
+
+        # Basic import test
+        python -c "from pyspark_analyzer import DataFrameProfiler, SamplingConfig; print('Package imported successfully')"
+
+        echo "Package verification successful!"

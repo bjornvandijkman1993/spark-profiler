@@ -1,0 +1,34 @@
+{
+  "branches": [
+    "main"
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "verifyReleaseCmd": "echo 'Verifying release ${nextRelease.version}'",
+        "prepareCmd": "sed -i.bak 's/version = \".*\"/version = \"${nextRelease.version}\"/' pyproject.toml && sed -i.bak 's/__version__ = \".*\"/__version__ = \"${nextRelease.version}\"/' pyspark_analyzer/__init__.py && rm -f pyproject.toml.bak pyspark_analyzer/__init__.py.bak && echo '${nextRelease.version}' > .semantic-release-version"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "pyproject.toml",
+          "pyspark_analyzer/__init__.py",
+          "CHANGELOG.md"
+        ],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
+    "@semantic-release/github"
+  ]
+}

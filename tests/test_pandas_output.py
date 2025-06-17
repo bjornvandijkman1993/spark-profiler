@@ -5,7 +5,6 @@ Unit tests for pandas DataFrame output functionality.
 import pytest
 import pandas as pd
 from datetime import datetime
-from pyspark.sql import SparkSession
 from pyspark.sql.types import (
     StructType,
     StructField,
@@ -19,19 +18,8 @@ from pyspark_analyzer import DataFrameProfiler
 from pyspark_analyzer.utils import format_profile_output
 
 
-@pytest.fixture(scope="module")
-def spark():
-    """Create a Spark session for tests."""
-    return (
-        SparkSession.builder.appName("test_pandas_output")
-        .master("local[*]")
-        .config("spark.sql.adaptive.enabled", "false")
-        .getOrCreate()
-    )
-
-
 @pytest.fixture
-def sample_dataframe(spark):
+def sample_dataframe(spark_session):
     """Create a sample DataFrame for testing."""
     schema = StructType(
         [
@@ -50,7 +38,7 @@ def sample_dataframe(spark):
         (5, "David", 88.0, datetime(2023, 1, 5)),
     ]
 
-    return spark.createDataFrame(data, schema)
+    return spark_session.createDataFrame(data, schema)
 
 
 class TestPandasOutput:
@@ -209,9 +197,9 @@ class TestPandasOutput:
         for col in basic_cols:
             assert col in df.columns[:8]  # Should be in first 8 columns
 
-    def test_empty_dataframe(self, spark):
+    def test_empty_dataframe(self, spark_session):
         """Test handling of empty DataFrame."""
-        empty_df = spark.createDataFrame([], StructType([]))
+        empty_df = spark_session.createDataFrame([], StructType([]))
         profiler = DataFrameProfiler(empty_df)
 
         result = profiler.profile(output_format="pandas")

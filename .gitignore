@@ -75,3 +75,6 @@ reports/
 dependency-check-report.html
 dependency-check-report.xml
 dependency-check-report.json
+
+# Semantic Release
+.semantic-release-version

@@ -155,3 +155,30 @@ print(f"Speedup: {sampling_info['estimated_speedup']:.1f}x")
 - **Performance Monitoring**: Track sampling time and estimated speedup
 - **Flexible Configuration**: Target size, fraction, or auto-determination
 - **Legacy Support**: Backward compatibility with sample_fraction parameter
+
+## Release Process
+
+The project uses **semantic-release** for automated version management:
+
+- **Conventional commits** trigger automatic releases
+- **Version bumping** happens automatically based on commit message types
+- **PyPI publication** is fully automated
+- See `RELEASE_PROCESS.md` for detailed instructions
+
+### Commit Message Format
+```bash
+# Patch release: fix(scope): description
+# Minor release: feat(scope): description
+# Major release: feat!: description with BREAKING CHANGE footer
+# No release: docs/chore/test/style: description
+```
+
+### Key Commands for Releases
+```bash
+# Conventional commit messages automatically trigger releases
+git commit -m "feat(profiler): add new statistics computation"
+git commit -m "fix(sampling): resolve edge case in quality estimation"
+
+# Manual release trigger (if needed)
+# Go to GitHub Actions → Semantic Release → Run workflow
+```
