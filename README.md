@@ -5,7 +5,7 @@
 [![Documentation Status](https://readthedocs.org/projects/pyspark-analyzer/badge/?version=latest)](https://pyspark-analyzer.readthedocs.io/en/latest/?badge=latest)
 [![Security](https://github.com/bjornvandijkman1993/pyspark-analyzer/workflows/CodeQL/badge.svg)](https://github.com/bjornvandijkman1993/pyspark-analyzer/security)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyPI version](https://badge.fury.io/py/pyspark-analyzer.svg)](https://pypi.org/project/pyspark-analyzer/)
+[![PyPI version](https://img.shields.io/pypi/v/pyspark-analyzer.svg)](https://pypi.org/project/pyspark-analyzer/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A comprehensive PySpark DataFrame profiler for generating detailed statistics and data quality reports with intelligent sampling capabilities for large-scale datasets.
