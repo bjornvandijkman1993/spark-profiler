@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v0.2.0...v0.2.1) (2025-06-17)
+
+
+### Bug Fixes
+
+* correct tool version configurations after semantic-release ([36db97d](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/36db97d45fe2535fead761c9d2584017eb415a9e))
+* correct tool version configurations after semantic-release ([eb1161f](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/eb1161f6bb997ea94d714e63ee54c9d20cc091fd))
+
 ## [0.2.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v0.1.6...v0.2.0) (2025-06-17)
 
 ### Bug Fixes
