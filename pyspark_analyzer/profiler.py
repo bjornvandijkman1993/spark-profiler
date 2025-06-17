@@ -55,20 +55,41 @@ class DataFrameProfiler:
         self.sampling_engine = SamplingDecisionEngine(sampling_config)
         self.sampling_metadata: Optional[SamplingMetadata] = None
 
-        # Count rows once to avoid multiple count() operations
-        original_size = dataframe.count()
+        # Use lazy evaluation for row counting to improve initialization performance
+        self._lazy_original_size: Optional[int] = None
+        self._original_dataframe = dataframe
+
+        # Defer sampling decision until actually needed
+        self.df = dataframe
+        self._sampling_applied = False
+        self.optimize_for_large_datasets = optimize_for_large_datasets
+
+        # Initialize with lazy evaluation - defer heavy operations
+        self.column_types = get_column_data_types(self.df)
+        self.stats_computer: Optional[StatisticsComputer] = None
+
+    def _ensure_sampling_applied(self) -> None:
+        """Apply sampling if needed, using lazy evaluation."""
+        if self._sampling_applied:
+            return
+
+        # Get original size only when needed
+        if self._lazy_original_size is None:
+            self._lazy_original_size = self._original_dataframe.count()
 
         # Apply sampling if needed
-        if self.sampling_engine.should_sample(dataframe, row_count=original_size):
+        if self.sampling_engine.should_sample(
+            self._original_dataframe, row_count=self._lazy_original_size
+        ):
             self.df, self.sampling_metadata = self.sampling_engine.create_sample(
-                dataframe, original_size=original_size
+                self._original_dataframe, original_size=self._lazy_original_size
             )
         else:
-            self.df = dataframe
+            self.df = self._original_dataframe
             # Create metadata for non-sampled case
 
             # Handle empty DataFrame case
-            if original_size == 0:
+            if self._lazy_original_size == 0:
                 self.sampling_metadata = SamplingMetadata(
                     original_size=0,
                     sample_size=0,
@@ -80,8 +101,8 @@ class DataFrameProfiler:
                 )
             else:
                 self.sampling_metadata = SamplingMetadata(
-                    original_size=original_size,
-                    sample_size=original_size,
+                    original_size=self._lazy_original_size,
+                    sample_size=self._lazy_original_size,
                     sampling_fraction=1.0,
                     strategy_used="none",
                     sampling_time=0.0,
@@ -90,17 +111,26 @@ class DataFrameProfiler:
                 )
 
         # Optimize DataFrame if requested (after sampling)
-        if optimize_for_large_datasets:
+        if self.optimize_for_large_datasets:
             self.df = optimize_dataframe_for_profiling(
                 self.df, row_count=self.sampling_metadata.sample_size
             )
 
+        # Update column types if DataFrame changed
         self.column_types = get_column_data_types(self.df)
-        # Pass the sample size to avoid redundant count operations
-        self.stats_computer = StatisticsComputer(
-            self.df, total_rows=self.sampling_metadata.sample_size
-        )
-        self.optimize_for_large_datasets = optimize_for_large_datasets
+        self._sampling_applied = True
+
+    def _ensure_stats_computer(self) -> StatisticsComputer:
+        """Initialize stats computer with lazy evaluation."""
+        if self.stats_computer is None:
+            self._ensure_sampling_applied()
+            # Ensure sampling_metadata is available after _ensure_sampling_applied
+            assert self.sampling_metadata is not None
+            # Pass the sample size to avoid redundant count operations
+            self.stats_computer = StatisticsComputer(
+                self.df, total_rows=self.sampling_metadata.sample_size
+            )
+        return self.stats_computer
 
     def profile(
         self,
@@ -122,6 +152,9 @@ class DataFrameProfiler:
         Returns:
             Profile results in requested format
         """
+        # Ensure sampling is applied before profiling
+        self._ensure_sampling_applied()
+
         if columns is None:
             columns = self.df.columns
 
@@ -136,9 +169,12 @@ class DataFrameProfiler:
             "sampling": self._get_sampling_info(),
         }
 
+        # Get stats computer with lazy initialization
+        stats_computer = self._ensure_stats_computer()
+
         # Use batch processing for large datasets if enabled
         if self.optimize_for_large_datasets:
-            profile_result["columns"] = self.stats_computer.compute_all_columns_batch(
+            profile_result["columns"] = stats_computer.compute_all_columns_batch(
                 columns
             )
         else:
@@ -154,6 +190,11 @@ class DataFrameProfiler:
 
     def _get_overview(self) -> Dict[str, Any]:
         """Get overview statistics for the entire DataFrame."""
+        # Ensure sampling is applied to get accurate metadata
+        self._ensure_sampling_applied()
+        # Ensure sampling_metadata is available after _ensure_sampling_applied
+        assert self.sampling_metadata is not None
+
         # Use cached row count from sampling metadata
         total_rows = self.sampling_metadata.sample_size
         total_columns = len(self.df.columns)
@@ -183,6 +224,12 @@ class DataFrameProfiler:
         Returns:
             Dictionary containing column statistics
         """
+        # Ensure sampling and stats computer are ready
+        self._ensure_sampling_applied()
+        stats_computer = self._ensure_stats_computer()
+        # Ensure sampling_metadata is available after _ensure_sampling_applied
+        assert self.sampling_metadata is not None
+
         column_type = self.column_types[column_name]
 
         # Handle empty DataFrame case
@@ -198,24 +245,24 @@ class DataFrameProfiler:
             }
 
         # Basic statistics for all columns
-        basic_stats = self.stats_computer.compute_basic_stats(column_name)
+        basic_stats = stats_computer.compute_basic_stats(column_name)
 
         column_profile = {"data_type": str(column_type), **basic_stats}
 
         # Add type-specific statistics
         if isinstance(column_type, NumericType):
-            numeric_stats = self.stats_computer.compute_numeric_stats(
+            numeric_stats = stats_computer.compute_numeric_stats(
                 column_name, advanced=include_advanced
             )
             column_profile.update(numeric_stats)
 
             # Add outlier statistics for numeric columns
             if include_advanced:
-                outlier_stats = self.stats_computer.compute_outlier_stats(column_name)
+                outlier_stats = stats_computer.compute_outlier_stats(column_name)
                 column_profile["outliers"] = outlier_stats
 
         elif isinstance(column_type, StringType):
-            string_stats = self.stats_computer.compute_string_stats(
+            string_stats = stats_computer.compute_string_stats(
                 column_name,
                 top_n=10 if include_advanced else 0,
                 pattern_detection=include_advanced,
@@ -223,7 +270,7 @@ class DataFrameProfiler:
             column_profile.update(string_stats)
 
         elif isinstance(column_type, (TimestampType, DateType)):
-            temporal_stats = self.stats_computer.compute_temporal_stats(column_name)
+            temporal_stats = stats_computer.compute_temporal_stats(column_name)
             column_profile.update(temporal_stats)
 
         # Add data quality metrics if requested
@@ -237,7 +284,7 @@ class DataFrameProfiler:
                 # For complex types (arrays, structs, etc.), skip type-specific quality checks
                 quality_type = "other"
 
-            quality_stats = self.stats_computer.compute_data_quality_stats(
+            quality_stats = stats_computer.compute_data_quality_stats(
                 column_name,
                 column_type=quality_type,
             )
@@ -247,6 +294,9 @@ class DataFrameProfiler:
 
     def _get_sampling_info(self) -> Dict[str, Any]:
         """Get sampling information for the profile."""
+        # Ensure sampling is applied to get accurate metadata
+        self._ensure_sampling_applied()
+
         if not self.sampling_metadata:
             return {"is_sampled": False}
 
