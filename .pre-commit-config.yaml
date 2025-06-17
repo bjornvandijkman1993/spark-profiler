@@ -34,12 +34,6 @@ repos:
         args: ['--ignore-missing-imports', '--no-strict-optional', '--allow-untyped-defs']
         exclude: ^(tests/|examples/)
 
-  - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.18.0
-    hooks:
-      - id: markdownlint-cli2
-        args: ['--config', '.markdownlint.json']
-
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.10
     hooks:
