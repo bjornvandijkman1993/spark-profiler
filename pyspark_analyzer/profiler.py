@@ -17,7 +17,7 @@ class DataFrameProfiler:
     """
     Main profiler class for generating comprehensive statistics for PySpark DataFrames.
 
-    This class analyzes a PySpark DataFrame and computes various statistics for each column
+    This class analyzes a PySpark DataFrame and computes various statistics for each column,
     including basic counts, data type specific metrics, and null value analysis.
     """
 
