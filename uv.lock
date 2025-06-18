@@ -3113,6 +3113,7 @@ docs = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "build" },
     { name = "cyclonedx-bom", version = "5.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "cyclonedx-bom", version = "6.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
     { name = "pandas-stubs", version = "2.0.3.230814", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
@@ -3154,6 +3155,7 @@ provides-extras = ["dev", "docs"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "build", specifier = ">=1.2.2.post1" },
     { name = "cyclonedx-bom", specifier = ">=5.5.0" },
     { name = "pandas-stubs", specifier = ">=2.0.3.230814" },
     { name = "pre-commit", specifier = ">=3.5.0" },
