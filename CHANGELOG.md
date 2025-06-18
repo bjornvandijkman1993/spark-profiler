@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.0.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v0.3.3...v1.0.0) (2025-06-18)
+
+
+### Bug Fixes
+
+* **sampling:** simplify sampling configuration and remove quality estimation ([1a22656](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/1a22656f73ad2018824ce04d39dc89a9ab600c8e))
+
+
+### BREAKING CHANGES
+
+* **sampling:** Removed quality_score and strategy_used from sampling metadata.
+The SamplingConfig API has been simplified but remains backward compatible.
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+
 ## [0.3.3](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v0.3.2...v0.3.3) (2025-06-18)
 
 
