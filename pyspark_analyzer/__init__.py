@@ -9,7 +9,7 @@ from .profiler import DataFrameProfiler
 from .sampling import SamplingConfig, create_sampling_config
 from .statistics import LazyRowCount
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 __all__ = [
     "DataFrameProfiler",
     "SamplingConfig",
