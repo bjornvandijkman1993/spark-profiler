@@ -35,6 +35,7 @@ jobs:
         npm install -g @semantic-release/changelog@6
         npm install -g @semantic-release/git@10
         npm install -g @semantic-release/exec@6
+        npm install -g semantic-release-pypi@3
 
     - name: Setup Python and uv
       uses: ./.github/actions/setup-python-uv
@@ -57,49 +58,5 @@ jobs:
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-        # Run semantic-release
+        # Run semantic-release (now handles PyPI publishing automatically)
         npx semantic-release
-
-    - name: Get release info
-      id: release
-      run: |
-        if [ -f .semantic-release-version ]; then
-          echo "version=$(cat .semantic-release-version)" >> $GITHUB_OUTPUT
-          echo "released=true" >> $GITHUB_OUTPUT
-        else
-          echo "released=false" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Build and publish to PyPI
-      if: steps.release.outputs.released == 'true'
-      run: |
-        # Build the package
-        uv build
-
-        # Check the package
-        uv run twine check dist/*
-
-        # Publish to PyPI using trusted publishing
-        uv run twine upload dist/* --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
-
-    - name: Verify PyPI publication
-      if: steps.release.outputs.released == 'true'
-      run: |
-        VERSION=${{ steps.release.outputs.version }}
-        echo "Waiting for PyPI to process the upload..."
-        sleep 120
-
-        # Create clean virtual environment
-        python -m venv test_env
-        source test_env/bin/activate
-
-        # Install the package
-        pip install pyspark-analyzer==$VERSION
-
-        # Verify import and version
-        python -c "import pyspark_analyzer; assert pyspark_analyzer.__version__ == '$VERSION', f'Version mismatch: {pyspark_analyzer.__version__} != $VERSION'"
-
-        # Basic import test
-        python -c "from pyspark_analyzer import DataFrameProfiler, SamplingConfig; print('Package imported successfully')"
-
-        echo "Package verification successful!"
