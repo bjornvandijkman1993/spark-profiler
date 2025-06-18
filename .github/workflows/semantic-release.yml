@@ -35,7 +35,6 @@ jobs:
         npm install -g @semantic-release/changelog@6
         npm install -g @semantic-release/git@10
         npm install -g @semantic-release/exec@6
-        npm install -g semantic-release-pypi@3
 
     - name: Setup Python and uv
       uses: ./.github/actions/setup-python-uv
@@ -44,8 +43,28 @@ jobs:
         install-extras: all-extras
 
     - name: Semantic Release
+      id: semantic
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       run: |
         npx semantic-release
+
+    - name: Build and Publish to PyPI
+      if: ${{ hashFiles('.release-version') != '' }}
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        VERSION=$(cat .release-version)
+        echo "Publishing version $VERSION to PyPI"
+
+        # Build the package
+        uv build
+
+        # Verify the build
+        ls -la dist/
+
+        # Upload to PyPI
+        uv run twine upload dist/*
+
+        echo "Successfully published version $VERSION to PyPI"
