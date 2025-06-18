@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v0.3.0...v0.3.1) (2025-06-18)
+
+
+### Bug Fixes
+
+* **ci:** add missing semantic-release execution step ([4fe1276](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/4fe1276b80565bc8672ac5ffc6d84c4606177207))
+* **ci:** use correct environment variable name for PyPI token ([7a83704](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/7a83704ecbd2ede23955d0e469b2f29cf566a56e))
+* **profiler:** improve docstring clarity in DataFrameProfiler class ([0d14f01](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/0d14f017b254e464b4cbb0d09b19a2c7697ba6c9))
+
 # [0.3.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v0.2.1...v0.3.0) (2025-06-18)
 
 
