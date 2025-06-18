@@ -109,27 +109,30 @@ The library is structured as follows:
 
 ### Usage Patterns
 ```python
-# Basic usage with auto-sampling
+# Basic usage with auto-sampling (default)
 profiler = DataFrameProfiler(spark_df)
 profile = profiler.profile()
 
-# Custom sampling configuration
+# Disable sampling
 from pyspark_analyzer import SamplingConfig
-config = SamplingConfig(target_size=100_000, seed=42)
+config = SamplingConfig(enabled=False)
 profiler = DataFrameProfiler(spark_df, sampling_config=config)
-profile = profiler.profile()
 
-# Optimized for large datasets with sampling
-profiler = DataFrameProfiler(spark_df, optimize_for_large_datasets=True)
-profile = profiler.profile()
+# Sample to specific number of rows
+config = SamplingConfig(target_rows=100_000, seed=42)
+profiler = DataFrameProfiler(spark_df, sampling_config=config)
 
-# Legacy sample_fraction (still supported)
-profiler = DataFrameProfiler(spark_df, sample_fraction=0.1)
-profile = profiler.profile()
+# Sample by fraction
+config = SamplingConfig(fraction=0.1, seed=42)  # 10% sample
+profiler = DataFrameProfiler(spark_df, sampling_config=config)
+
+# Custom auto-sampling threshold
+config = SamplingConfig(auto_threshold=5_000_000)  # Auto-sample if >5M rows
+profiler = DataFrameProfiler(spark_df, sampling_config=config)
 
 # Check sampling information
 sampling_info = profile['sampling']
-print(f"Sample quality: {sampling_info['quality_score']:.3f}")
+print(f"Sampled: {sampling_info['is_sampled']}")
 print(f"Speedup: {sampling_info['estimated_speedup']:.1f}x")
 ```
 
@@ -140,21 +143,19 @@ print(f"Speedup: {sampling_info['estimated_speedup']:.1f}x")
 - **Temporal**: date ranges, min/max dates
 
 ### Performance Optimizations
-- **Intelligent Sampling**: Automatic sampling for datasets >10M rows with quality estimation
-- **Configurable Sampling**: Custom target sizes, fractions, and quality thresholds
-- **Quality Monitoring**: Statistical quality scores and confidence reporting
+- **Intelligent Sampling**: Automatic sampling for datasets >10M rows
+- **Configurable Sampling**: Simple target rows or fraction configuration
 - **Approximate Functions**: Fast distinct counts and percentile computations
 - **Batch Aggregations**: Minimize data scans with combined operations
 - **DataFrame Caching**: Smart caching for multiple operations
 - **Adaptive Partitioning**: Intelligent partitioning for different dataset sizes
 
 ### Sampling Features
-- **Auto-Sampling**: Automatically applies sampling for large datasets (>10M rows)
-- **Random Sampling**: Reproducible random sampling with seed control
-- **Quality Estimation**: Statistical quality scores for sampling accuracy
+- **Auto-Sampling**: Automatically applies sampling for large datasets (>10M rows by default)
+- **Simple Configuration**: Clear options - enabled/disabled, target rows, or fraction
+- **Reproducible**: Random sampling with seed control
 - **Performance Monitoring**: Track sampling time and estimated speedup
-- **Flexible Configuration**: Target size, fraction, or auto-determination
-- **Legacy Support**: Backward compatibility with sample_fraction parameter
+- **Flexible Thresholds**: Customize when auto-sampling kicks in
 
 ## Release Process
 

@@ -10,7 +10,7 @@ from pyspark.sql.types import NumericType, StringType, TimestampType, DateType
 from .statistics import StatisticsComputer
 from .utils import get_column_data_types, format_profile_output
 from .performance import optimize_dataframe_for_profiling
-from .sampling import SamplingConfig, SamplingDecisionEngine, SamplingMetadata
+from .sampling import SamplingConfig, SamplingMetadata, apply_sampling
 
 
 class DataFrameProfiler:
@@ -25,7 +25,6 @@ class DataFrameProfiler:
         self,
         dataframe: DataFrame,
         optimize_for_large_datasets: bool = False,
-        sample_fraction: Optional[float] = None,
         sampling_config: Optional[SamplingConfig] = None,
     ):
         """
@@ -34,32 +33,20 @@ class DataFrameProfiler:
         Args:
             dataframe: PySpark DataFrame to profile
             optimize_for_large_datasets: If True, use optimized batch processing for better performance
-            sample_fraction: If provided, sample the DataFrame to this fraction for faster profiling (legacy)
-            sampling_config: Advanced sampling configuration (recommended over sample_fraction)
+            sampling_config: Sampling configuration. If None, auto-sampling is enabled for large datasets.
         """
         if not isinstance(dataframe, DataFrame):
             raise TypeError("Input must be a PySpark DataFrame")
 
-        # Handle legacy sample_fraction parameter
-        if sample_fraction and sampling_config:
-            raise ValueError("Cannot specify both sample_fraction and sampling_config")
-
-        if sample_fraction:
-            sampling_config = SamplingConfig(target_fraction=sample_fraction)
-
-        # Set up sampling
+        # Set up sampling with default config if not provided
         if sampling_config is None:
             sampling_config = SamplingConfig()
 
         self.sampling_config = sampling_config
-        self.sampling_engine = SamplingDecisionEngine(sampling_config)
         self.sampling_metadata: Optional[SamplingMetadata] = None
 
-        # Use lazy evaluation for row counting to improve initialization performance
-        self._lazy_original_size: Optional[int] = None
+        # Store original DataFrame
         self._original_dataframe = dataframe
-
-        # Defer sampling decision until actually needed
         self.df = dataframe
         self._sampling_applied = False
         self.optimize_for_large_datasets = optimize_for_large_datasets
@@ -68,47 +55,15 @@ class DataFrameProfiler:
         self.column_types = get_column_data_types(self.df)
         self.stats_computer: Optional[StatisticsComputer] = None
 
-    def _ensure_sampling_applied(self) -> None:
-        """Apply sampling if needed, using lazy evaluation."""
+    def _apply_sampling(self) -> None:
+        """Apply sampling if not already applied."""
         if self._sampling_applied:
             return
 
-        # Get original size only when needed
-        if self._lazy_original_size is None:
-            self._lazy_original_size = self._original_dataframe.count()
-
-        # Apply sampling if needed
-        if self.sampling_engine.should_sample(
-            self._original_dataframe, row_count=self._lazy_original_size
-        ):
-            self.df, self.sampling_metadata = self.sampling_engine.create_sample(
-                self._original_dataframe, original_size=self._lazy_original_size
-            )
-        else:
-            self.df = self._original_dataframe
-            # Create metadata for non-sampled case
-
-            # Handle empty DataFrame case
-            if self._lazy_original_size == 0:
-                self.sampling_metadata = SamplingMetadata(
-                    original_size=0,
-                    sample_size=0,
-                    sampling_fraction=1.0,
-                    strategy_used="none",
-                    sampling_time=0.0,
-                    quality_score=1.0,
-                    is_sampled=False,
-                )
-            else:
-                self.sampling_metadata = SamplingMetadata(
-                    original_size=self._lazy_original_size,
-                    sample_size=self._lazy_original_size,
-                    sampling_fraction=1.0,
-                    strategy_used="none",
-                    sampling_time=0.0,
-                    quality_score=1.0,
-                    is_sampled=False,
-                )
+        # Apply sampling
+        self.df, self.sampling_metadata = apply_sampling(
+            self._original_dataframe, self.sampling_config
+        )
 
         # Optimize DataFrame if requested (after sampling)
         if self.optimize_for_large_datasets:
@@ -123,8 +78,8 @@ class DataFrameProfiler:
     def _ensure_stats_computer(self) -> StatisticsComputer:
         """Initialize stats computer with lazy evaluation."""
         if self.stats_computer is None:
-            self._ensure_sampling_applied()
-            # Ensure sampling_metadata is available after _ensure_sampling_applied
+            self._apply_sampling()
+            # Ensure sampling_metadata is available after _apply_sampling
             assert self.sampling_metadata is not None
             # Pass the sample size to avoid redundant count operations
             self.stats_computer = StatisticsComputer(
@@ -153,7 +108,7 @@ class DataFrameProfiler:
             Profile results in requested format
         """
         # Ensure sampling is applied before profiling
-        self._ensure_sampling_applied()
+        self._apply_sampling()
 
         if columns is None:
             columns = self.df.columns
@@ -191,8 +146,8 @@ class DataFrameProfiler:
     def _get_overview(self) -> Dict[str, Any]:
         """Get overview statistics for the entire DataFrame."""
         # Ensure sampling is applied to get accurate metadata
-        self._ensure_sampling_applied()
-        # Ensure sampling_metadata is available after _ensure_sampling_applied
+        self._apply_sampling()
+        # Ensure sampling_metadata is available after _apply_sampling
         assert self.sampling_metadata is not None
 
         # Use cached row count from sampling metadata
@@ -225,9 +180,9 @@ class DataFrameProfiler:
             Dictionary containing column statistics
         """
         # Ensure sampling and stats computer are ready
-        self._ensure_sampling_applied()
+        self._apply_sampling()
         stats_computer = self._ensure_stats_computer()
-        # Ensure sampling_metadata is available after _ensure_sampling_applied
+        # Ensure sampling_metadata is available after _apply_sampling
         assert self.sampling_metadata is not None
 
         column_type = self.column_types[column_name]
@@ -295,7 +250,7 @@ class DataFrameProfiler:
     def _get_sampling_info(self) -> Dict[str, Any]:
         """Get sampling information for the profile."""
         # Ensure sampling is applied to get accurate metadata
-        self._ensure_sampling_applied()
+        self._apply_sampling()
 
         if not self.sampling_metadata:
             return {"is_sampled": False}
@@ -305,10 +260,7 @@ class DataFrameProfiler:
             "original_size": self.sampling_metadata.original_size,
             "sample_size": self.sampling_metadata.sample_size,
             "sampling_fraction": self.sampling_metadata.sampling_fraction,
-            "strategy_used": self.sampling_metadata.strategy_used,
             "sampling_time": self.sampling_metadata.sampling_time,
-            "quality_score": self.sampling_metadata.quality_score,
-            "reduction_ratio": self.sampling_metadata.reduction_ratio,
             "estimated_speedup": self.sampling_metadata.speedup_estimate,
         }
 
