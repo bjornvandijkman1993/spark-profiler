@@ -37,6 +37,12 @@ jobs:
         npm install -g @semantic-release/exec@6
         npm install -g semantic-release-pypi@3
 
+    - name: Setup Python and uv
+      uses: ./.github/actions/setup-python-uv
+      with:
+        python-version: "3.11"
+        install-extras: all-extras
+
     - name: Semantic Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
