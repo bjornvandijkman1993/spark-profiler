@@ -14,7 +14,7 @@ from pyspark.sql.types import (
 )
 import numpy as np
 
-from pyspark_analyzer import DataFrameProfiler
+from pyspark_analyzer.profiler import DataFrameProfiler
 from pyspark_analyzer.statistics import StatisticsComputer
 
 
@@ -289,7 +289,11 @@ class TestProfilerIntegration:
         df = spark_session.createDataFrame(data, ["id", "text", "value"])
 
         profiler = DataFrameProfiler(df)
-        profile = profiler.quick_profile()
+        profile = profiler.profile(
+            output_format="dict",
+            include_advanced=False,
+            include_quality=False,
+        )
 
         # Should have basic stats but not advanced ones
         value_stats = profile["columns"]["value"]
@@ -310,7 +314,26 @@ class TestProfilerIntegration:
         df = spark_session.createDataFrame(data, ["id", "text", "value"])
 
         profiler = DataFrameProfiler(df)
-        quality_df = profiler.quality_report()
+        profile = profiler.profile(
+            output_format="dict",
+            include_advanced=False,
+            include_quality=True,
+        )
+
+        # Extract quality metrics into a summary (replicate quality_report functionality)
+        import pandas as pd
+
+        quality_data = []
+        for col_name, col_stats in profile["columns"].items():
+            if "quality" in col_stats:
+                quality_info = {
+                    "column": col_name,
+                    "data_type": col_stats["data_type"],
+                    **col_stats["quality"],
+                }
+                quality_data.append(quality_info)
+
+        quality_df = pd.DataFrame(quality_data)
 
         # Should return a pandas DataFrame
         assert hasattr(quality_df, "columns")

@@ -16,8 +16,7 @@ from pyspark.sql.types import (
 from datetime import date, timedelta
 import random
 import numpy as np
-
-from pyspark_analyzer import DataFrameProfiler
+from pyspark_analyzer import analyze
 
 
 def create_sample_data(spark):
@@ -114,16 +113,19 @@ def main():
     print(f"\nDataset shape: {df.count()} rows, {len(df.columns)} columns")
     print(f"Columns: {', '.join(df.columns)}")
 
-    # Initialize profiler
-    profiler = DataFrameProfiler(df)
+    # Note: The analyze() function will be used for all profiling operations
 
     # 1. Full profile with all advanced statistics
     print("\n" + "=" * 60)
     print("1. FULL PROFILE WITH ADVANCED STATISTICS")
     print("=" * 60)
 
-    full_profile = profiler.profile(
-        output_format="dict", include_advanced=True, include_quality=True
+    full_profile = analyze(
+        df,
+        output_format="dict",
+        include_advanced=True,
+        include_quality=True,
+        sampling=False,
     )
 
     # Show advanced numeric statistics for price column
@@ -178,7 +180,29 @@ def main():
     print("2. DATA QUALITY REPORT")
     print("=" * 60)
 
-    quality_df = profiler.quality_report()
+    # Get quality report by running analyze with quality metrics
+    quality_profile = analyze(
+        df,
+        output_format="dict",
+        include_advanced=False,
+        include_quality=True,
+        sampling=False,
+    )
+
+    # Extract quality metrics into a DataFrame
+    import pandas as pd
+
+    quality_data = []
+    for col_name, col_stats in quality_profile["columns"].items():
+        if "quality" in col_stats:
+            quality_info = {
+                "column": col_name,
+                "data_type": col_stats["data_type"],
+                **col_stats["quality"],
+            }
+            quality_data.append(quality_info)
+
+    quality_df = pd.DataFrame(quality_data)
     print("\nQuality Scores by Column:")
     print(quality_df.to_string(index=False))
 
@@ -190,7 +214,13 @@ def main():
     import time
 
     start_time = time.time()
-    _ = profiler.quick_profile()
+    _ = analyze(
+        df,
+        output_format="dict",
+        include_advanced=False,
+        include_quality=False,
+        sampling=False,
+    )
     quick_time = time.time() - start_time
 
     print(f"\nQuick profile completed in {quick_time:.2f} seconds")
@@ -201,6 +231,13 @@ def main():
     print("4. OUTLIER DETECTION COMPARISON")
     print("=" * 60)
 
+    # For advanced usage, we need to create a profiler instance directly
+    from pyspark_analyzer.profiler import DataFrameProfiler
+    from pyspark_analyzer.sampling import SamplingConfig
+
+    profiler = DataFrameProfiler(df, sampling_config=SamplingConfig(enabled=False))
+    # Force initialization of stats computer
+    profiler._ensure_stats_computer()
     stats_computer = profiler.stats_computer
 
     # IQR method

@@ -14,7 +14,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-from pyspark_analyzer import DataFrameProfiler, SamplingConfig
+from pyspark_analyzer.profiler import DataFrameProfiler, SamplingConfig
 from pyspark_analyzer.utils import format_profile_output
 
 
@@ -152,12 +152,13 @@ class TestPandasOutput:
         assert isinstance(format_profile_output(profile_dict, "summary"), str)
 
     def test_convenience_methods(self, sample_dataframe, tmp_path):
-        """Test to_csv, to_parquet, and format_output methods."""
+        """Test saving profile outputs using pandas methods directly."""
         profiler = DataFrameProfiler(sample_dataframe)
+        profile_df = profiler.profile(output_format="pandas")
 
         # Test to_csv
         csv_path = tmp_path / "profile.csv"
-        profiler.to_csv(str(csv_path), index=False)
+        profile_df.to_csv(str(csv_path), index=False)
         assert csv_path.exists()
 
         # Read back and verify
@@ -168,18 +169,18 @@ class TestPandasOutput:
         # Test to_parquet (skip if pyarrow not installed)
         parquet_path = tmp_path / "profile.parquet"
         try:
-            profiler.to_parquet(str(parquet_path))
+            profile_df.to_parquet(str(parquet_path))
             assert parquet_path.exists()
         except ImportError:
             # Skip parquet test if pyarrow not installed
             pass
 
-        # Test format_output
-        df = profiler.format_output("pandas")
-        assert isinstance(df, pd.DataFrame)
-
-        dict_output = profiler.format_output("dict")
+        # Test different output formats
+        dict_output = profiler.profile(output_format="dict")
         assert isinstance(dict_output, dict)
+
+        pandas_output = profiler.profile(output_format="pandas")
+        assert isinstance(pandas_output, pd.DataFrame)
 
     def test_column_order(self, sample_dataframe):
         """Test that columns are in the expected order."""

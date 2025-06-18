@@ -21,7 +21,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-from pyspark_analyzer import DataFrameProfiler
+from pyspark_analyzer import analyze
 
 
 def create_sample_data(spark, num_rows=10000):
@@ -83,8 +83,7 @@ def main():
 
     # Example 1: Basic pandas output
     print("\n=== Example 1: Basic Pandas Output ===")
-    profiler = DataFrameProfiler(df)
-    profile_df = profiler.profile()  # Returns pandas DataFrame by default
+    profile_df = analyze(df, sampling=False)  # Returns pandas DataFrame by default
 
     print(f"Profile shape: {profile_df.shape}")
     print("\nFirst few rows:")
@@ -98,11 +97,11 @@ def main():
     print("\n=== Example 2: Saving to Different Formats ===")
 
     # Save to CSV
-    profiler.to_csv("profile_results.csv", index=False)
+    profile_df.to_csv("profile_results.csv", index=False)
     print("✓ Saved to profile_results.csv")
 
     # Save to Parquet (more efficient for larger profiles)
-    profiler.to_parquet("profile_results.parquet")
+    profile_df.to_parquet("profile_results.parquet")
     print("✓ Saved to profile_results.parquet")
 
     # Example 3: Data quality monitoring
@@ -149,8 +148,7 @@ def main():
 
     # Create a filtered dataset (simulate different time period)
     df_filtered = df.filter(df.price > 100)
-    profiler_filtered = DataFrameProfiler(df_filtered)
-    profile_filtered_df = profiler_filtered.profile()
+    profile_filtered_df = analyze(df_filtered, sampling=False)
 
     # Compare the two profiles
     comparison = profile_df.merge(

@@ -16,7 +16,7 @@ from pyspark.sql.types import (
     ArrayType,
 )
 
-from pyspark_analyzer import DataFrameProfiler, SamplingConfig
+from pyspark_analyzer.profiler import DataFrameProfiler, SamplingConfig
 from pyspark_analyzer.performance import optimize_dataframe_for_profiling
 from pyspark_analyzer.utils import format_profile_output
 
@@ -110,7 +110,7 @@ class TestEndToEndProfiling:
         )
 
         # Profile with auto-sampling enabled using custom config
-        from pyspark_analyzer import SamplingConfig
+        from pyspark_analyzer.sampling import SamplingConfig
 
         sampling_config = SamplingConfig(auto_threshold=50000)  # Lower than 100k rows
         profiler = DataFrameProfiler(
