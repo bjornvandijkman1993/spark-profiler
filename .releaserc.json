@@ -16,7 +16,7 @@
       "@semantic-release/exec",
       {
         "verifyReleaseCmd": "echo 'Verifying release ${nextRelease.version}'",
-        "prepareCmd": "sed -i.bak 's/^version = \".*\"/version = \"${nextRelease.version}\"/' pyproject.toml && sed -i.bak 's/__version__ = \".*\"/__version__ = \"${nextRelease.version}\"/' pyspark_analyzer/__init__.py && rm -f pyproject.toml.bak pyspark_analyzer/__init__.py.bak"
+        "prepareCmd": "sed -i.bak 's/^version = \".*\"/version = \"${nextRelease.version}\"/' pyproject.toml && sed -i.bak 's/__version__ = \".*\"/__version__ = \"${nextRelease.version}\"/' pyspark_analyzer/__init__.py && rm -f pyproject.toml.bak pyspark_analyzer/__init__.py.bak && rm -rf dist/ && python -m build"
       }
     ],
     [
