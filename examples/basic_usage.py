@@ -12,7 +12,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 from datetime import datetime
-from pyspark_analyzer import DataFrameProfiler
+from pyspark_analyzer import analyze
 
 
 def create_sample_data():
@@ -58,10 +58,11 @@ def main():
     print("PROFILING ENTIRE DATAFRAME")
     print("=" * 60)
 
-    # Create profiler and generate profile
-    profiler = DataFrameProfiler(df)
-    profile = profiler.profile(
-        output_format="dict"
+    # Generate profile using the analyze function
+    profile = analyze(
+        df,
+        output_format="dict",
+        sampling=False,  # Disable sampling for this small dataset
     )  # Get as dictionary for easier access
 
     # Display overview
@@ -111,7 +112,9 @@ def main():
     print("=" * 60)
 
     # Profile only specific columns
-    numeric_profile = profiler.profile(columns=["age", "salary"], output_format="dict")
+    numeric_profile = analyze(
+        df, columns=["age", "salary"], output_format="dict", sampling=False
+    )
     print("\nNumeric columns only:")
     for col_name, stats in numeric_profile["columns"].items():
         print(

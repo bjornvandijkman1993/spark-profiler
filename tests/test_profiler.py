@@ -4,7 +4,7 @@ Test cases for the DataFrame profiler.
 
 import pytest
 
-from pyspark_analyzer import DataFrameProfiler
+from pyspark_analyzer.profiler import DataFrameProfiler
 from pyspark_analyzer.statistics import StatisticsComputer
 from pyspark_analyzer.utils import get_column_data_types, format_profile_output
 

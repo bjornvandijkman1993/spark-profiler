@@ -17,7 +17,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 from datetime import datetime
-from pyspark_analyzer import DataFrameProfiler
+from pyspark_analyzer import analyze
 
 
 def verify_installation():
@@ -63,9 +63,8 @@ def verify_installation():
 
         # Test basic profiling
         print("\n🔍 Running basic profiling...")
-        profiler = DataFrameProfiler(df)
         # Get profile as dictionary for easier access
-        profile = profiler.profile(output_format="dict")
+        profile = analyze(df, output_format="dict", sampling=False)
 
         # Display results
         overview = profile["overview"]
@@ -75,8 +74,8 @@ def verify_installation():
 
         # Test specific column profiling
         print("\n🎯 Testing specific column profiling...")
-        numeric_profile = profiler.profile(
-            columns=["age", "salary"], output_format="dict"
+        numeric_profile = analyze(
+            df, columns=["age", "salary"], output_format="dict", sampling=False
         )
 
         for col_name, stats in numeric_profile["columns"].items():
@@ -86,8 +85,9 @@ def verify_installation():
 
         # Test performance optimization
         print("\n⚡ Testing performance optimization...")
-        optimized_profiler = DataFrameProfiler(df, optimize_for_large_datasets=True)
-        optimized_profile = optimized_profiler.profile(output_format="dict")
+        optimized_profile = analyze(
+            df, optimize_for_large_datasets=True, output_format="dict", sampling=False
+        )
 
         print(
             f"✅ Optimized profiling completed for {len(optimized_profile['columns'])} columns"
@@ -95,7 +95,7 @@ def verify_installation():
 
         # Test pandas output (new default)
         print("\n🐼 Testing pandas output format...")
-        pandas_profile = profiler.profile()  # Default is pandas
+        pandas_profile = analyze(df, sampling=False)  # Default is pandas
         print(f"✅ Pandas DataFrame shape: {pandas_profile.shape}")
         print(f"✅ Columns in pandas output: {list(pandas_profile.columns)[:5]}...")
 

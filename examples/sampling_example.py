@@ -13,7 +13,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 from datetime import datetime
-from pyspark_analyzer import DataFrameProfiler, SamplingConfig
+from pyspark_analyzer import analyze
 
 
 def create_large_sample_data():
@@ -65,10 +65,9 @@ def main():
     print("1. AUTO-SAMPLING (Default Behavior)")
     print("=" * 70)
 
-    # Default profiler with auto-sampling
+    # Default behavior with auto-sampling
     # For datasets > 10M rows, auto-sampling kicks in automatically
-    profiler = DataFrameProfiler(df)
-    profile = profiler.profile(output_format="dict")
+    profile = analyze(df, output_format="dict")
 
     sampling_info = profile["sampling"]
     print(f"Sampling applied: {sampling_info['is_sampled']}")
@@ -84,9 +83,7 @@ def main():
     print("=" * 70)
 
     # Disable sampling completely
-    no_sampling_config = SamplingConfig(enabled=False)
-    profiler_no_sample = DataFrameProfiler(df, sampling_config=no_sampling_config)
-    profile_no_sample = profiler_no_sample.profile(output_format="dict")
+    profile_no_sample = analyze(df, sampling=False, output_format="dict")
 
     print(f"Sampling applied: {profile_no_sample['sampling']['is_sampled']}")
     print(f"Rows processed: {profile_no_sample['sampling']['sample_size']:,}")
@@ -96,10 +93,9 @@ def main():
     print("=" * 70)
 
     # Sample to exactly 10,000 rows
-    target_config = SamplingConfig(target_rows=10000, seed=42)  # For reproducibility
-
-    profiler_target = DataFrameProfiler(df, sampling_config=target_config)
-    profile_target = profiler_target.profile(output_format="dict")
+    profile_target = analyze(
+        df, target_rows=10000, seed=42, output_format="dict"
+    )  # For reproducibility
 
     sampling_info = profile_target["sampling"]
     print("Target rows: 10,000")
@@ -111,10 +107,7 @@ def main():
     print("=" * 70)
 
     # Sample 2% of the data
-    fraction_config = SamplingConfig(fraction=0.02, seed=123)
-
-    profiler_fraction = DataFrameProfiler(df, sampling_config=fraction_config)
-    profile_fraction = profiler_fraction.profile(output_format="dict")
+    profile_fraction = analyze(df, fraction=0.02, seed=123, output_format="dict")
 
     sampling_info = profile_fraction["sampling"]
     print("Target fraction: 2%")
@@ -126,12 +119,11 @@ def main():
     print("=" * 70)
 
     # Lower the auto-sampling threshold to 25,000 rows
-    custom_threshold_config = SamplingConfig(
-        auto_threshold=25000  # Auto-sample datasets larger than 25k rows
+    profile_custom = analyze(
+        df,
+        auto_threshold=25000,  # Auto-sample datasets larger than 25k rows
+        output_format="dict",
     )
-
-    profiler_custom = DataFrameProfiler(df, sampling_config=custom_threshold_config)
-    profile_custom = profiler_custom.profile(output_format="dict")
 
     sampling_info = profile_custom["sampling"]
     print("Auto-sampling threshold: 25,000 rows")
@@ -148,17 +140,13 @@ def main():
     # Time full profiling
     print("⏱️  Timing full dataset profiling...")
     start_time = time.time()
-    profiler_full = DataFrameProfiler(df, sampling_config=SamplingConfig(enabled=False))
-    profile_full = profiler_full.profile(output_format="dict")
+    profile_full = analyze(df, sampling=False, output_format="dict")
     full_time = time.time() - start_time
 
     # Time sampled profiling
     print("⏱️  Timing sampled profiling (10% sample)...")
     start_time = time.time()
-    profiler_sampled = DataFrameProfiler(
-        df, sampling_config=SamplingConfig(fraction=0.1)
-    )
-    profile_sampled = profiler_sampled.profile(output_format="dict")
+    profile_sampled = analyze(df, fraction=0.1, output_format="dict")
     sampled_time = time.time() - start_time
 
     print("\nPerformance Results:")
@@ -176,6 +164,33 @@ def main():
     print(
         f"  Difference: {abs(full_age_stats['mean'] - sampled_age_stats['mean']):.2f}"
     )
+
+    print("\n" + "=" * 70)
+    print("7. SIMPLIFIED API - Using analyze()")
+    print("=" * 70)
+
+    print("The new simplified API makes sampling even easier:")
+
+    # Example 1: Disable sampling
+    print("\n📌 analyze(df, sampling=False)")
+    profile = analyze(df, sampling=False, output_format="dict")
+    print(f"   Rows processed: {profile['sampling']['sample_size']:,}")
+
+    # Example 2: Sample to specific rows
+    print("\n📌 analyze(df, target_rows=5000)")
+    profile = analyze(df, target_rows=5000, output_format="dict")
+    print(f"   Sample size: {profile['sampling']['sample_size']:,} rows")
+
+    # Example 3: Sample by fraction
+    print("\n📌 analyze(df, fraction=0.05)")
+    profile = analyze(df, fraction=0.05, output_format="dict")
+    print(f"   Sample size: {profile['sampling']['sample_size']:,} rows")
+
+    # Example 4: Custom threshold with seed
+    print("\n📌 analyze(df, auto_threshold=30000, seed=42)")
+    profile = analyze(df, auto_threshold=30000, seed=42, output_format="dict")
+    print(f"   Sampling applied: {profile['sampling']['is_sampled']}")
+    print(f"   Sample size: {profile['sampling']['sample_size']:,} rows")
 
     print("\n✅ Sampling demonstration completed!")
 

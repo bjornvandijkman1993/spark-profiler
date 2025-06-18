@@ -11,7 +11,8 @@ from pyspark.sql.types import (
     DoubleType,
 )
 
-from pyspark_analyzer import DataFrameProfiler, SamplingConfig
+from pyspark_analyzer.profiler import DataFrameProfiler
+from pyspark_analyzer.sampling import SamplingConfig
 from pyspark_analyzer.sampling import SamplingMetadata, apply_sampling
 
 

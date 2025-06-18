@@ -1,5 +1,7 @@
 """
-Main DataFrame profiler class for PySpark DataFrames.
+Internal DataFrame profiler implementation for PySpark DataFrames.
+
+This module is for internal use only. Use the `analyze()` function from the main package instead.
 """
 
 import pandas as pd
@@ -263,109 +265,3 @@ class DataFrameProfiler:
             "sampling_time": self.sampling_metadata.sampling_time,
             "estimated_speedup": self.sampling_metadata.speedup_estimate,
         }
-
-    def to_csv(self, path: str, **kwargs: Any) -> None:
-        """
-        Save profile results to CSV file.
-
-        Args:
-            path: Path to save the CSV file
-            **kwargs: Additional arguments passed to pandas.DataFrame.to_csv()
-        """
-        df = self.profile(output_format="pandas")
-        if hasattr(df, "to_csv"):
-            df.to_csv(path, **kwargs)
-
-    def to_parquet(self, path: str, **kwargs: Any) -> None:
-        """
-        Save profile results to Parquet file.
-
-        Args:
-            path: Path to save the Parquet file
-            **kwargs: Additional arguments passed to pandas.DataFrame.to_parquet()
-        """
-        df = self.profile(output_format="pandas")
-        if hasattr(df, "to_parquet"):
-            df.to_parquet(path, **kwargs)
-
-    def to_sql(self, name: str, con: Any, **kwargs: Any) -> None:
-        """
-        Save profile results to SQL database table.
-
-        Args:
-            name: Name of the SQL table
-            con: SQLAlchemy engine or DBAPI2 connection
-            **kwargs: Additional arguments passed to pandas.DataFrame.to_sql()
-        """
-        df = self.profile(output_format="pandas")
-        if hasattr(df, "to_sql"):
-            df.to_sql(name, con, **kwargs)
-
-    def format_output(
-        self, format_type: str = "pandas"
-    ) -> Union[pd.DataFrame, Dict[str, Any], str]:
-        """
-        Get profile output in specified format.
-
-        This is a convenience method that calls profile() with the specified format.
-
-        Args:
-            format_type: Output format ("pandas", "dict", "json", "summary")
-
-        Returns:
-            Profile results in requested format
-        """
-        return self.profile(output_format=format_type)
-
-    def quick_profile(self, columns: Optional[List[str]] = None) -> Dict[str, Any]:
-        """
-        Generate a quick profile without advanced statistics for performance.
-
-        Args:
-            columns: List of specific columns to profile. If None, profiles all columns.
-
-        Returns:
-            Basic profile results as dictionary
-        """
-        result = self.profile(
-            columns=columns,
-            output_format="dict",
-            include_advanced=False,
-            include_quality=False,
-        )
-        # Type assertion for mypy
-        assert isinstance(result, dict)
-        return result
-
-    def quality_report(self, columns: Optional[List[str]] = None) -> pd.DataFrame:
-        """
-        Generate a data quality report for specified columns.
-
-        Args:
-            columns: List of specific columns to analyze. If None, analyzes all columns.
-
-        Returns:
-            DataFrame with quality metrics for each column
-        """
-        profile = self.profile(
-            columns=columns,
-            output_format="dict",
-            include_advanced=False,
-            include_quality=True,
-        )
-
-        # Type assertion for mypy
-        assert isinstance(profile, dict)
-
-        # Extract quality metrics into a summary
-        quality_data = []
-        for col_name, col_stats in profile["columns"].items():
-            if "quality" in col_stats:
-                quality_info = {
-                    "column": col_name,
-                    "data_type": col_stats["data_type"],
-                    **col_stats["quality"],
-                }
-                quality_data.append(quality_info)
-
-        return pd.DataFrame(quality_data)
