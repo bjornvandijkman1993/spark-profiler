@@ -14,7 +14,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-from pyspark_analyzer import DataFrameProfiler
+from pyspark_analyzer import DataFrameProfiler, SamplingConfig
 from pyspark_analyzer.utils import format_profile_output
 
 
@@ -212,13 +212,14 @@ class TestPandasOutput:
 
     def test_with_sampling(self, sample_dataframe):
         """Test pandas output with sampling enabled."""
-        profiler = DataFrameProfiler(sample_dataframe, sample_fraction=0.5)
+        sampling_config = SamplingConfig(fraction=0.5)
+        profiler = DataFrameProfiler(sample_dataframe, sampling_config=sampling_config)
         df = profiler.profile(output_format="pandas")
 
         # Check that sampling info is in metadata
         assert df.attrs["sampling"]["is_sampled"] is True
         assert df.attrs["sampling"]["sampling_fraction"] == 0.5
-        assert "quality_score" in df.attrs["sampling"]
+        # quality_score is no longer part of the simplified API
 
     def test_null_handling(self, sample_dataframe):
         """Test that null values are handled correctly."""

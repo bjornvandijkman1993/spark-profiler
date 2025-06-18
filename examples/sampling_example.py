@@ -13,7 +13,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 from datetime import datetime
-from pyspark_analyzer import DataFrameProfiler, SamplingConfig, create_sampling_config
+from pyspark_analyzer import DataFrameProfiler, SamplingConfig
 
 
 def create_large_sample_data():
@@ -66,8 +66,9 @@ def main():
     print("=" * 70)
 
     # Default profiler with auto-sampling
+    # For datasets > 10M rows, auto-sampling kicks in automatically
     profiler = DataFrameProfiler(df)
-    profile = profiler.profile(output_format="dict")  # Get as dictionary
+    profile = profiler.profile(output_format="dict")
 
     sampling_info = profile["sampling"]
     print(f"Sampling applied: {sampling_info['is_sampled']}")
@@ -75,51 +76,71 @@ def main():
         print(f"Original size: {sampling_info['original_size']:,} rows")
         print(f"Sample size: {sampling_info['sample_size']:,} rows")
         print(f"Sampling fraction: {sampling_info['sampling_fraction']:.4f}")
-        print(f"Quality score: {sampling_info['quality_score']:.3f}")
         print(f"Estimated speedup: {sampling_info['estimated_speedup']:.1f}x")
         print(f"Sampling time: {sampling_info['sampling_time']:.2f} seconds")
 
     print("\n" + "=" * 70)
-    print("2. CUSTOM SAMPLING CONFIGURATION")
+    print("2. DISABLE SAMPLING")
     print("=" * 70)
 
-    # Custom sampling with specific target size
-    custom_config = SamplingConfig(
-        target_size=10000,
-        seed=42,
-        auto_sample=False,  # Force sampling even for smaller datasets
-    )
+    # Disable sampling completely
+    no_sampling_config = SamplingConfig(enabled=False)
+    profiler_no_sample = DataFrameProfiler(df, sampling_config=no_sampling_config)
+    profile_no_sample = profiler_no_sample.profile(output_format="dict")
 
-    profiler_custom = DataFrameProfiler(df, sampling_config=custom_config)
-    profile_custom = profiler_custom.profile(output_format="dict")
-
-    sampling_info = profile_custom["sampling"]
-    print("Custom sampling results:")
-    print(f"  Sample size: {sampling_info['sample_size']:,} rows")
-    print(f"  Quality score: {sampling_info['quality_score']:.3f}")
-    print(f"  Reduction ratio: {sampling_info['reduction_ratio']:.4f}")
+    print(f"Sampling applied: {profile_no_sample['sampling']['is_sampled']}")
+    print(f"Rows processed: {profile_no_sample['sampling']['sample_size']:,}")
 
     print("\n" + "=" * 70)
-    print("3. FRACTION-BASED SAMPLING")
+    print("3. SAMPLE TO SPECIFIC NUMBER OF ROWS")
     print("=" * 70)
 
-    # Fraction-based sampling
-    fraction_config = create_sampling_config(
-        target_fraction=0.02, seed=123
-    )  # 2% sample
+    # Sample to exactly 10,000 rows
+    target_config = SamplingConfig(target_rows=10000, seed=42)  # For reproducibility
+
+    profiler_target = DataFrameProfiler(df, sampling_config=target_config)
+    profile_target = profiler_target.profile(output_format="dict")
+
+    sampling_info = profile_target["sampling"]
+    print("Target rows: 10,000")
+    print(f"Actual sample size: {sampling_info['sample_size']:,} rows")
+    print(f"Sampling fraction: {sampling_info['sampling_fraction']:.4f}")
+
+    print("\n" + "=" * 70)
+    print("4. FRACTION-BASED SAMPLING")
+    print("=" * 70)
+
+    # Sample 2% of the data
+    fraction_config = SamplingConfig(fraction=0.02, seed=123)
 
     profiler_fraction = DataFrameProfiler(df, sampling_config=fraction_config)
     profile_fraction = profiler_fraction.profile(output_format="dict")
 
     sampling_info = profile_fraction["sampling"]
-    print("Fraction-based sampling results:")
-    print("  Target fraction: 2%")
-    print(f"  Actual sample size: {sampling_info['sample_size']:,} rows")
-    print(f"  Actual fraction: {sampling_info['sampling_fraction']:.4f}")
-    print(f"  Quality score: {sampling_info['quality_score']:.3f}")
+    print("Target fraction: 2%")
+    print(f"Actual sample size: {sampling_info['sample_size']:,} rows")
+    print(f"Actual fraction: {sampling_info['sampling_fraction']:.4f}")
 
     print("\n" + "=" * 70)
-    print("4. PERFORMANCE COMPARISON")
+    print("5. CUSTOM AUTO-SAMPLING THRESHOLD")
+    print("=" * 70)
+
+    # Lower the auto-sampling threshold to 25,000 rows
+    custom_threshold_config = SamplingConfig(
+        auto_threshold=25000  # Auto-sample datasets larger than 25k rows
+    )
+
+    profiler_custom = DataFrameProfiler(df, sampling_config=custom_threshold_config)
+    profile_custom = profiler_custom.profile(output_format="dict")
+
+    sampling_info = profile_custom["sampling"]
+    print("Auto-sampling threshold: 25,000 rows")
+    print("Dataset size: 50,000 rows")
+    print(f"Sampling applied: {sampling_info['is_sampled']}")
+    print(f"Sample size: {sampling_info['sample_size']:,} rows")
+
+    print("\n" + "=" * 70)
+    print("6. PERFORMANCE COMPARISON")
     print("=" * 70)
 
     import time
@@ -127,16 +148,16 @@ def main():
     # Time full profiling
     print("⏱️  Timing full dataset profiling...")
     start_time = time.time()
-    profiler_full = DataFrameProfiler(
-        df, sampling_config=SamplingConfig(auto_sample=False)
-    )
+    profiler_full = DataFrameProfiler(df, sampling_config=SamplingConfig(enabled=False))
     profile_full = profiler_full.profile(output_format="dict")
     full_time = time.time() - start_time
 
     # Time sampled profiling
-    print("⏱️  Timing sampled profiling...")
+    print("⏱️  Timing sampled profiling (10% sample)...")
     start_time = time.time()
-    profiler_sampled = DataFrameProfiler(df)  # Auto-sampling enabled
+    profiler_sampled = DataFrameProfiler(
+        df, sampling_config=SamplingConfig(fraction=0.1)
+    )
     profile_sampled = profiler_sampled.profile(output_format="dict")
     sampled_time = time.time() - start_time
 
@@ -155,19 +176,6 @@ def main():
     print(
         f"  Difference: {abs(full_age_stats['mean'] - sampled_age_stats['mean']):.2f}"
     )
-
-    print("\n" + "=" * 70)
-    print("5. LEGACY COMPATIBILITY")
-    print("=" * 70)
-
-    # Show legacy sample_fraction parameter still works
-    profiler_legacy = DataFrameProfiler(df, sample_fraction=0.01)
-    profile_legacy = profiler_legacy.profile(output_format="dict")
-
-    sampling_info = profile_legacy["sampling"]
-    print("Legacy sample_fraction=0.01 results:")
-    print(f"  Sample size: {sampling_info['sample_size']:,} rows")
-    print(f"  Quality score: {sampling_info['quality_score']:.3f}")
 
     print("\n✅ Sampling demonstration completed!")
 

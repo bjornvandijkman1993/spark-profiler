@@ -84,19 +84,27 @@ if sampling_info['is_sampled']:
     print(f"Speedup: {sampling_info['estimated_speedup']:.1f}x")
 ```
 
-### Advanced Sampling
+### Sampling Options
 
 ```python
 from pyspark_analyzer import DataFrameProfiler, SamplingConfig
 
-# Custom sampling configuration
-config = SamplingConfig(
-    target_size=100_000,  # Sample to 100k rows
-    seed=42,              # Reproducible sampling
-    auto_sample=True      # Enable intelligent sampling
-)
-
+# Option 1: Disable sampling completely
+config = SamplingConfig(enabled=False)
 profiler = DataFrameProfiler(df, sampling_config=config)
+
+# Option 2: Sample to specific number of rows
+config = SamplingConfig(target_rows=100_000, seed=42)
+profiler = DataFrameProfiler(df, sampling_config=config)
+
+# Option 3: Sample by fraction
+config = SamplingConfig(fraction=0.1, seed=42)  # 10% sample
+profiler = DataFrameProfiler(df, sampling_config=config)
+
+# Option 4: Auto-sampling (default behavior)
+# Automatically samples large datasets (>10M rows by default)
+profiler = DataFrameProfiler(df)  # Uses default SamplingConfig
+
 profile = profiler.profile()
 ```
 
@@ -136,8 +144,7 @@ profile = profiler.profile()
 
 - **`DataFrameProfiler`**: Main interface for profiling operations
 - **`StatisticsComputer`**: Handles individual column statistics computation
-- **`SamplingConfig`**: Flexible configuration with validation
-- **`RandomSamplingStrategy`**: Reproducible random sampling with quality estimation
+- **`SamplingConfig`**: Simple, clear configuration for sampling behavior
 - **`BatchStatisticsComputer`**: Optimized batch processing for large datasets
 
 ### Performance Optimizations
