@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [2.0.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v1.0.0...v2.0.0) (2025-06-18)
+
+
+### Features
+
+* **api:** simplify library with single analyze() function ([ed1a8dc](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/ed1a8dc51c543f2a72dfdecc04826ce6bf6dd98a))
+
+
+### BREAKING CHANGES
+
+* **api:** Remove DataFrameProfiler from public API. Users should now use the simple analyze() function instead.
+
+- Add new analyze() function as the sole public API
+- Remove DataFrameProfiler, SamplingConfig from public exports
+- Remove convenience methods (to_csv, to_parquet, etc) from DataFrameProfiler
+- Update all examples to use the new simplified API
+- Update tests to use internal imports
+
+The new API is much simpler:
+```python
+from pyspark_analyzer import analyze
+
+# Basic usage
+profile = analyze(df)
+
+# Control sampling
+profile = analyze(df, sampling=False)
+profile = analyze(df, target_rows=100_000)
+profile = analyze(df, fraction=0.1)
+```
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+
 # [1.0.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v0.3.3...v1.0.0) (2025-06-18)
 
 
