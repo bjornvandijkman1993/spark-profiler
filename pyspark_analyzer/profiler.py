@@ -5,7 +5,6 @@ This module is for internal use only. Use the `analyze()` function from the main
 """
 
 import warnings
-import logging
 
 import pandas as pd
 from typing import Dict, Any, List, Optional, Union
@@ -24,8 +23,9 @@ from .exceptions import (
     SparkOperationError,
     StatisticsError,
 )
+from .logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def profile_dataframe(
@@ -34,7 +34,6 @@ def profile_dataframe(
     output_format: str = "pandas",
     include_advanced: bool = True,
     include_quality: bool = True,
-    optimize_for_large_datasets: bool = False,
     sampling_config: Optional[SamplingConfig] = None,
 ) -> Union[pd.DataFrame, Dict[str, Any], str]:
     """
@@ -47,27 +46,40 @@ def profile_dataframe(
                       Defaults to "pandas" for easy analysis.
         include_advanced: Include advanced statistics (skewness, kurtosis, outliers, etc.)
         include_quality: Include data quality metrics
-        optimize_for_large_datasets: If True, use optimized batch processing for better performance
         sampling_config: Sampling configuration. If None, auto-sampling is enabled for large datasets.
 
     Returns:
         Profile results in requested format
     """
     if not isinstance(dataframe, DataFrame):
+        logger.error("Input must be a PySpark DataFrame")
         raise DataTypeError("Input must be a PySpark DataFrame")
+
+    logger.info(f"Starting profile_dataframe with {len(dataframe.columns)} columns")
 
     # Set up sampling with default config if not provided
     if sampling_config is None:
         sampling_config = SamplingConfig()
 
     # Apply sampling
+    logger.debug("Applying sampling configuration")
     sampled_df, sampling_metadata = apply_sampling(dataframe, sampling_config)
 
-    # Optimize DataFrame if requested (after sampling)
-    if optimize_for_large_datasets:
-        sampled_df = optimize_dataframe_for_profiling(
-            sampled_df, row_count=sampling_metadata.sample_size
+    if sampling_metadata.is_sampled:
+        logger.info(
+            f"Sampling applied: {sampling_metadata.original_size} rows -> "
+            f"{sampling_metadata.sample_size} rows (fraction: {sampling_metadata.sampling_fraction:.4f})"
         )
+    else:
+        logger.debug(
+            f"No sampling applied, using full dataset with {sampling_metadata.sample_size} rows"
+        )
+
+    # Always optimize DataFrame for better performance
+    logger.debug("Optimizing DataFrame for profiling")
+    sampled_df = optimize_dataframe_for_profiling(
+        sampled_df, row_count=sampling_metadata.sample_size
+    )
 
     # Get column types
     column_types = get_column_data_types(sampled_df)
@@ -79,7 +91,12 @@ def profile_dataframe(
     # Validate columns exist
     invalid_columns = set(columns) - set(sampled_df.columns)
     if invalid_columns:
+        logger.error(f"Columns not found in DataFrame: {invalid_columns}")
         raise ColumnNotFoundError(list(invalid_columns), sampled_df.columns)
+
+    logger.info(
+        f"Profiling {len(columns)} columns: {columns[:5]}{'...' if len(columns) > 5 else ''}"
+    )
 
     # Create profile result
     profile_result: Dict[str, Any] = {
@@ -93,44 +110,25 @@ def profile_dataframe(
         sampled_df, total_rows=sampling_metadata.sample_size
     )
 
-    # Use batch processing for large datasets if enabled
+    # Always use batch processing for optimal performance
+    logger.debug("Starting batch column profiling")
     try:
-        if optimize_for_large_datasets:
-            profile_result["columns"] = stats_computer.compute_all_columns_batch(
-                columns
-            )
-        else:
-            # Standard column-by-column processing
-            for column in columns:
-                try:
-                    profile_result["columns"][column] = _profile_column(
-                        sampled_df,
-                        column,
-                        column_types,
-                        stats_computer,
-                        sampling_metadata,
-                        include_advanced=include_advanced,
-                        include_quality=include_quality,
-                    )
-                except (AnalysisException, Py4JError, Py4JJavaError) as e:
-                    logger.error(f"Failed to profile column '{column}': {str(e)}")
-                    raise SparkOperationError(
-                        f"Failed to profile column '{column}' due to Spark error: {str(e)}",
-                        e,
-                    )
-                except Exception as e:
-                    logger.error(
-                        f"Unexpected error profiling column '{column}': {str(e)}"
-                    )
-                    raise StatisticsError(
-                        f"Failed to compute statistics for column '{column}': {str(e)}"
-                    )
+        profile_result["columns"] = stats_computer.compute_all_columns_batch(
+            columns, include_advanced=include_advanced, include_quality=include_quality
+        )
+        logger.info("Column profiling completed")
     except (AnalysisException, Py4JError, Py4JJavaError) as e:
         logger.error(f"Spark error during batch profiling: {str(e)}")
         raise SparkOperationError(
             f"Failed to profile DataFrame due to Spark error: {str(e)}", e
         )
+    except Exception as e:
+        logger.error(f"Unexpected error during batch profiling: {str(e)}")
+        raise StatisticsError(
+            f"Failed to compute statistics during batch profiling: {str(e)}"
+        )
 
+    logger.debug(f"Formatting output as {output_format}")
     return format_profile_output(profile_result, output_format)
 
 
@@ -267,7 +265,6 @@ class DataFrameProfiler:
     def __init__(
         self,
         dataframe: DataFrame,
-        optimize_for_large_datasets: bool = False,
         sampling_config: Optional[SamplingConfig] = None,
     ):
         """
@@ -275,7 +272,6 @@ class DataFrameProfiler:
 
         Args:
             dataframe: PySpark DataFrame to profile
-            optimize_for_large_datasets: If True, use optimized batch processing for better performance
             sampling_config: Sampling configuration. If None, auto-sampling is enabled for large datasets.
         """
         warnings.warn(
@@ -286,6 +282,7 @@ class DataFrameProfiler:
         )
 
         if not isinstance(dataframe, DataFrame):
+            logger.error("Input must be a PySpark DataFrame")
             raise DataTypeError("Input must be a PySpark DataFrame")
 
         # Set up sampling with default config if not provided
@@ -299,7 +296,6 @@ class DataFrameProfiler:
         self._original_dataframe = dataframe
         self.df = dataframe
         self._sampling_applied = False
-        self.optimize_for_large_datasets = optimize_for_large_datasets
 
         # Initialize with lazy evaluation - defer heavy operations
         self.column_types = get_column_data_types(self.df)
@@ -315,11 +311,10 @@ class DataFrameProfiler:
             self._original_dataframe, self.sampling_config
         )
 
-        # Optimize DataFrame if requested (after sampling)
-        if self.optimize_for_large_datasets:
-            self.df = optimize_dataframe_for_profiling(
-                self.df, row_count=self.sampling_metadata.sample_size
-            )
+        # Always optimize DataFrame for better performance
+        self.df = optimize_dataframe_for_profiling(
+            self.df, row_count=self.sampling_metadata.sample_size
+        )
 
         # Update column types if DataFrame changed
         self.column_types = get_column_data_types(self.df)
@@ -364,127 +359,5 @@ class DataFrameProfiler:
             output_format=output_format,
             include_advanced=include_advanced,
             include_quality=include_quality,
-            optimize_for_large_datasets=self.optimize_for_large_datasets,
             sampling_config=self.sampling_config,
         )
-
-    def _get_overview(self) -> Dict[str, Any]:
-        """Get overview statistics for the entire DataFrame."""
-        # Ensure sampling is applied to get accurate metadata
-        self._apply_sampling()
-        # Ensure sampling_metadata is available after _apply_sampling
-        assert self.sampling_metadata is not None
-
-        # Use cached row count from sampling metadata
-        total_rows = self.sampling_metadata.sample_size
-        total_columns = len(self.df.columns)
-
-        return {
-            "total_rows": total_rows,
-            "total_columns": total_columns,
-            "column_types": {
-                col: str(dtype) for col, dtype in self.column_types.items()
-            },
-        }
-
-    def _profile_column(
-        self,
-        column_name: str,
-        include_advanced: bool = True,
-        include_quality: bool = True,
-    ) -> Dict[str, Any]:
-        """
-        Profile a single column.
-
-        Args:
-            column_name: Name of the column to profile
-            include_advanced: Include advanced statistics
-            include_quality: Include data quality metrics
-
-        Returns:
-            Dictionary containing column statistics
-        """
-        # Ensure sampling and stats computer are ready
-        self._apply_sampling()
-        stats_computer = self._ensure_stats_computer()
-        # Ensure sampling_metadata is available after _apply_sampling
-        assert self.sampling_metadata is not None
-
-        column_type = self.column_types[column_name]
-
-        # Handle empty DataFrame case
-        if self.sampling_metadata.sample_size == 0:
-            return {
-                "data_type": str(column_type),
-                "total_count": 0,
-                "non_null_count": 0,
-                "null_count": 0,
-                "null_percentage": 0.0,
-                "distinct_count": 0,
-                "distinct_percentage": 0.0,
-            }
-
-        # Basic statistics for all columns
-        basic_stats = stats_computer.compute_basic_stats(column_name)
-
-        column_profile = {"data_type": str(column_type), **basic_stats}
-
-        # Add type-specific statistics
-        if isinstance(column_type, NumericType):
-            numeric_stats = stats_computer.compute_numeric_stats(
-                column_name, advanced=include_advanced
-            )
-            column_profile.update(numeric_stats)
-
-            # Add outlier statistics for numeric columns
-            if include_advanced:
-                outlier_stats = stats_computer.compute_outlier_stats(column_name)
-                column_profile["outliers"] = outlier_stats
-
-        elif isinstance(column_type, StringType):
-            string_stats = stats_computer.compute_string_stats(
-                column_name,
-                top_n=10 if include_advanced else 0,
-                pattern_detection=include_advanced,
-            )
-            column_profile.update(string_stats)
-
-        elif isinstance(column_type, (TimestampType, DateType)):
-            temporal_stats = stats_computer.compute_temporal_stats(column_name)
-            column_profile.update(temporal_stats)
-
-        # Add data quality metrics if requested
-        if include_quality:
-            # Determine quality check type based on column type
-            if isinstance(column_type, NumericType):
-                quality_type = "numeric"
-            elif isinstance(column_type, StringType):
-                quality_type = "string"
-            else:
-                # For complex types (arrays, structs, etc.), skip type-specific quality checks
-                quality_type = "other"
-
-            quality_stats = stats_computer.compute_data_quality_stats(
-                column_name,
-                column_type=quality_type,
-            )
-            column_profile["quality"] = quality_stats
-
-        return column_profile
-
-    def _get_sampling_info(self) -> Dict[str, Any]:
-        """Get sampling information for the profile."""
-        # Ensure sampling is applied to get accurate metadata
-        self._apply_sampling()
-
-        if not self.sampling_metadata:
-            return {"is_sampled": False}
-
-        return {
-            "is_sampled": self.sampling_metadata.is_sampled,
-            "original_size": self.sampling_metadata.original_size,
-            "sample_size": self.sampling_metadata.sample_size,
-            "sampling_fraction": self.sampling_metadata.sampling_fraction,
-            "sampling_time": self.sampling_metadata.sampling_time,
-            "estimated_speedup": self.sampling_metadata.speedup_estimate,
-        }

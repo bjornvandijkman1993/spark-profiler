@@ -1,5 +1,4 @@
 from typing import Optional, List, Union, Any
-import logging
 import pandas as pd
 from pyspark.sql import DataFrame
 from pyspark.sql.utils import AnalysisException
@@ -7,8 +6,9 @@ from pyspark.sql.utils import AnalysisException
 from .profiler import profile_dataframe
 from .sampling import SamplingConfig
 from .exceptions import ConfigurationError, SparkOperationError
+from .logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def analyze(
@@ -21,7 +21,6 @@ def analyze(
     output_format: str = "pandas",
     include_advanced: bool = True,
     include_quality: bool = True,
-    optimize_for_large_datasets: bool = False,
     seed: Optional[int] = None,
 ) -> Union[pd.DataFrame, dict, str]:
     """
@@ -40,7 +39,6 @@ def analyze(
         output_format: Output format ("pandas", "dict", "json", "summary"). Default is "pandas".
         include_advanced: Include advanced statistics (skewness, kurtosis, outliers, etc.)
         include_quality: Include data quality metrics
-        optimize_for_large_datasets: Use optimized batch processing for better performance
         seed: Random seed for reproducible sampling
 
     Returns:
@@ -69,32 +67,42 @@ def analyze(
         >>> # Get results as dictionary
         >>> profile = analyze(df, output_format="dict")
     """
-    try:
-        # Build sampling configuration based on parameters
-        sampling_config = _build_sampling_config(
-            sampling=sampling,
-            target_rows=target_rows,
-            fraction=fraction,
-            seed=seed,
-        )
+    logger.info(
+        f"Starting DataFrame analysis with parameters: "
+        f"sampling={sampling}, target_rows={target_rows}, "
+        f"fraction={fraction}, columns={columns}, "
+        f"output_format={output_format}"
+    )
 
-        # Use the new standalone function directly
-        return profile_dataframe(
+    # Build sampling configuration based on parameters
+    sampling_config = _build_sampling_config(
+        sampling=sampling,
+        target_rows=target_rows,
+        fraction=fraction,
+        seed=seed,
+    )
+
+    logger.debug(f"Sampling configuration: {sampling_config}")
+
+    # Use the new standalone function directly
+    try:
+        result = profile_dataframe(
             dataframe=df,
             columns=columns,
             output_format=output_format,
             include_advanced=include_advanced,
             include_quality=include_quality,
-            optimize_for_large_datasets=optimize_for_large_datasets,
             sampling_config=sampling_config,
         )
+        logger.info("DataFrame analysis completed successfully")
+        return result
     except AnalysisException as e:
         logger.error(f"Spark analysis error during profiling: {str(e)}")
         raise SparkOperationError(
             f"Failed to analyze DataFrame due to Spark error: {str(e)}", e
         )
     except Exception as e:
-        logger.error(f"Unexpected error during profiling: {str(e)}")
+        logger.error(f"Error during DataFrame analysis: {str(e)}", exc_info=True)
         raise
 
 
@@ -120,10 +128,12 @@ def _build_sampling_config(
         ValueError: If both target_rows and fraction are specified
     """
     if target_rows is not None and fraction is not None:
+        logger.error("Cannot specify both target_rows and fraction")
         raise ConfigurationError("Cannot specify both target_rows and fraction")
 
     # If sampling is explicitly disabled
     if sampling is False:
+        logger.debug("Sampling explicitly disabled")
         return SamplingConfig(enabled=False)
 
     # Build config with specified parameters
@@ -134,9 +144,11 @@ def _build_sampling_config(
 
     if target_rows is not None:
         config_params["target_rows"] = target_rows
+        logger.debug(f"Target rows set to {target_rows}")
 
     if fraction is not None:
         config_params["fraction"] = fraction
+        logger.debug(f"Fraction set to {fraction}")
 
     if seed is not None:
         config_params["seed"] = seed

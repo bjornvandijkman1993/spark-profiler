@@ -16,8 +16,10 @@ from .exceptions import (
     DataTypeError,
     ColumnNotFoundError,
 )
+from .sampling import SamplingConfig
+from .logging import configure_logging, set_log_level, disable_logging, get_logger
 
-__version__ = "3.2.0"
+__version__ = "4.1.0"
 __all__ = [
     "analyze",
     # Exceptions
@@ -29,4 +31,10 @@ __all__ = [
     "SparkOperationError",
     "DataTypeError",
     "ColumnNotFoundError",
+    # Sampling and Logging
+    "SamplingConfig",
+    "configure_logging",
+    "set_log_level",
+    "disable_logging",
+    "get_logger",
 ]

@@ -141,9 +141,7 @@ class TestAnalyzeAPI:
     def test_optimization_flag(self, sample_dataframe):
         """Test optimization for large datasets flag."""
         # Just verify it runs without error
-        result = analyze(
-            sample_dataframe, optimize_for_large_datasets=True, output_format="dict"
-        )
+        result = analyze(sample_dataframe, output_format="dict")
         assert "overview" in result
 
     def test_invalid_parameters(self, sample_dataframe):

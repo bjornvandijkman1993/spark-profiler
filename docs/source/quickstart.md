@@ -8,7 +8,7 @@ This guide will help you get started with pyspark-analyzer in just a few minutes
 
 ```python
 from pyspark.sql import SparkSession
-from pyspark_analyzer import DataFrameProfiler
+from pyspark_analyzer import analyze
 
 # Create Spark session
 spark = SparkSession.builder \
@@ -34,74 +34,78 @@ df = spark.read.json("data.json")
 ### 3. Profile Your DataFrame
 
 ```python
-# Create profiler instance
-profiler = DataFrameProfiler(df)
+# Generate profile with the analyze function
+profile = analyze(df)
 
-# Generate profile
-profile = profiler.profile()
-
-# View results
+# View results as a pandas DataFrame
 print(profile)
 ```
 
 ## Output Formats
 
-### Dictionary Format (default)
+### Pandas DataFrame (default)
 
 ```python
-profile = profiler.profile()
-print(profile["overview"])
-print(profile["columns"]["age"])
+# Default output is a pandas DataFrame
+profile = analyze(df)
+print(profile)
+```
+
+### Dictionary Format
+
+```python
+# Get dictionary output
+profile_dict = analyze(df, output_format="dict")
+print(profile_dict["overview"])
+print(profile_dict["columns"]["age"])
 ```
 
 ### JSON Format
 
 ```python
-json_profile = profiler.get_profile("json")
+# Get JSON string output
+json_profile = analyze(df, output_format="json")
 print(json_profile)
-```
-
-### Summary Report
-
-```python
-summary = profiler.get_profile("summary")
-print(summary)
 ```
 
 ## Working with Large Datasets
 
-### Automatic Optimization
+### Automatic Sampling
 
 ```python
-# Automatically optimizes for datasets > 10M rows
-profiler = DataFrameProfiler(df, optimize_for_large_datasets=True)
-profile = profiler.profile()
+# Enable automatic sampling for large datasets
+profile = analyze(df, sampling=True)
+
+# Specify target number of rows
+profile = analyze(df, sampling=True, target_rows=100_000)
+
+# Or specify sampling fraction
+profile = analyze(df, sampling=True, fraction=0.1)
 ```
 
-### Custom Sampling
+### Custom Sampling Configuration
 
 ```python
 from pyspark_analyzer import SamplingConfig
 
-# Configure sampling
+# For advanced control, use SamplingConfig
 config = SamplingConfig(
     target_size=100_000,  # Target 100k rows
     min_fraction=0.01,    # At least 1% of data
     quality_threshold=0.8  # Minimum quality score
 )
 
-profiler = DataFrameProfiler(df, sampling_config=config)
-profile = profiler.profile()
+profile_dict = analyze(df, sampling_config=config, output_format="dict")
 
 # Check sampling info
-print(profile["sampling"])
+print(profile_dict["sampling"])
 ```
 
 ## Profile Specific Columns
 
 ```python
 # Profile only specific columns
-profile = profiler.profile(columns=["age", "salary", "department"])
+profile = analyze(df, columns=["age", "salary", "department"])
 ```
 
 ## Common Use Cases
@@ -109,10 +113,11 @@ profile = profiler.profile(columns=["age", "salary", "department"])
 ### Data Quality Assessment
 
 ```python
-profile = profiler.profile()
+# Get profile with quality metrics
+profile_dict = analyze(df, include_quality=True, output_format="dict")
 
 # Check for data quality issues
-for col_name, col_stats in profile["columns"].items():
+for col_name, col_stats in profile_dict["columns"].items():
     null_ratio = col_stats["null_count"] / col_stats["count"]
     if null_ratio > 0.5:
         print(f"Warning: {col_name} has {null_ratio:.1%} null values")
@@ -125,12 +130,12 @@ for col_name, col_stats in profile["columns"].items():
 
 ```python
 # Identify columns that need cleaning
-profile = profiler.profile()
+profile_dict = analyze(df, output_format="dict")
 
 numeric_cols = []
 categorical_cols = []
 
-for col_name, col_stats in profile["columns"].items():
+for col_name, col_stats in profile_dict["columns"].items():
     if col_stats["data_type"] in ["integer", "double", "float"]:
         numeric_cols.append(col_name)
     elif col_stats["distinct_count"] < 100:  # Potential categorical

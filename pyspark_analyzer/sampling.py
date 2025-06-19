@@ -3,7 +3,6 @@ Simplified sampling configuration for DataFrame profiling.
 """
 
 import time
-import logging
 from typing import Tuple, Optional
 from dataclasses import dataclass
 from pyspark.sql import DataFrame
@@ -11,8 +10,9 @@ from pyspark.sql.utils import AnalysisException
 from py4j.protocol import Py4JError, Py4JJavaError
 
 from .exceptions import ConfigurationError, SamplingError, SparkOperationError
+from .logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -81,6 +81,7 @@ def apply_sampling(
 
     # Get row count if not provided
     if row_count is None:
+        logger.debug("Computing row count for sampling decision")
         try:
             row_count = df.count()
         except (AnalysisException, Py4JError, Py4JJavaError) as e:
@@ -89,8 +90,11 @@ def apply_sampling(
                 f"Failed to count DataFrame rows during sampling: {str(e)}", e
             )
 
+    logger.debug(f"DataFrame has {row_count:,} rows")
+
     # Handle empty DataFrame
     if row_count == 0:
+        logger.warning("DataFrame is empty, no sampling needed")
         return df, SamplingMetadata(
             original_size=0,
             sample_size=0,
@@ -102,16 +106,21 @@ def apply_sampling(
     # Determine if sampling should be applied
     if not config.enabled:
         # Sampling disabled
+        logger.info("Sampling is disabled by configuration")
         sampling_fraction = 1.0
         should_sample = False
     elif config.target_rows is not None:
         # Explicit target rows specified
         sampling_fraction = min(1.0, config.target_rows / row_count)
         should_sample = sampling_fraction < 1.0
+        logger.info(
+            f"Target rows sampling: {config.target_rows:,} rows (fraction: {sampling_fraction:.4f})"
+        )
     elif config.fraction is not None:
         # Explicit fraction specified
         sampling_fraction = config.fraction
         should_sample = sampling_fraction < 1.0
+        logger.info(f"Fraction-based sampling: {sampling_fraction:.4f}")
     else:
         # Auto-sampling for large datasets (over 10M rows)
         if row_count > 10_000_000:
@@ -121,16 +130,25 @@ def apply_sampling(
             target_rows = min(1_000_000, int(row_count * 0.1))
             sampling_fraction = min(1.0, target_rows / row_count)
             should_sample = sampling_fraction < 1.0
+            logger.info(
+                f"Auto-sampling triggered for large dataset: {row_count:,} rows -> "
+                f"{target_rows:,} rows (fraction: {sampling_fraction:.4f})"
+            )
         else:
             sampling_fraction = 1.0
             should_sample = False
+            logger.debug(f"No auto-sampling needed for {row_count:,} rows")
 
     # Apply sampling if needed
     if should_sample:
+        logger.debug(
+            f"Applying sampling with fraction {sampling_fraction:.4f} and seed {config.seed}"
+        )
         try:
             sample_df = df.sample(fraction=sampling_fraction, seed=config.seed)
             sample_size = sample_df.count()
             is_sampled = True
+            logger.info(f"Sampling completed: {row_count:,} -> {sample_size:,} rows")
         except (AnalysisException, Py4JError, Py4JJavaError) as e:
             logger.error(f"Failed to sample DataFrame: {str(e)}")
             raise SamplingError(
@@ -140,13 +158,21 @@ def apply_sampling(
         sample_df = df
         sample_size = row_count
         is_sampled = False
+        logger.debug("No sampling applied, using full dataset")
 
+    sampling_time = time.time() - start_time
     metadata = SamplingMetadata(
         original_size=row_count,
         sample_size=sample_size,
         sampling_fraction=sampling_fraction,
-        sampling_time=time.time() - start_time,
+        sampling_time=sampling_time,
         is_sampled=is_sampled,
     )
+
+    if is_sampled:
+        logger.debug(
+            f"Sampling metadata: speedup estimate = {metadata.speedup_estimate:.2f}x, "
+            f"time = {sampling_time:.2f}s"
+        )
 
     return sample_df, metadata
