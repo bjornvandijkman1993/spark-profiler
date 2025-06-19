@@ -35,99 +35,6 @@ from .logging import get_logger
 logger = get_logger(__name__)
 
 
-class LazyRowCount:
-    """
-    Lazy evaluation wrapper for DataFrame row counting operations.
-
-    This class defers count operations until they are actually needed,
-    improving performance by avoiding unnecessary DataFrame scans.
-    """
-
-    def __init__(self, dataframe: DataFrame, initial_count: Optional[int] = None):
-        """
-        Initialize lazy row counter.
-
-        Args:
-            dataframe: PySpark DataFrame to count
-            initial_count: Pre-computed count if available
-        """
-        self.df = dataframe
-        self._count: Optional[int] = initial_count
-        self._conditional_counts: Dict[str, int] = {}
-
-    @property
-    def value(self) -> int:
-        """Get total row count, computing if not cached."""
-        if self._count is None:
-            logger.debug("Computing DataFrame row count")
-            self._count = self.df.count()
-            logger.debug(f"Row count computed: {self._count:,}")
-        return self._count
-
-    def get_conditional_count(self, condition_key: str, condition_expr: Any) -> int:
-        """
-        Get count for a specific condition, caching the result.
-
-        Args:
-            condition_key: Unique key for caching this condition
-            condition_expr: PySpark condition expression
-
-        Returns:
-            Count of rows matching the condition
-        """
-        if condition_key not in self._conditional_counts:
-            self._conditional_counts[condition_key] = self.df.filter(
-                condition_expr
-            ).count()
-        return self._conditional_counts[condition_key]
-
-    def get_multiple_conditional_counts(
-        self, conditions: Dict[str, Any]
-    ) -> Dict[str, int]:
-        """
-        Efficiently compute multiple conditional counts in a single aggregation.
-
-        Args:
-            conditions: Dictionary mapping condition keys to condition expressions
-
-        Returns:
-            Dictionary mapping condition keys to their counts
-        """
-        # Check which conditions we haven't computed yet
-        missing_conditions = {
-            key: expr
-            for key, expr in conditions.items()
-            if key not in self._conditional_counts
-        }
-
-        if missing_conditions:
-            # Build aggregation expressions for missing conditions
-            agg_exprs = [
-                count(when(expr, 1)).alias(key)
-                for key, expr in missing_conditions.items()
-            ]
-
-            # Execute single aggregation
-            if agg_exprs:
-                result = self.df.agg(*agg_exprs).collect()[0]
-
-                # Cache the results
-                for key in missing_conditions:
-                    self._conditional_counts[key] = result[key]
-
-        # Return all requested counts
-        return {key: self._conditional_counts[key] for key in conditions.keys()}
-
-    def invalidate_cache(self) -> None:
-        """Clear cached counts (useful after DataFrame transformations)."""
-        self._count = None
-        self._conditional_counts.clear()
-
-    def set_count(self, count: int) -> None:
-        """Set the total count explicitly (useful for optimization)."""
-        self._count = count
-
-
 class StatisticsComputer:
     """Handles computation of various statistics for DataFrame columns."""
 
@@ -140,16 +47,20 @@ class StatisticsComputer:
             total_rows: Cached row count to avoid recomputation
         """
         self.df = dataframe
-        # Use LazyRowCount for efficient row counting
-        self.lazy_row_count = LazyRowCount(dataframe, initial_count=total_rows)
+        # Store total rows if provided to avoid recomputation
+        self._total_rows = total_rows
         self.cache_enabled = False
         logger.debug(
             f"StatisticsComputer initialized with {'cached' if total_rows else 'lazy'} row count"
         )
 
     def _get_total_rows(self) -> int:
-        """Get total row count using lazy evaluation."""
-        return self.lazy_row_count.value
+        """Get total row count, computing if not cached."""
+        if self._total_rows is None:
+            logger.debug("Computing DataFrame row count")
+            self._total_rows = self.df.count()
+            logger.debug(f"Row count computed: {self._total_rows:,}")
+        return self._total_rows
 
     def compute_basic_stats(self, column_name: str) -> Dict[str, Any]:
         """
@@ -518,19 +429,25 @@ class StatisticsComputer:
                 lower_bound = q1 - 1.5 * iqr
                 upper_bound = q3 + 1.5 * iqr
 
-                # Use lazy conditional counting for outliers
-                conditions = {
-                    "lower_outliers": col(column_name) < lower_bound,
-                    "upper_outliers": col(column_name) > upper_bound,
-                    "total_outliers": (col(column_name) < lower_bound)
-                    | (col(column_name) > upper_bound),
-                }
+                # Compute outlier counts in a single aggregation
+                outlier_result = self.df.agg(
+                    count(when(col(column_name) < lower_bound, 1)).alias(
+                        "lower_outliers"
+                    ),
+                    count(when(col(column_name) > upper_bound, 1)).alias(
+                        "upper_outliers"
+                    ),
+                    count(
+                        when(
+                            (col(column_name) < lower_bound)
+                            | (col(column_name) > upper_bound),
+                            1,
+                        )
+                    ).alias("total_outliers"),
+                ).collect()[0]
 
-                outlier_counts = self.lazy_row_count.get_multiple_conditional_counts(
-                    conditions
-                )
                 total_rows = self._get_total_rows()
-                outlier_count = outlier_counts["total_outliers"]
+                outlier_count = outlier_result["total_outliers"]
 
                 return {
                     "method": "iqr",
@@ -540,8 +457,8 @@ class StatisticsComputer:
                     "outlier_percentage": (
                         (outlier_count / total_rows * 100) if total_rows > 0 else 0.0
                     ),
-                    "lower_outlier_count": outlier_counts["lower_outliers"],
-                    "upper_outlier_count": outlier_counts["upper_outliers"],
+                    "lower_outlier_count": outlier_result["lower_outliers"],
+                    "upper_outlier_count": outlier_result["upper_outliers"],
                 }
 
         elif method == "zscore":
@@ -555,13 +472,10 @@ class StatisticsComputer:
             std_val = stats_result["std_val"]
 
             if mean_val is not None and std_val is not None and std_val > 0:
-                # Use lazy conditional counting for z-score outliers
-                zscore_condition = (
+                # Compute z-score outliers
+                outlier_count = self.df.filter(
                     spark_abs((col(column_name) - mean_val) / std_val) > 3
-                )
-                outlier_count = self.lazy_row_count.get_conditional_count(
-                    f"zscore_outliers_{column_name}", zscore_condition
-                )
+                ).count()
 
                 total_rows = self._get_total_rows()
 

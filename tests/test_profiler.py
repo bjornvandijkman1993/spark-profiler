@@ -4,31 +4,24 @@ Test cases for the DataFrame profiler.
 
 import pytest
 
-from pyspark_analyzer.profiler import DataFrameProfiler
+from pyspark_analyzer import analyze
 from pyspark_analyzer.statistics import StatisticsComputer
-from pyspark_analyzer.utils import get_column_data_types, format_profile_output
+from pyspark_analyzer.utils import format_profile_output
 
 
-class TestDataFrameProfiler:
-    """Test cases for DataFrameProfiler class."""
+class TestAnalyzeFunction:
+    """Test cases for analyze function."""
 
-    def test_init_with_valid_dataframe(self, sample_dataframe):
-        """Test profiler initialization with valid DataFrame."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        assert profiler.df == sample_dataframe
-        assert len(profiler.column_types) == 4  # id, name, age, salary
-
-    def test_init_with_invalid_input(self):
-        """Test profiler initialization with invalid input."""
+    def test_analyze_with_invalid_input(self):
+        """Test analyze function with invalid input."""
         from pyspark_analyzer import DataTypeError
 
         with pytest.raises(DataTypeError):
-            DataFrameProfiler("not_a_dataframe")
+            analyze("not_a_dataframe")
 
     def test_profile_all_columns(self, sample_dataframe):
         """Test profiling all columns."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile(output_format="dict")
+        profile = analyze(sample_dataframe, output_format="dict")
 
         assert "overview" in profile
         assert "columns" in profile
@@ -47,8 +40,9 @@ class TestDataFrameProfiler:
 
     def test_profile_specific_columns(self, sample_dataframe):
         """Test profiling specific columns."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile(columns=["id", "name"], output_format="dict")
+        profile = analyze(
+            sample_dataframe, columns=["id", "name"], output_format="dict"
+        )
 
         assert len(profile["columns"]) == 2
         assert "id" in profile["columns"]
@@ -60,15 +54,16 @@ class TestDataFrameProfiler:
         """Test profiling with invalid column names."""
         from pyspark_analyzer import ColumnNotFoundError
 
-        profiler = DataFrameProfiler(sample_dataframe)
-
         with pytest.raises(ColumnNotFoundError, match="Columns not found"):
-            profiler.profile(columns=["nonexistent_column"], output_format="dict")
+            analyze(
+                sample_dataframe, columns=["nonexistent_column"], output_format="dict"
+            )
 
     def test_numeric_column_stats(self, sample_dataframe):
         """Test statistics for numeric columns."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile(columns=["id", "salary"], output_format="dict")
+        profile = analyze(
+            sample_dataframe, columns=["id", "salary"], output_format="dict"
+        )
 
         # Check numeric stats for 'id' column
         id_stats = profile["columns"]["id"]
@@ -86,8 +81,7 @@ class TestDataFrameProfiler:
 
     def test_string_column_stats(self, sample_dataframe):
         """Test statistics for string columns."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile(columns=["name"], output_format="dict")
+        profile = analyze(sample_dataframe, columns=["name"], output_format="dict")
 
         name_stats = profile["columns"]["name"]
         assert "min_length" in name_stats
@@ -140,33 +134,16 @@ class TestStatisticsComputer:
 class TestUtils:
     """Test cases for utility functions."""
 
-    def test_get_column_data_types(self, sample_dataframe):
-        """Test column data type extraction."""
-        column_types = get_column_data_types(sample_dataframe)
-
-        assert len(column_types) == 4
-        assert "id" in column_types
-        assert "name" in column_types
-        assert "age" in column_types
-        assert "salary" in column_types
-
-        assert str(column_types["id"]) == "LongType()"
-        assert str(column_types["name"]) == "StringType()"
-        assert str(column_types["age"]) == "LongType()"
-        assert str(column_types["salary"]) == "DoubleType()"
-
     def test_format_profile_output_dict(self, sample_dataframe):
         """Test dictionary format output."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile(output_format="dict")
+        profile = analyze(sample_dataframe, output_format="dict")
 
         formatted = format_profile_output(profile, format_type="dict")
         assert formatted == profile
 
     def test_format_profile_output_json(self, sample_dataframe):
         """Test JSON format output."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile(output_format="dict")
+        profile = analyze(sample_dataframe, output_format="dict")
 
         formatted = format_profile_output(profile, format_type="json")
         assert isinstance(formatted, str)
@@ -175,8 +152,7 @@ class TestUtils:
 
     def test_format_profile_output_summary(self, sample_dataframe):
         """Test summary format output."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile(output_format="dict")
+        profile = analyze(sample_dataframe, output_format="dict")
 
         formatted = format_profile_output(profile, format_type="summary")
         assert isinstance(formatted, str)
@@ -188,8 +164,7 @@ class TestUtils:
         """Test invalid format type."""
         from pyspark_analyzer import ConfigurationError
 
-        profiler = DataFrameProfiler(sample_dataframe)
-        profile = profiler.profile(output_format="dict")
+        profile = analyze(sample_dataframe, output_format="dict")
 
         with pytest.raises(ConfigurationError, match="Unsupported format type"):
             format_profile_output(profile, format_type="invalid_format")

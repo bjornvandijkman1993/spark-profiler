@@ -14,7 +14,7 @@ from pyspark.sql.types import (
 )
 import numpy as np
 
-from pyspark_analyzer.profiler import DataFrameProfiler
+from pyspark_analyzer import analyze
 from pyspark_analyzer.statistics import StatisticsComputer
 
 
@@ -246,7 +246,7 @@ class TestDataQualityStatistics:
 
 
 class TestProfilerIntegration:
-    """Test integration of advanced statistics with DataFrameProfiler."""
+    """Test integration of advanced statistics with analyze function."""
 
     def test_profile_with_advanced_stats(self, spark_session):
         """Test profiling with advanced statistics enabled."""
@@ -267,8 +267,7 @@ class TestProfilerIntegration:
         )
         df = spark_session.createDataFrame(data, schema)
 
-        profiler = DataFrameProfiler(df)
-        profile = profiler.profile(output_format="dict", include_advanced=True)
+        profile = analyze(df, output_format="dict", include_advanced=True)
 
         # Check numeric column has advanced stats
         price_stats = profile["columns"]["price"]
@@ -288,8 +287,8 @@ class TestProfilerIntegration:
         data = [(i, f"value_{i}", float(i * 10)) for i in range(100)]
         df = spark_session.createDataFrame(data, ["id", "text", "value"])
 
-        profiler = DataFrameProfiler(df)
-        profile = profiler.profile(
+        profile = analyze(
+            df,
             output_format="dict",
             include_advanced=False,
             include_quality=False,
@@ -313,8 +312,8 @@ class TestProfilerIntegration:
         ]
         df = spark_session.createDataFrame(data, ["id", "text", "value"])
 
-        profiler = DataFrameProfiler(df)
-        profile = profiler.profile(
+        profile = analyze(
+            df,
             output_format="dict",
             include_advanced=False,
             include_quality=True,

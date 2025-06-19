@@ -11,8 +11,7 @@ from pyspark.sql.types import (
     DoubleType,
 )
 
-from pyspark_analyzer import ConfigurationError
-from pyspark_analyzer.profiler import DataFrameProfiler
+from pyspark_analyzer import ConfigurationError, analyze
 from pyspark_analyzer.sampling import SamplingConfig
 from pyspark_analyzer.sampling import SamplingMetadata, apply_sampling
 
@@ -161,16 +160,14 @@ class TestApplySampling:
         assert metadata.sampling_fraction == 1.0
 
 
-class TestDataFrameProfilerSampling:
-    """Test cases for DataFrameProfiler sampling integration."""
+class TestAnalyzeSampling:
+    """Test cases for analyze function sampling integration."""
 
     def test_auto_sampling_large_dataset(self, large_dataframe):
         """Test auto-sampling with large dataset."""
         # Since large_dataframe has 10k rows and auto-sampling only kicks in at 10M rows,
         # we need to explicitly use fraction or target_rows to test sampling
-        config = SamplingConfig(fraction=0.5)  # Sample 50% of data
-        profiler = DataFrameProfiler(large_dataframe, sampling_config=config)
-        profile = profiler.profile(output_format="dict")
+        profile = analyze(large_dataframe, fraction=0.5, output_format="dict")
 
         sampling_info = profile["sampling"]
         assert sampling_info["is_sampled"] is True
@@ -178,18 +175,15 @@ class TestDataFrameProfilerSampling:
 
     def test_no_sampling_small_dataset(self, small_dataframe):
         """Test no sampling with small dataset."""
-        profiler = DataFrameProfiler(small_dataframe)
-        profile = profiler.profile(output_format="dict")
+        profile = analyze(small_dataframe, output_format="dict")
 
         sampling_info = profile["sampling"]
         assert sampling_info["is_sampled"] is False
         assert sampling_info["sample_size"] == sampling_info["original_size"]
 
     def test_custom_sampling_config(self, large_dataframe):
-        """Test DataFrameProfiler with custom sampling config."""
-        config = SamplingConfig(fraction=0.5, seed=123)  # 50% sample
-        profiler = DataFrameProfiler(large_dataframe, sampling_config=config)
-        profile = profiler.profile(output_format="dict")
+        """Test analyze with custom sampling config."""
+        profile = analyze(large_dataframe, fraction=0.5, seed=123, output_format="dict")
 
         sampling_info = profile["sampling"]
         assert sampling_info["is_sampled"] is True
@@ -198,9 +192,7 @@ class TestDataFrameProfilerSampling:
 
     def test_disable_sampling(self, large_dataframe):
         """Test disabling sampling."""
-        config = SamplingConfig(enabled=False)
-        profiler = DataFrameProfiler(large_dataframe, sampling_config=config)
-        profile = profiler.profile(output_format="dict")
+        profile = analyze(large_dataframe, sampling=False, output_format="dict")
 
         sampling_info = profile["sampling"]
         assert sampling_info["is_sampled"] is False
@@ -208,9 +200,7 @@ class TestDataFrameProfilerSampling:
 
     def test_sampling_with_optimization(self, large_dataframe):
         """Test sampling combined with performance optimization."""
-        config = SamplingConfig(fraction=0.5)  # 50% sample
-        profiler = DataFrameProfiler(large_dataframe, sampling_config=config)
-        profile = profiler.profile(output_format="dict")
+        profile = analyze(large_dataframe, fraction=0.5, output_format="dict")
 
         sampling_info = profile["sampling"]
         assert sampling_info["is_sampled"] is True
@@ -219,8 +209,7 @@ class TestDataFrameProfilerSampling:
 
     def test_profile_structure_with_sampling(self, large_dataframe):
         """Test that profile structure includes sampling information."""
-        profiler = DataFrameProfiler(large_dataframe)
-        profile = profiler.profile(output_format="dict")
+        profile = analyze(large_dataframe, output_format="dict")
 
         # Check required keys
         assert "overview" in profile

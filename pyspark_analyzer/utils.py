@@ -4,8 +4,6 @@ Utility functions for the DataFrame profiler.
 
 from typing import Dict, Any, Union
 import pandas as pd
-from pyspark.sql import DataFrame
-from pyspark.sql.types import DataType
 
 from .exceptions import ConfigurationError
 from .logging import get_logger
@@ -40,19 +38,6 @@ def escape_column_name(column_name: str) -> str:
     escaped = column_name.replace("`", "``")
     # Wrap in backticks
     return f"`{escaped}`"
-
-
-def get_column_data_types(dataframe: DataFrame) -> Dict[str, DataType]:
-    """
-    Get data types for all columns in the DataFrame.
-
-    Args:
-        dataframe: PySpark DataFrame
-
-    Returns:
-        Dictionary mapping column names to their data types
-    """
-    return {field.name: field.dataType for field in dataframe.schema.fields}
 
 
 def format_profile_output(
