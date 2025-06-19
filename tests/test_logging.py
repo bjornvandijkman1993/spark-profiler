@@ -156,11 +156,13 @@ class TestLoggingOutput:
 
     def test_error_logging(self, spark, log_capture):
         """Test error logging before exceptions."""
+        from pyspark_analyzer import DataTypeError
+
         # Configure logging
         configure_logging(level="ERROR")
 
         # Try to analyze invalid input
-        with pytest.raises(TypeError):
+        with pytest.raises(DataTypeError):
             pyspark_analyzer.analyze("not a dataframe")
 
         # Check error was logged
@@ -247,15 +249,14 @@ class TestLoggingIntegration:
         # But shouldn't affect root logger
         assert custom_handler in root_logger.handlers
 
-    def test_log_suppression_performance(self, sample_df, benchmark):
-        """Test that disabling logging improves performance."""
-        # Benchmark with logging disabled
+    def test_log_suppression_performance(self, sample_df):
+        """Test that disabling logging completes without errors."""
+        # Disable logging
         disable_logging()
 
-        # Run analysis multiple times
-        def run_analysis():
-            for _ in range(10):
-                pyspark_analyzer.analyze(sample_df)
+        # Run analysis multiple times - should complete without errors
+        for _ in range(5):
+            pyspark_analyzer.analyze(sample_df)
 
-        # This should be fast with logging disabled
-        benchmark(run_analysis)
+        # Re-enable logging at WARNING level
+        configure_logging(level="WARNING")

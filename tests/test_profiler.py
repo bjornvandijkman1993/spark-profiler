@@ -58,9 +58,11 @@ class TestDataFrameProfiler:
 
     def test_profile_invalid_columns(self, sample_dataframe):
         """Test profiling with invalid column names."""
+        from pyspark_analyzer import ColumnNotFoundError
+
         profiler = DataFrameProfiler(sample_dataframe)
 
-        with pytest.raises(ValueError, match="Columns not found"):
+        with pytest.raises(ColumnNotFoundError, match="Columns not found"):
             profiler.profile(columns=["nonexistent_column"], output_format="dict")
 
     def test_numeric_column_stats(self, sample_dataframe):
@@ -184,10 +186,12 @@ class TestUtils:
 
     def test_format_profile_output_invalid_format(self, sample_dataframe):
         """Test invalid format type."""
+        from pyspark_analyzer import ConfigurationError
+
         profiler = DataFrameProfiler(sample_dataframe)
         profile = profiler.profile(output_format="dict")
 
-        with pytest.raises(ValueError, match="Unsupported format type"):
+        with pytest.raises(ConfigurationError, match="Unsupported format type"):
             format_profile_output(profile, format_type="invalid_format")
 
 

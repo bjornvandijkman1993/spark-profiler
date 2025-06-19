@@ -2,7 +2,18 @@
 Advanced statistics features in pyspark-analyzer.
 """
 
+import random
+from datetime import date, timedelta
+
 from pyspark.sql import SparkSession
+from pyspark.sql.types import (
+    StructType,
+    StructField,
+    IntegerType,
+    StringType,
+    DoubleType,
+    DateType,
+)
 import numpy as np
 from pyspark_analyzer import analyze
 
@@ -38,6 +49,7 @@ profile = analyze(
     include_quality=True,
     sampling=False,
 )
+
 
 def create_sample_data(spark):
     """Create a sample dataset with various data quality issues."""
@@ -301,5 +313,6 @@ def main():
     print("  - Data quality metrics (completeness, uniqueness, quality scores)")
     print("  - Top frequent values for categorical analysis")
     print("=" * 60)
+
 
 spark.stop()
