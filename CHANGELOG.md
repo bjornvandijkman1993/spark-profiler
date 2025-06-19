@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [3.0.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v2.0.0...v3.0.0) (2025-06-19)
+
+
+### Bug Fixes
+
+* **tests:** add automatic Java environment setup for PyCharm ([7330c05](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/7330c0525512aec2122339bc6341614bb61c3a3e))
+
+
+### Code Refactoring
+
+* remove auto_threshold parameter from sampling configuration ([75fe4b3](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/75fe4b3f87dcc8a392645a7268373953b1206b9e))
+
+
+### BREAKING CHANGES
+
+* The auto_threshold parameter has been removed from the analyze() function and SamplingConfig. Auto-sampling now uses a fixed threshold of 10 million rows.
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+
 # [2.0.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v1.0.0...v2.0.0) (2025-06-18)
 
 
