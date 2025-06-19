@@ -118,18 +118,18 @@ def main():
     print("5. CUSTOM AUTO-SAMPLING THRESHOLD")
     print("=" * 70)
 
-    # Lower the auto-sampling threshold to 25,000 rows
+    # Use target_rows to sample to specific size
     profile_custom = analyze(
         df,
-        auto_threshold=25000,  # Auto-sample datasets larger than 25k rows
+        target_rows=25000,  # Sample to approximately 25k rows
         output_format="dict",
     )
 
     sampling_info = profile_custom["sampling"]
-    print("Auto-sampling threshold: 25,000 rows")
+    print("Target sample size: 25,000 rows")
     print("Dataset size: 50,000 rows")
     print(f"Sampling applied: {sampling_info['is_sampled']}")
-    print(f"Sample size: {sampling_info['sample_size']:,} rows")
+    print(f"Actual sample size: {sampling_info['sample_size']:,} rows")
 
     print("\n" + "=" * 70)
     print("6. PERFORMANCE COMPARISON")
@@ -186,9 +186,9 @@ def main():
     profile = analyze(df, fraction=0.05, output_format="dict")
     print(f"   Sample size: {profile['sampling']['sample_size']:,} rows")
 
-    # Example 4: Custom threshold with seed
-    print("\n📌 analyze(df, auto_threshold=30000, seed=42)")
-    profile = analyze(df, auto_threshold=30000, seed=42, output_format="dict")
+    # Example 4: Specific target rows with seed
+    print("\n📌 analyze(df, target_rows=10000, seed=42)")
+    profile = analyze(df, target_rows=10000, seed=42, output_format="dict")
     print(f"   Sampling applied: {profile['sampling']['is_sampled']}")
     print(f"   Sample size: {profile['sampling']['sample_size']:,} rows")
 

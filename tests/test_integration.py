@@ -109,10 +109,10 @@ class TestEndToEndProfiling:
             "concat('customer_', id % 10000) as customer_id",
         )
 
-        # Profile with auto-sampling enabled using custom config
+        # Profile with sampling enabled using fraction-based sampling
         from pyspark_analyzer.sampling import SamplingConfig
 
-        sampling_config = SamplingConfig(auto_threshold=50000)  # Lower than 100k rows
+        sampling_config = SamplingConfig(fraction=0.5)  # Sample 50% of data
         profiler = DataFrameProfiler(
             large_df, optimize_for_large_datasets=True, sampling_config=sampling_config
         )
@@ -121,8 +121,8 @@ class TestEndToEndProfiling:
         # Verify sampling was applied
         assert profile["sampling"]["is_sampled"] is True
         assert (
-            profile["sampling"]["sample_size"] <= 100_000
-        )  # May be equal if auto_threshold is at boundary
+            profile["sampling"]["sample_size"] <= 60_000
+        )  # Should be approximately 50k with some variance
         assert profile["sampling"]["sampling_fraction"] <= 1.0
         # quality_score is no longer part of the simplified API
 

@@ -43,7 +43,6 @@ class TestSamplingConfig:
         assert config.target_rows is None
         assert config.fraction is None
         assert config.seed == 42
-        assert config.auto_threshold == 10_000_000
 
     def test_custom_config(self):
         """Test custom sampling configuration."""
@@ -79,7 +78,7 @@ class TestApplySampling:
 
     def test_no_sampling_needed(self, small_dataframe):
         """Test when no sampling is needed."""
-        config = SamplingConfig(auto_threshold=1000)  # Higher than DataFrame size
+        config = SamplingConfig()  # Default config - won't sample small datasets
 
         sample_df, metadata = apply_sampling(small_dataframe, config)
 
@@ -109,12 +108,15 @@ class TestApplySampling:
 
     def test_auto_sampling(self, large_dataframe):
         """Test automatic sampling decision."""
-        config = SamplingConfig(enabled=True, auto_threshold=5000)  # Less than 10k rows
+        # Note: auto-sampling only kicks in for datasets >10M rows
+        # Since large_dataframe has 10k rows, it won't auto-sample
+        config = SamplingConfig(enabled=True)
 
         sample_df, metadata = apply_sampling(large_dataframe, config)
 
-        assert metadata.is_sampled is True
-        assert metadata.sample_size < metadata.original_size
+        # Should not be sampled since it's under 10M rows
+        assert metadata.is_sampled is False
+        assert metadata.sample_size == metadata.original_size
 
     def test_sampling_disabled(self, large_dataframe):
         """Test when sampling is disabled."""
@@ -163,8 +165,9 @@ class TestDataFrameProfilerSampling:
 
     def test_auto_sampling_large_dataset(self, large_dataframe):
         """Test auto-sampling with large dataset."""
-        # Use a lower threshold to trigger sampling
-        config = SamplingConfig(auto_threshold=5000)  # Less than 10k rows
+        # Since large_dataframe has 10k rows and auto-sampling only kicks in at 10M rows,
+        # we need to explicitly use fraction or target_rows to test sampling
+        config = SamplingConfig(fraction=0.5)  # Sample 50% of data
         profiler = DataFrameProfiler(large_dataframe, sampling_config=config)
         profile = profiler.profile(output_format="dict")
 

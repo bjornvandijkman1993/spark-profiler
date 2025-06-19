@@ -18,14 +18,12 @@ class SamplingConfig:
         target_rows: Target number of rows to sample. Takes precedence over fraction.
         fraction: Fraction of data to sample (0-1). Only used if target_rows is not set.
         seed: Random seed for reproducible sampling.
-        auto_threshold: Row count threshold above which auto-sampling kicks in (if enabled=True).
     """
 
     enabled: bool = True
     target_rows: Optional[int] = None
     fraction: Optional[float] = None
     seed: int = 42
-    auto_threshold: int = 10_000_000
 
     def __post_init__(self) -> None:
         """Validate configuration after initialization."""
@@ -102,13 +100,12 @@ def apply_sampling(
         sampling_fraction = config.fraction
         should_sample = sampling_fraction < 1.0
     else:
-        # Auto-sampling based on threshold
-        if row_count > config.auto_threshold:
-            # For datasets over the threshold, sample to the smaller of:
+        # Auto-sampling for large datasets (over 10M rows)
+        if row_count > 10_000_000:
+            # For large datasets, sample to the smaller of:
             # - 1M rows
             # - 10% of the original size
-            # - The auto_threshold itself
-            target_rows = min(1_000_000, int(row_count * 0.1), config.auto_threshold)
+            target_rows = min(1_000_000, int(row_count * 0.1))
             sampling_fraction = min(1.0, target_rows / row_count)
             should_sample = sampling_fraction < 1.0
         else:
