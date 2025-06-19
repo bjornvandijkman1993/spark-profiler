@@ -11,6 +11,7 @@ from pyspark.sql.types import (
     DoubleType,
 )
 
+from pyspark_analyzer import ConfigurationError
 from pyspark_analyzer.profiler import DataFrameProfiler
 from pyspark_analyzer.sampling import SamplingConfig
 from pyspark_analyzer.sampling import SamplingMetadata, apply_sampling
@@ -53,23 +54,23 @@ class TestSamplingConfig:
 
     def test_config_validation_both_size_and_fraction(self):
         """Test validation when both target_rows and fraction are specified."""
-        with pytest.raises(ValueError, match="Cannot specify both"):
+        with pytest.raises(ConfigurationError, match="Cannot specify both"):
             SamplingConfig(target_rows=1000, fraction=0.1)
 
     def test_config_validation_invalid_fraction(self):
         """Test validation of invalid fraction."""
-        with pytest.raises(ValueError, match="fraction must be between"):
+        with pytest.raises(ConfigurationError, match="fraction must be between"):
             SamplingConfig(fraction=1.5)
 
-        with pytest.raises(ValueError, match="fraction must be between"):
+        with pytest.raises(ConfigurationError, match="fraction must be between"):
             SamplingConfig(fraction=-0.1)
 
     def test_config_validation_invalid_target_rows(self):
         """Test validation of invalid target_rows."""
-        with pytest.raises(ValueError, match="target_rows must be positive"):
+        with pytest.raises(ConfigurationError, match="target_rows must be positive"):
             SamplingConfig(target_rows=-100)
 
-        with pytest.raises(ValueError, match="target_rows must be positive"):
+        with pytest.raises(ConfigurationError, match="target_rows must be positive"):
             SamplingConfig(target_rows=0)
 
 

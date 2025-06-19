@@ -3,9 +3,14 @@ Utility functions for the DataFrame profiler.
 """
 
 from typing import Dict, Any, Union
+import logging
 import pandas as pd
 from pyspark.sql import DataFrame
 from pyspark.sql.types import DataType
+
+from .exceptions import ConfigurationError
+
+logger = logging.getLogger(__name__)
 
 
 def escape_column_name(column_name: str) -> str:
@@ -74,7 +79,9 @@ def format_profile_output(
     elif format_type == "pandas":
         return _create_pandas_dataframe(profile_data)
     else:
-        raise ValueError(f"Unsupported format type: {format_type}")
+        raise ConfigurationError(
+            f"Unsupported format type: {format_type}. Supported formats are: dict, json, summary, pandas"
+        )
 
 
 def _create_summary_report(profile_data: Dict[str, Any]) -> str:

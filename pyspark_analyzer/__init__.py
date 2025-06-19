@@ -6,8 +6,27 @@ for all columns including null counts, data type specific metrics, and performan
 """
 
 from .api import analyze
+from .exceptions import (
+    ProfilingError,
+    InvalidDataError,
+    SamplingError,
+    StatisticsError,
+    ConfigurationError,
+    SparkOperationError,
+    DataTypeError,
+    ColumnNotFoundError,
+)
 
 __version__ = "3.2.0"
 __all__ = [
     "analyze",
+    # Exceptions
+    "ProfilingError",
+    "InvalidDataError",
+    "SamplingError",
+    "StatisticsError",
+    "ConfigurationError",
+    "SparkOperationError",
+    "DataTypeError",
+    "ColumnNotFoundError",
 ]

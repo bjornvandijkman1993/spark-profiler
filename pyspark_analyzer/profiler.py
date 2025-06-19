@@ -5,16 +5,27 @@ This module is for internal use only. Use the `analyze()` function from the main
 """
 
 import warnings
+import logging
 
 import pandas as pd
 from typing import Dict, Any, List, Optional, Union
 from pyspark.sql import DataFrame
 from pyspark.sql.types import NumericType, StringType, TimestampType, DateType
+from pyspark.sql.utils import AnalysisException
+from py4j.protocol import Py4JError, Py4JJavaError
 
 from .statistics import StatisticsComputer
 from .utils import get_column_data_types, format_profile_output
 from .performance import optimize_dataframe_for_profiling
 from .sampling import SamplingConfig, SamplingMetadata, apply_sampling
+from .exceptions import (
+    DataTypeError,
+    ColumnNotFoundError,
+    SparkOperationError,
+    StatisticsError,
+)
+
+logger = logging.getLogger(__name__)
 
 
 def profile_dataframe(
@@ -43,7 +54,7 @@ def profile_dataframe(
         Profile results in requested format
     """
     if not isinstance(dataframe, DataFrame):
-        raise TypeError("Input must be a PySpark DataFrame")
+        raise DataTypeError("Input must be a PySpark DataFrame")
 
     # Set up sampling with default config if not provided
     if sampling_config is None:
@@ -68,7 +79,7 @@ def profile_dataframe(
     # Validate columns exist
     invalid_columns = set(columns) - set(sampled_df.columns)
     if invalid_columns:
-        raise ValueError(f"Columns not found in DataFrame: {invalid_columns}")
+        raise ColumnNotFoundError(list(invalid_columns), sampled_df.columns)
 
     # Create profile result
     profile_result: Dict[str, Any] = {
@@ -83,20 +94,42 @@ def profile_dataframe(
     )
 
     # Use batch processing for large datasets if enabled
-    if optimize_for_large_datasets:
-        profile_result["columns"] = stats_computer.compute_all_columns_batch(columns)
-    else:
-        # Standard column-by-column processing
-        for column in columns:
-            profile_result["columns"][column] = _profile_column(
-                sampled_df,
-                column,
-                column_types,
-                stats_computer,
-                sampling_metadata,
-                include_advanced=include_advanced,
-                include_quality=include_quality,
+    try:
+        if optimize_for_large_datasets:
+            profile_result["columns"] = stats_computer.compute_all_columns_batch(
+                columns
             )
+        else:
+            # Standard column-by-column processing
+            for column in columns:
+                try:
+                    profile_result["columns"][column] = _profile_column(
+                        sampled_df,
+                        column,
+                        column_types,
+                        stats_computer,
+                        sampling_metadata,
+                        include_advanced=include_advanced,
+                        include_quality=include_quality,
+                    )
+                except (AnalysisException, Py4JError, Py4JJavaError) as e:
+                    logger.error(f"Failed to profile column '{column}': {str(e)}")
+                    raise SparkOperationError(
+                        f"Failed to profile column '{column}' due to Spark error: {str(e)}",
+                        e,
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Unexpected error profiling column '{column}': {str(e)}"
+                    )
+                    raise StatisticsError(
+                        f"Failed to compute statistics for column '{column}': {str(e)}"
+                    )
+    except (AnalysisException, Py4JError, Py4JJavaError) as e:
+        logger.error(f"Spark error during batch profiling: {str(e)}")
+        raise SparkOperationError(
+            f"Failed to profile DataFrame due to Spark error: {str(e)}", e
+        )
 
     return format_profile_output(profile_result, output_format)
 
@@ -253,7 +286,7 @@ class DataFrameProfiler:
         )
 
         if not isinstance(dataframe, DataFrame):
-            raise TypeError("Input must be a PySpark DataFrame")
+            raise DataTypeError("Input must be a PySpark DataFrame")
 
         # Set up sampling with default config if not provided
         if sampling_config is None:

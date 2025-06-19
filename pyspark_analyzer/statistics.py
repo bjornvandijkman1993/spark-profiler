@@ -2,6 +2,7 @@
 Statistics computation functions for DataFrame profiling.
 """
 
+import logging
 from typing import Dict, Any, List, Optional
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import (
@@ -25,7 +26,13 @@ from pyspark.sql.functions import (
     desc,
     abs as spark_abs,
 )
+from pyspark.sql.utils import AnalysisException
+from py4j.protocol import Py4JError, Py4JJavaError
+
 from .utils import escape_column_name
+from .exceptions import StatisticsError, SparkOperationError
+
+logger = logging.getLogger(__name__)
 
 
 class LazyRowCount:
@@ -149,18 +156,34 @@ class StatisticsComputer:
         Returns:
             Dictionary with basic statistics
         """
-        # Use lazy evaluation - total_rows will only be computed if needed
-        total_rows = self._get_total_rows()
+        try:
+            # Use lazy evaluation - total_rows will only be computed if needed
+            total_rows = self._get_total_rows()
 
-        # Single aggregation for efficiency - optimized for large datasets
-        escaped_name = escape_column_name(column_name)
-        result = self.df.agg(
-            count(col(escaped_name)).alias("non_null_count"),
-            count(when(col(escaped_name).isNull(), 1)).alias("null_count"),
-            approx_count_distinct(col(escaped_name), rsd=0.05).alias(
-                "distinct_count"
-            ),  # 5% relative error for speed
-        ).collect()[0]
+            # Single aggregation for efficiency - optimized for large datasets
+            escaped_name = escape_column_name(column_name)
+            result = self.df.agg(
+                count(col(escaped_name)).alias("non_null_count"),
+                count(when(col(escaped_name).isNull(), 1)).alias("null_count"),
+                approx_count_distinct(col(escaped_name), rsd=0.05).alias(
+                    "distinct_count"
+                ),  # 5% relative error for speed
+            ).collect()[0]
+        except (AnalysisException, Py4JError, Py4JJavaError) as e:
+            logger.error(
+                f"Failed to compute basic stats for column '{column_name}': {str(e)}"
+            )
+            raise SparkOperationError(
+                f"Failed to compute basic statistics for column '{column_name}': {str(e)}",
+                e,
+            )
+        except Exception as e:
+            logger.error(
+                f"Unexpected error computing basic stats for column '{column_name}': {str(e)}"
+            )
+            raise StatisticsError(
+                f"Failed to compute basic statistics for column '{column_name}': {str(e)}"
+            )
 
         non_null_count = result["non_null_count"]
         null_count = result["null_count"]
@@ -219,7 +242,23 @@ class StatisticsComputer:
             )
 
         # Single aggregation for all numeric stats
-        result = self.df.agg(*agg_list).collect()[0]
+        try:
+            result = self.df.agg(*agg_list).collect()[0]
+        except (AnalysisException, Py4JError, Py4JJavaError) as e:
+            logger.error(
+                f"Failed to compute numeric stats for column '{column_name}': {str(e)}"
+            )
+            raise SparkOperationError(
+                f"Failed to compute numeric statistics for column '{column_name}': {str(e)}",
+                e,
+            )
+        except Exception as e:
+            logger.error(
+                f"Unexpected error computing numeric stats for column '{column_name}': {str(e)}"
+            )
+            raise StatisticsError(
+                f"Failed to compute numeric statistics for column '{column_name}': {str(e)}"
+            )
 
         stats = {
             "min": result["min_value"],
@@ -258,7 +297,13 @@ class StatisticsComputer:
                 and result["mean_value"] != 0
                 and result["std_value"]
             ):
-                stats["cv"] = abs(result["std_value"] / result["mean_value"])
+                try:
+                    stats["cv"] = abs(result["std_value"] / result["mean_value"])
+                except (ZeroDivisionError, ArithmeticError) as e:
+                    logger.warning(
+                        f"Could not compute coefficient of variation for column '{column_name}': {str(e)}"
+                    )
+                    stats["cv"] = None
 
         return stats
 
@@ -326,7 +371,23 @@ class StatisticsComputer:
             )
 
         # Single aggregation for efficiency
-        result = self.df.agg(*agg_list).collect()[0]
+        try:
+            result = self.df.agg(*agg_list).collect()[0]
+        except (AnalysisException, Py4JError, Py4JJavaError) as e:
+            logger.error(
+                f"Failed to compute string stats for column '{column_name}': {str(e)}"
+            )
+            raise SparkOperationError(
+                f"Failed to compute string statistics for column '{column_name}': {str(e)}",
+                e,
+            )
+        except Exception as e:
+            logger.error(
+                f"Unexpected error computing string stats for column '{column_name}': {str(e)}"
+            )
+            raise StatisticsError(
+                f"Failed to compute string statistics for column '{column_name}': {str(e)}"
+            )
 
         stats = {
             "min_length": result["min_length"],
@@ -374,10 +435,26 @@ class StatisticsComputer:
         Returns:
             Dictionary with temporal statistics
         """
-        result = self.df.agg(
-            spark_min(col(column_name)).alias("min_date"),
-            spark_max(col(column_name)).alias("max_date"),
-        ).collect()[0]
+        try:
+            result = self.df.agg(
+                spark_min(col(column_name)).alias("min_date"),
+                spark_max(col(column_name)).alias("max_date"),
+            ).collect()[0]
+        except (AnalysisException, Py4JError, Py4JJavaError) as e:
+            logger.error(
+                f"Failed to compute temporal stats for column '{column_name}': {str(e)}"
+            )
+            raise SparkOperationError(
+                f"Failed to compute temporal statistics for column '{column_name}': {str(e)}",
+                e,
+            )
+        except Exception as e:
+            logger.error(
+                f"Unexpected error computing temporal stats for column '{column_name}': {str(e)}"
+            )
+            raise StatisticsError(
+                f"Failed to compute temporal statistics for column '{column_name}': {str(e)}"
+            )
 
         min_date = result["min_date"]
         max_date = result["max_date"]
@@ -387,9 +464,12 @@ class StatisticsComputer:
         if min_date and max_date:
             try:
                 date_range_days = (max_date - min_date).days
-            except (AttributeError, TypeError):
+            except (AttributeError, TypeError) as e:
                 # Handle different datetime types
-                pass
+                logger.warning(
+                    f"Could not calculate date range for column '{column_name}': {str(e)}"
+                )
+                date_range_days = None
 
         return {
             "min_date": min_date,

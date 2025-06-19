@@ -1,9 +1,14 @@
 from typing import Optional, List, Union, Any
+import logging
 import pandas as pd
 from pyspark.sql import DataFrame
+from pyspark.sql.utils import AnalysisException
 
 from .profiler import profile_dataframe
 from .sampling import SamplingConfig
+from .exceptions import ConfigurationError, SparkOperationError
+
+logger = logging.getLogger(__name__)
 
 
 def analyze(
@@ -64,24 +69,33 @@ def analyze(
         >>> # Get results as dictionary
         >>> profile = analyze(df, output_format="dict")
     """
-    # Build sampling configuration based on parameters
-    sampling_config = _build_sampling_config(
-        sampling=sampling,
-        target_rows=target_rows,
-        fraction=fraction,
-        seed=seed,
-    )
+    try:
+        # Build sampling configuration based on parameters
+        sampling_config = _build_sampling_config(
+            sampling=sampling,
+            target_rows=target_rows,
+            fraction=fraction,
+            seed=seed,
+        )
 
-    # Use the new standalone function directly
-    return profile_dataframe(
-        dataframe=df,
-        columns=columns,
-        output_format=output_format,
-        include_advanced=include_advanced,
-        include_quality=include_quality,
-        optimize_for_large_datasets=optimize_for_large_datasets,
-        sampling_config=sampling_config,
-    )
+        # Use the new standalone function directly
+        return profile_dataframe(
+            dataframe=df,
+            columns=columns,
+            output_format=output_format,
+            include_advanced=include_advanced,
+            include_quality=include_quality,
+            optimize_for_large_datasets=optimize_for_large_datasets,
+            sampling_config=sampling_config,
+        )
+    except AnalysisException as e:
+        logger.error(f"Spark analysis error during profiling: {str(e)}")
+        raise SparkOperationError(
+            f"Failed to analyze DataFrame due to Spark error: {str(e)}", e
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error during profiling: {str(e)}")
+        raise
 
 
 def _build_sampling_config(
@@ -106,7 +120,7 @@ def _build_sampling_config(
         ValueError: If both target_rows and fraction are specified
     """
     if target_rows is not None and fraction is not None:
-        raise ValueError("Cannot specify both target_rows and fraction")
+        raise ConfigurationError("Cannot specify both target_rows and fraction")
 
     # If sampling is explicitly disabled
     if sampling is False:

@@ -148,16 +148,19 @@ class TestAnalyzeAPI:
 
     def test_invalid_parameters(self, sample_dataframe):
         """Test error handling for invalid parameters."""
+        from pyspark_analyzer import ConfigurationError, ColumnNotFoundError
+
         # Both target_rows and fraction
-        with pytest.raises(ValueError, match="Cannot specify both"):
+        with pytest.raises(ConfigurationError, match="Cannot specify both"):
             analyze(sample_dataframe, target_rows=100, fraction=0.5)
 
         # Invalid columns
-        with pytest.raises(ValueError, match="Columns not found"):
+        with pytest.raises(ColumnNotFoundError) as exc_info:
             analyze(sample_dataframe, columns=["nonexistent"])
+        assert "nonexistent" in str(exc_info.value)
 
         # Invalid output format
-        with pytest.raises(ValueError):
+        with pytest.raises(ConfigurationError):
             analyze(sample_dataframe, output_format="invalid")
 
     def test_reproducible_sampling(self, sample_dataframe):

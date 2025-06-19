@@ -16,6 +16,7 @@ from pyspark.sql.types import (
     ArrayType,
 )
 
+from pyspark_analyzer import ColumnNotFoundError, ConfigurationError
 from pyspark_analyzer.profiler import DataFrameProfiler, SamplingConfig
 from pyspark_analyzer.performance import optimize_dataframe_for_profiling
 from pyspark_analyzer.utils import format_profile_output
@@ -288,11 +289,11 @@ class TestEndToEndProfiling:
         profiler = DataFrameProfiler(df)
 
         # Test invalid column selection
-        with pytest.raises(ValueError):
+        with pytest.raises(ColumnNotFoundError):
             profiler.profile(columns=["non_existent_column"], output_format="dict")
 
         # Test invalid output format
-        with pytest.raises(ValueError):
+        with pytest.raises(ConfigurationError):
             profile = profiler.profile(output_format="dict")
             format_profile_output(profile, "invalid_format")
 

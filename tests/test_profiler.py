@@ -20,7 +20,9 @@ class TestDataFrameProfiler:
 
     def test_init_with_invalid_input(self):
         """Test profiler initialization with invalid input."""
-        with pytest.raises(TypeError):
+        from pyspark_analyzer import DataTypeError
+
+        with pytest.raises(DataTypeError):
             DataFrameProfiler("not_a_dataframe")
 
     def test_profile_all_columns(self, sample_dataframe):

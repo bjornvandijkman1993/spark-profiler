@@ -19,6 +19,7 @@ from pyspark.sql.types import (
     MapType,
 )
 
+from pyspark_analyzer import ConfigurationError
 from pyspark_analyzer.utils import (
     get_column_data_types,
     format_profile_output,
@@ -215,7 +216,7 @@ class TestFormatProfileOutput:
         """Test formatting with invalid format type."""
         profile_data = {"test": "data"}
 
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ConfigurationError) as excinfo:
             format_profile_output(profile_data, "invalid")
 
         assert "Unsupported format type: invalid" in str(excinfo.value)

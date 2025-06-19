@@ -3,9 +3,16 @@ Simplified sampling configuration for DataFrame profiling.
 """
 
 import time
+import logging
 from typing import Tuple, Optional
 from dataclasses import dataclass
 from pyspark.sql import DataFrame
+from pyspark.sql.utils import AnalysisException
+from py4j.protocol import Py4JError, Py4JJavaError
+
+from .exceptions import ConfigurationError, SamplingError, SparkOperationError
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -28,14 +35,14 @@ class SamplingConfig:
     def __post_init__(self) -> None:
         """Validate configuration after initialization."""
         if self.target_rows is not None and self.target_rows <= 0:
-            raise ValueError("target_rows must be positive")
+            raise ConfigurationError("target_rows must be positive")
 
         if self.fraction is not None:
             if not (0 < self.fraction <= 1.0):
-                raise ValueError("fraction must be between 0 and 1")
+                raise ConfigurationError("fraction must be between 0 and 1")
 
         if self.target_rows is not None and self.fraction is not None:
-            raise ValueError("Cannot specify both target_rows and fraction")
+            raise ConfigurationError("Cannot specify both target_rows and fraction")
 
 
 @dataclass
@@ -74,7 +81,13 @@ def apply_sampling(
 
     # Get row count if not provided
     if row_count is None:
-        row_count = df.count()
+        try:
+            row_count = df.count()
+        except (AnalysisException, Py4JError, Py4JJavaError) as e:
+            logger.error(f"Failed to count DataFrame rows: {str(e)}")
+            raise SparkOperationError(
+                f"Failed to count DataFrame rows during sampling: {str(e)}", e
+            )
 
     # Handle empty DataFrame
     if row_count == 0:
@@ -114,9 +127,15 @@ def apply_sampling(
 
     # Apply sampling if needed
     if should_sample:
-        sample_df = df.sample(fraction=sampling_fraction, seed=config.seed)
-        sample_size = sample_df.count()
-        is_sampled = True
+        try:
+            sample_df = df.sample(fraction=sampling_fraction, seed=config.seed)
+            sample_size = sample_df.count()
+            is_sampled = True
+        except (AnalysisException, Py4JError, Py4JJavaError) as e:
+            logger.error(f"Failed to sample DataFrame: {str(e)}")
+            raise SamplingError(
+                f"Failed to sample DataFrame with fraction {sampling_fraction}: {str(e)}"
+            )
     else:
         sample_df = df
         sample_size = row_count
