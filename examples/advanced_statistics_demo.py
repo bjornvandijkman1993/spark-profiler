@@ -259,7 +259,6 @@ def main():
 
     # Extract outlier information from the advanced statistics
     quantity_stats = outlier_results["columns"]["quantity"]
-    price_stats = outlier_results["columns"]["price"]
 
     # Display outlier information if available in advanced statistics
     print("\nOutlier Detection Results for 'quantity':")
