@@ -1,9 +1,60 @@
 """Shared test fixtures and configuration for pytest."""
 
 import os
+import sys
+import subprocess
 import pytest
 from unittest.mock import Mock
 from pyspark.sql import SparkSession
+
+
+def setup_java_environment():
+    """Setup Java environment for PySpark if not already configured.
+
+    This function is called at module level to ensure Java is configured
+    before any PySpark imports or operations.
+    """
+    if not os.environ.get("JAVA_HOME"):
+        # Try to find Java 17 in common locations
+        java_paths = [
+            "/opt/homebrew/opt/openjdk@17",  # Apple Silicon Macs
+            "/usr/local/opt/openjdk@17",  # Intel Macs
+        ]
+
+        for path in java_paths:
+            if os.path.exists(path):
+                os.environ["JAVA_HOME"] = path
+                os.environ["PATH"] = f"{path}/bin:{os.environ.get('PATH', '')}"
+                break
+        else:
+            # Try to find Java using /usr/libexec/java_home on macOS
+            try:
+                result = subprocess.run(
+                    ["/usr/libexec/java_home", "-v", "17"],
+                    capture_output=True,
+                    text=True,
+                )
+                if result.returncode == 0:
+                    java_home = result.stdout.strip()
+                    os.environ["JAVA_HOME"] = java_home
+                    os.environ["PATH"] = f"{java_home}/bin:{os.environ.get('PATH', '')}"
+            except (FileNotFoundError, subprocess.SubprocessError):
+                pass
+
+    # Set other required environment variables
+    os.environ.setdefault("SPARK_LOCAL_IP", "127.0.0.1")
+
+    # Set PySpark to use the current Python interpreter
+    if not os.environ.get("PYSPARK_PYTHON"):
+        os.environ["PYSPARK_PYTHON"] = sys.executable
+        os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
+
+    # Reduce Spark log verbosity
+    os.environ.setdefault("SPARK_SUBMIT_OPTS", "-Dlog4j.logLevel=ERROR")
+
+
+# Call setup at module level to ensure it runs before any tests
+setup_java_environment()
 
 
 @pytest.fixture(scope="session")
@@ -13,8 +64,6 @@ def spark_session():
     This fixture is created once per test session and shared across all tests.
     It sets up Spark in local mode with minimal configuration to avoid Java issues.
     """
-    # Set Java options to avoid common issues
-    os.environ.setdefault("SPARK_LOCAL_IP", "127.0.0.1")
 
     # Create SparkSession with test configuration
     spark = (
