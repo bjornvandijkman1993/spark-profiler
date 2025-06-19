@@ -34,6 +34,7 @@ ENV/
 # Testing
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
 .tox/
 
@@ -81,3 +82,7 @@ dependency-check-report.json
 
 # Project planning files
 project_files/
+
+# Claude and AI documentation
+.claude/
+ai_docs/
