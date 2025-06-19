@@ -612,7 +612,10 @@ class StatisticsComputer:
             self.cache_enabled = False
 
     def compute_all_columns_batch(
-        self, columns: Optional[List[str]] = None
+        self,
+        columns: Optional[List[str]] = None,
+        include_advanced: bool = True,
+        include_quality: bool = True,
     ) -> Dict[str, Dict[str, Any]]:
         """
         Compute statistics for multiple columns in batch operations.
@@ -624,6 +627,8 @@ class StatisticsComputer:
 
         Args:
             columns: List of columns to profile. If None, profiles all columns.
+            include_advanced: Include advanced statistics (skewness, kurtosis, outliers, etc.)
+            include_quality: Include data quality metrics
 
         Returns:
             Dictionary mapping column names to their statistics
@@ -648,7 +653,7 @@ class StatisticsComputer:
                 if column in column_types:
                     columns_to_process.append(column)
                     agg_exprs = self._build_column_agg_exprs(
-                        column, column_types[column]
+                        column, column_types[column], include_advanced
                     )
                     all_agg_exprs.extend(agg_exprs)
 
@@ -663,7 +668,12 @@ class StatisticsComputer:
                 results = {}
                 for column in columns_to_process:
                     results[column] = self._extract_column_stats(
-                        column, column_types[column], result_row, total_rows
+                        column,
+                        column_types[column],
+                        result_row,
+                        total_rows,
+                        include_advanced,
+                        include_quality,
                     )
 
                 return results
@@ -673,13 +683,16 @@ class StatisticsComputer:
             # Always clean up caching
             self.disable_caching()
 
-    def _build_column_agg_exprs(self, column_name: str, column_type: Any) -> List[Any]:
+    def _build_column_agg_exprs(
+        self, column_name: str, column_type: Any, include_advanced: bool = True
+    ) -> List[Any]:
         """
         Build aggregation expressions for a single column.
 
         Args:
             column_name: Name of the column
             column_type: PySpark data type of the column
+            include_advanced: Whether to include advanced statistics
 
         Returns:
             List of aggregation expressions for this column
@@ -702,23 +715,32 @@ class StatisticsComputer:
 
         # Add type-specific aggregations
         if isinstance(column_type, NumericType):
-            agg_exprs.extend(
-                [
-                    spark_min(col(escaped_name)).alias(f"{column_name}_min"),
-                    spark_max(col(escaped_name)).alias(f"{column_name}_max"),
-                    mean(col(escaped_name)).alias(f"{column_name}_mean"),
-                    stddev(col(escaped_name)).alias(f"{column_name}_std"),
-                    expr(f"percentile_approx({escaped_name}, 0.5)").alias(
-                        f"{column_name}_median"
-                    ),
-                    expr(f"percentile_approx({escaped_name}, 0.25)").alias(
-                        f"{column_name}_q1"
-                    ),
-                    expr(f"percentile_approx({escaped_name}, 0.75)").alias(
-                        f"{column_name}_q3"
-                    ),
-                ]
-            )
+            numeric_aggs = [
+                spark_min(col(escaped_name)).alias(f"{column_name}_min"),
+                spark_max(col(escaped_name)).alias(f"{column_name}_max"),
+                mean(col(escaped_name)).alias(f"{column_name}_mean"),
+                stddev(col(escaped_name)).alias(f"{column_name}_std"),
+                expr(f"percentile_approx({escaped_name}, 0.5)").alias(
+                    f"{column_name}_median"
+                ),
+                expr(f"percentile_approx({escaped_name}, 0.25)").alias(
+                    f"{column_name}_q1"
+                ),
+                expr(f"percentile_approx({escaped_name}, 0.75)").alias(
+                    f"{column_name}_q3"
+                ),
+            ]
+
+            # Add advanced statistics if requested
+            if include_advanced:
+                numeric_aggs.extend(
+                    [
+                        skewness(col(escaped_name)).alias(f"{column_name}_skewness"),
+                        kurtosis(col(escaped_name)).alias(f"{column_name}_kurtosis"),
+                    ]
+                )
+
+            agg_exprs.extend(numeric_aggs)
         elif isinstance(column_type, StringType):
             agg_exprs.extend(
                 [
@@ -745,7 +767,13 @@ class StatisticsComputer:
         return agg_exprs
 
     def _extract_column_stats(
-        self, column_name: str, column_type: Any, result_row: Any, total_rows: int
+        self,
+        column_name: str,
+        column_type: Any,
+        result_row: Any,
+        total_rows: int,
+        include_advanced: bool = True,
+        include_quality: bool = True,
     ) -> Dict[str, Any]:
         """
         Extract statistics for a single column from the aggregation result.
@@ -755,6 +783,8 @@ class StatisticsComputer:
             column_type: PySpark data type of the column
             result_row: Row containing all aggregation results
             total_rows: Total number of rows in the DataFrame
+            include_advanced: Whether to include advanced statistics
+            include_quality: Whether to include data quality metrics
 
         Returns:
             Dictionary with column statistics
@@ -810,6 +840,18 @@ class StatisticsComputer:
             if q1_val is not None and q3_val is not None:
                 stats["iqr"] = q3_val - q1_val
 
+            # Add advanced statistics if included and available
+            if include_advanced:
+                if f"{column_name}_skewness" in result_row:
+                    stats["skewness"] = result_row[f"{column_name}_skewness"]
+                if f"{column_name}_kurtosis" in result_row:
+                    stats["kurtosis"] = result_row[f"{column_name}_kurtosis"]
+
+                # Add outlier statistics (these require separate computation)
+                if q1_val is not None and q3_val is not None:
+                    outlier_stats = self.compute_outlier_stats(column_name)
+                    stats["outliers"] = outlier_stats
+
         elif isinstance(column_type, StringType):
             stats.update(
                 {
@@ -819,6 +861,18 @@ class StatisticsComputer:
                     "empty_count": result_row[f"{column_name}_empty_count"],
                 }
             )
+
+            # Add advanced string statistics if requested
+            if include_advanced:
+                # These require separate computation
+                string_stats = self.compute_string_stats(
+                    column_name, top_n=10, pattern_detection=True
+                )
+                # Only add the advanced parts
+                if "top_values" in string_stats:
+                    stats["top_values"] = string_stats["top_values"]
+                if "patterns" in string_stats:
+                    stats["patterns"] = string_stats["patterns"]
         elif isinstance(column_type, (TimestampType, DateType)):
             min_date = result_row[f"{column_name}_min_date"]
             max_date = result_row[f"{column_name}_max_date"]
@@ -837,5 +891,21 @@ class StatisticsComputer:
                     "date_range_days": date_range_days,
                 }
             )
+
+        # Add data quality metrics if requested
+        if include_quality:
+            # Determine quality check type based on column type
+            if isinstance(column_type, NumericType):
+                quality_type = "numeric"
+            elif isinstance(column_type, StringType):
+                quality_type = "string"
+            else:
+                # For complex types (arrays, structs, etc.), skip type-specific quality checks
+                quality_type = "other"
+
+            quality_stats = self.compute_data_quality_stats(
+                column_name, column_type=quality_type
+            )
+            stats["quality"] = quality_stats
 
         return stats

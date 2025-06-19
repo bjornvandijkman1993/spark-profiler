@@ -61,8 +61,10 @@ A complete profile contains three main sections:
 The library automatically applies optimizations for large datasets:
 
 ```python
-# Triggers optimizations for DataFrames > 10M rows
-profiler = DataFrameProfiler(df, optimize_for_large_datasets=True)
+from pyspark_analyzer import analyze
+
+# Enable sampling for large datasets
+profile = analyze(df, sampling=True)
 ```
 
 Optimizations include:
@@ -76,9 +78,15 @@ Optimizations include:
 #### 1. Sampling Configuration
 
 ```python
-from pyspark_analyzer import SamplingConfig
+from pyspark_analyzer import analyze, SamplingConfig
 
-# Aggressive sampling for very large datasets
+# Simple sampling with target rows
+profile = analyze(df, sampling=True, target_rows=50_000)
+
+# Or use fraction-based sampling
+profile = analyze(df, sampling=True, fraction=0.01)
+
+# For advanced control, use SamplingConfig
 config = SamplingConfig(
     target_size=50_000,      # Smaller sample
     min_fraction=0.001,      # 0.1% minimum
@@ -86,7 +94,7 @@ config = SamplingConfig(
     seed=42                  # Reproducible results
 )
 
-profiler = DataFrameProfiler(df, sampling_config=config)
+profile = analyze(df, sampling_config=config)
 ```
 
 #### 2. Column Selection
@@ -94,7 +102,7 @@ profiler = DataFrameProfiler(df, sampling_config=config)
 ```python
 # Profile only essential columns
 essential_cols = ["user_id", "revenue", "timestamp"]
-profile = profiler.profile(columns=essential_cols)
+profile = analyze(df, columns=essential_cols)
 ```
 
 #### 3. Partition Optimization
@@ -102,7 +110,7 @@ profile = profiler.profile(columns=essential_cols)
 ```python
 # Optimize partitions before profiling
 df = df.repartition(200)  # Adjust based on cluster size
-profiler = DataFrameProfiler(df)
+profile = analyze(df)
 ```
 
 ## Advanced Sampling
@@ -117,11 +125,10 @@ config = SamplingConfig(
     confidence_level=0.95   # 95% confidence interval
 )
 
-profiler = DataFrameProfiler(df, sampling_config=config)
-profile = profiler.profile()
+profile_dict = analyze(df, sampling_config=config, output_format="dict")
 
 # Check actual quality achieved
-sampling_info = profile["sampling"]
+sampling_info = profile_dict["sampling"]
 print(f"Quality score: {sampling_info['quality_score']:.2f}")
 print(f"Confidence: {sampling_info['confidence_interval']}")
 ```
@@ -142,11 +149,12 @@ config = SamplingConfig(
 
 ```python
 from pyspark.ml.feature import StandardScaler, VectorAssembler
+from pyspark_analyzer import analyze
 
 # Use profile to identify numeric columns
-profile = profiler.profile()
+profile_dict = analyze(df, output_format="dict")
 numeric_cols = [
-    col for col, stats in profile["columns"].items()
+    col for col, stats in profile_dict["columns"].items()
     if stats["data_type"] in ["integer", "double"]
 ]
 
@@ -160,12 +168,13 @@ assembler = VectorAssembler(
 ### With Data Quality Frameworks
 
 ```python
+from pyspark_analyzer import analyze
+
 def generate_quality_report(df):
-    profiler = DataFrameProfiler(df)
-    profile = profiler.profile()
+    profile_dict = analyze(df, include_quality=True, output_format="dict")
 
     issues = []
-    for col, stats in profile["columns"].items():
+    for col, stats in profile_dict["columns"].items():
         # Check for high null rates
         null_rate = stats["null_count"] / stats["count"]
         if null_rate > 0.1:
@@ -182,16 +191,17 @@ def generate_quality_report(df):
 
 ```python
 import json
+from pyspark_analyzer import analyze
 
-# Export for visualization tools
-profile = profiler.profile()
+# Get JSON output directly
+json_profile = analyze(df, output_format="json")
 with open("profile_report.json", "w") as f:
-    json.dump(profile, f, indent=2)
+    f.write(json_profile)
 
-# Generate markdown report
-summary = profiler.get_profile("summary")
-with open("profile_summary.md", "w") as f:
-    f.write(summary)
+# Or get dictionary and convert
+profile_dict = analyze(df, output_format="dict")
+with open("profile_report.json", "w") as f:
+    json.dump(profile_dict, f, indent=2)
 ```
 
 ## Best Practices
@@ -199,14 +209,17 @@ with open("profile_summary.md", "w") as f:
 ### 1. Cache Management
 
 ```python
-# Reuse profiler instance for multiple operations
-profiler = DataFrameProfiler(df)
+# Cache DataFrame before profiling for multiple operations
+df.cache()
 
-# First profile - computes and caches
-full_profile = profiler.profile()
+# First profile
+full_profile = analyze(df)
 
-# Subsequent calls use cache
-subset_profile = profiler.profile(columns=["age", "salary"])
+# Subsequent calls benefit from cached DataFrame
+subset_profile = analyze(df, columns=["age", "salary"])
+
+# Don't forget to unpersist when done
+df.unpersist()
 ```
 
 ### 2. Memory Management
@@ -218,7 +231,7 @@ chunk_size = 10
 
 for i in range(0, len(columns), chunk_size):
     chunk_cols = columns[i:i + chunk_size]
-    profile = profiler.profile(columns=chunk_cols)
+    profile = analyze(df, columns=chunk_cols)
     # Process chunk results...
 ```
 
@@ -226,9 +239,10 @@ for i in range(0, len(columns), chunk_size):
 
 ```python
 from pyspark.sql import AnalysisException
+from pyspark_analyzer import analyze
 
 try:
-    profile = profiler.profile()
+    profile = analyze(df)
 except AnalysisException as e:
     print(f"Schema error: {e}")
 except Exception as e:
@@ -267,8 +281,9 @@ def html_formatter(profile):
 
 ```python
 import logging
+from pyspark_analyzer import analyze
+
 logging.getLogger("pyspark_analyzer").setLevel(logging.DEBUG)
 
-profiler = DataFrameProfiler(df)
-profile = profiler.profile()  # Will show debug information
+profile = analyze(df)  # Will show debug information
 ```

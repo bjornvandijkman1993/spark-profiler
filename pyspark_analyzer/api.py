@@ -16,7 +16,6 @@ def analyze(
     output_format: str = "pandas",
     include_advanced: bool = True,
     include_quality: bool = True,
-    optimize_for_large_datasets: bool = False,
     seed: Optional[int] = None,
 ) -> Union[pd.DataFrame, dict, str]:
     """
@@ -35,7 +34,6 @@ def analyze(
         output_format: Output format ("pandas", "dict", "json", "summary"). Default is "pandas".
         include_advanced: Include advanced statistics (skewness, kurtosis, outliers, etc.)
         include_quality: Include data quality metrics
-        optimize_for_large_datasets: Use optimized batch processing for better performance
         seed: Random seed for reproducible sampling
 
     Returns:
@@ -79,7 +77,6 @@ def analyze(
         output_format=output_format,
         include_advanced=include_advanced,
         include_quality=include_quality,
-        optimize_for_large_datasets=optimize_for_large_datasets,
         sampling_config=sampling_config,
     )
 
