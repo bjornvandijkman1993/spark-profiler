@@ -61,7 +61,7 @@ uv sync
 
 ```python
 from pyspark.sql import SparkSession
-from pyspark_analyzer import DataFrameProfiler
+from pyspark_analyzer import analyze
 
 # Create Spark session
 spark = SparkSession.builder.appName("DataProfiling").getOrCreate()
@@ -69,48 +69,117 @@ spark = SparkSession.builder.appName("DataProfiling").getOrCreate()
 # Load your DataFrame
 df = spark.read.parquet("your_data.parquet")
 
-# Profile the DataFrame
-profiler = DataFrameProfiler(df)
-profile = profiler.profile()
+# Profile the DataFrame (returns pandas DataFrame by default)
+profile_df = analyze(df)
 
-# View results
-print(f"Total Rows: {profile['overview']['total_rows']:,}")
-print(f"Total Columns: {profile['overview']['total_columns']}")
+# View column statistics
+print(profile_df)
 
-# Check sampling information
-sampling_info = profile['sampling']
-if sampling_info['is_sampled']:
-    print(f"Sample Quality: {sampling_info['quality_score']:.3f}")
-    print(f"Speedup: {sampling_info['estimated_speedup']:.1f}x")
+# Get dictionary format for programmatic access
+profile_dict = analyze(df, output_format="dict")
+print(f"Total Rows: {profile_dict['overview']['total_rows']:,}")
+print(f"Total Columns: {profile_dict['overview']['total_columns']}")
+
+# Get human-readable summary
+summary = analyze(df, output_format="summary")
+print(summary)
 ```
 
 ### Sampling Options
 
 ```python
-from pyspark_analyzer import DataFrameProfiler, SamplingConfig
+from pyspark_analyzer import analyze
 
 # Option 1: Disable sampling completely
-config = SamplingConfig(enabled=False)
-profiler = DataFrameProfiler(df, sampling_config=config)
+profile = analyze(df, sampling=False)
 
 # Option 2: Sample to specific number of rows
-config = SamplingConfig(target_rows=100_000, seed=42)
-profiler = DataFrameProfiler(df, sampling_config=config)
+profile = analyze(df, target_rows=100_000, seed=42)
 
 # Option 3: Sample by fraction
-config = SamplingConfig(fraction=0.1, seed=42)  # 10% sample
-profiler = DataFrameProfiler(df, sampling_config=config)
+profile = analyze(df, fraction=0.1, seed=42)  # 10% sample
 
-# Option 4: Auto-sampling (default behavior)
+# Option 4: Custom auto-sampling threshold
+# Auto-sample only if dataset has more than 5M rows
+profile = analyze(df, auto_threshold=5_000_000)
+
+# Option 5: Auto-sampling (default behavior)
 # Automatically samples large datasets (>10M rows by default)
-profiler = DataFrameProfiler(df)  # Uses default SamplingConfig
+profile = analyze(df)
 
+# Check sampling information (with dict output)
+profile_dict = analyze(df, output_format="dict")
+sampling_info = profile_dict['sampling']
+if sampling_info['is_sampled']:
+    print(f"Sample Quality: {sampling_info['quality_score']:.3f}")
+    print(f"Speedup: {sampling_info['estimated_speedup']:.1f}x")
+```
+
+### Advanced Features
+
+```python
+from pyspark_analyzer import analyze
+
+# Include advanced statistics (skewness, kurtosis, percentiles)
+profile = analyze(df, include_advanced=True)
+
+# Include data quality analysis
+profile = analyze(df, include_quality=True)
+
+# Profile specific columns only
+profile = analyze(df, columns=["age", "salary", "department"])
+
+# Different output formats
+profile_df = analyze(df)                    # Default: pandas DataFrame
+profile_dict = analyze(df, output_format="dict")    # Dictionary format
+summary = analyze(df, output_format="summary")      # Human-readable summary
+
+# Save pandas output to various formats
+profile_df = analyze(df)
+profile_df.to_csv("profile.csv")
+profile_df.to_parquet("profile.parquet")
+profile_df.to_html("profile.html")
+```
+
+### Using the Traditional API
+
+The library maintains backward compatibility with the class-based approach:
+
+```python
+from pyspark_analyzer import DataFrameProfiler, SamplingConfig
+
+# Traditional usage
+config = SamplingConfig(target_rows=50000)
+profiler = DataFrameProfiler(df, sampling_config=config)
 profile = profiler.profile()
+
+# Access to internal components for advanced use cases
+stats_computer = profiler.stats_computer
 ```
 
 ## 📊 Example Output
 
+### Default: Pandas DataFrame
 ```python
+profile_df = analyze(df)
+print(profile_df)
+
+# Output:
+#                    column_name     data_type  null_count  null_percentage  distinct_count  ...
+# 0                     user_id   IntegerType           0              0.0           50000  ...
+# 1                         age   IntegerType         100              0.1             120  ...
+# 2                       email    StringType           0              0.0           49950  ...
+
+# Access metadata
+print(profile_df.attrs['overview'])
+# {'total_rows': 1000000, 'total_columns': 5, ...}
+```
+
+### Dictionary Format
+```python
+profile_dict = analyze(df, output_format="dict")
+
+# Output:
 {
     'overview': {
         'total_rows': 1000000,
@@ -132,8 +201,7 @@ profile = profiler.profile()
             'max': 999999,
             'mean': 500000.0,
             ...
-        },
-        ...
+        }
     }
 }
 ```
@@ -165,9 +233,11 @@ profile = profiler.profile()
 Check out the [examples](./examples/) directory for comprehensive usage examples:
 
 - [`installation_verification.py`](./examples/installation_verification.py) - Verify your installation
-- [`basic_usage.py`](./examples/basic_usage.py) - Complete usage demonstration
-- [`sampling_example.py`](./examples/sampling_example.py) - Advanced sampling features
-- [`adaptive_partitioning_demo.py`](./examples/adaptive_partitioning_demo.py) - Partition optimization demonstration
+- [`simple_api_example.py`](./examples/simple_api_example.py) - Quick start with the new `analyze()` API
+- [`basic_usage.py`](./examples/basic_usage.py) - Traditional class-based usage demonstration
+- [`sampling_example.py`](./examples/sampling_example.py) - All sampling configuration options
+- [`pandas_output_example.py`](./examples/pandas_output_example.py) - Working with pandas DataFrame output
+- [`advanced_statistics_demo.py`](./examples/advanced_statistics_demo.py) - Advanced features and data quality analysis
 
 ## 🧪 Development
 
