@@ -5,6 +5,10 @@ Performance optimization utilities for large dataset profiling.
 from typing import Optional
 from pyspark.sql import DataFrame
 
+from .logging import get_logger
+
+logger = get_logger(__name__)
+
 
 def optimize_dataframe_for_profiling(
     df: DataFrame,
@@ -22,10 +26,15 @@ def optimize_dataframe_for_profiling(
     Returns:
         Optimized DataFrame
     """
+    logger.debug(f"Optimizing DataFrame with row_count={row_count}")
     optimized_df = df
 
     # Sample if requested (note: sampling is now handled by SamplingDecisionEngine)
     if sample_fraction and 0 < sample_fraction < 1.0:
+        logger.warning(
+            f"Legacy sampling detected with fraction={sample_fraction}. "
+            "Consider using SamplingConfig instead."
+        )
         optimized_df = optimized_df.sample(fraction=sample_fraction, seed=42)
         # If we sampled, the row count needs to be recalculated
         row_count = None
@@ -60,25 +69,41 @@ def _adaptive_partition(df: DataFrame, row_count: Optional[int] = None) -> DataF
     aqe_setting = spark.conf.get("spark.sql.adaptive.enabled", "false")
     aqe_enabled = aqe_setting.lower() == "true" if aqe_setting else False
     if aqe_enabled:
+        logger.debug(
+            "Adaptive Query Execution is enabled, deferring to Spark optimization"
+        )
         # With AQE enabled, Spark will automatically optimize partitions
         # We only need to handle extreme cases
         current_partitions = df.rdd.getNumPartitions()
 
         # Only intervene for very small datasets
         if row_count is not None and row_count < 1000 and current_partitions > 1:
+            logger.info(
+                f"Coalescing small dataset from {current_partitions} to 1 partition"
+            )
             return df.coalesce(1)
 
         # Let AQE handle the rest
+        logger.debug(
+            f"AQE will handle optimization for {current_partitions} partitions"
+        )
         return df
 
     # Manual partition optimization when AQE is disabled
     current_partitions = df.rdd.getNumPartitions()
+    logger.debug(
+        f"Manual partition optimization: current partitions = {current_partitions}"
+    )
 
     # Get cluster configuration hints
     default_parallelism = spark.sparkContext.defaultParallelism
     shuffle_partitions_setting = spark.conf.get("spark.sql.shuffle.partitions", "200")
     shuffle_partitions = (
         int(shuffle_partitions_setting) if shuffle_partitions_setting else 200
+    )
+    logger.debug(
+        f"Cluster config: default_parallelism={default_parallelism}, "
+        f"shuffle_partitions={shuffle_partitions}"
     )
 
     # Optimal partition size targets (in bytes)
@@ -98,6 +123,11 @@ def _adaptive_partition(df: DataFrame, row_count: Optional[int] = None) -> DataF
     optimal_partitions = int(estimated_total_bytes / target_partition_bytes)
     optimal_partitions = max(1, optimal_partitions)  # At least 1 partition
 
+    logger.debug(
+        f"Data size estimate: {estimated_total_bytes / (1024*1024):.2f} MB, "
+        f"target partitions: {optimal_partitions}"
+    )
+
     # Apply cluster-aware bounds
     # Don't exceed shuffle partitions or create too many small partitions
     optimal_partitions = min(optimal_partitions, shuffle_partitions)
@@ -108,9 +138,11 @@ def _adaptive_partition(df: DataFrame, row_count: Optional[int] = None) -> DataF
     if row_count < 10000:
         # Very small dataset - minimize overhead
         optimal_partitions = min(optimal_partitions, max(1, default_parallelism // 4))
+        logger.debug(f"Small dataset optimization: {optimal_partitions} partitions")
     elif row_count > 10000000:
         # Very large dataset - ensure sufficient parallelism
         optimal_partitions = max(optimal_partitions, default_parallelism)
+        logger.debug(f"Large dataset optimization: {optimal_partitions} partitions")
 
     # Only repartition if there's a significant difference
     partition_ratio = (
@@ -121,13 +153,25 @@ def _adaptive_partition(df: DataFrame, row_count: Optional[int] = None) -> DataF
         # Significant difference - worth repartitioning
         if optimal_partitions < current_partitions:
             # Reduce partitions - use coalesce to avoid shuffle
+            logger.info(
+                f"Coalescing partitions: {current_partitions} -> {optimal_partitions} "
+                f"(ratio: {partition_ratio:.2f})"
+            )
             return df.coalesce(optimal_partitions)
         else:
             # Increase partitions - requires shuffle
             # Consider using repartitionByRange for better distribution if there's a sortable key
+            logger.info(
+                f"Repartitioning: {current_partitions} -> {optimal_partitions} "
+                f"(ratio: {partition_ratio:.2f})"
+            )
             return df.repartition(optimal_partitions)
 
     # No significant benefit from repartitioning
+    logger.debug(
+        f"No repartitioning needed: current={current_partitions}, "
+        f"optimal={optimal_partitions}, ratio={partition_ratio:.2f}"
+    )
     return df
 
 
