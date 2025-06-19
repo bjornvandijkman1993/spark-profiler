@@ -89,9 +89,9 @@ With sampling configuration::
     # Or sample 10% of data
     profile = analyze(df, fraction=0.1)
 
-Optimized for large datasets::
+With automatic sampling for large datasets::
 
-    profile = analyze(df, optimize_for_large_datasets=True)
+    profile = analyze(df, sampling=True)
 
 Different output formats::
 

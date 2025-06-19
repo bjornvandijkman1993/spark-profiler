@@ -231,34 +231,32 @@ def main():
     print("4. OUTLIER DETECTION COMPARISON")
     print("=" * 60)
 
-    # Note: For very advanced usage (like accessing internal components directly),
-    # you might still need to use DataFrameProfiler. However, this is not recommended
-    # for general use. The analyze() function should cover most use cases.
-    # Here we show it for demonstration purposes only.
-    from pyspark_analyzer.profiler import DataFrameProfiler
-    from pyspark_analyzer.sampling import SamplingConfig
-
-    # This will show a deprecation warning
-    profiler = DataFrameProfiler(df, sampling_config=SamplingConfig(enabled=False))
-    # Force initialization of stats computer
-    profiler._ensure_stats_computer()
-    stats_computer = profiler.stats_computer
-
-    # IQR method
-    iqr_outliers = stats_computer.compute_outlier_stats("quantity", method="iqr")
-    print("\nIQR Method Results for 'quantity':")
-    print(
-        f"  - Outliers: {iqr_outliers['outlier_count']} ({iqr_outliers['outlier_percentage']:.1f}%)"
+    # Note: Direct outlier detection is now available through the analyze function
+    # with include_advanced=True parameter
+    outlier_results = analyze(
+        df.select("quantity", "price"), include_advanced=True, output_format="dict"
     )
-    print(f"  - Lower outliers: {iqr_outliers['lower_outlier_count']}")
-    print(f"  - Upper outliers: {iqr_outliers['upper_outlier_count']}")
 
-    # Z-score method
-    zscore_outliers = stats_computer.compute_outlier_stats("quantity", method="zscore")
-    print("\nZ-Score Method Results for 'quantity':")
-    print(
-        f"  - Outliers (|z| > 3): {zscore_outliers['outlier_count']} ({zscore_outliers['outlier_percentage']:.1f}%)"
-    )
+    # Extract outlier information from the advanced statistics
+    quantity_stats = outlier_results["columns"]["quantity"]
+    price_stats = outlier_results["columns"]["price"]
+
+    # Display outlier information if available in advanced statistics
+    print("\nOutlier Detection Results for 'quantity':")
+    if "outliers" in quantity_stats:
+        outliers = quantity_stats["outliers"]
+        print(f"  - Total outliers: {outliers.get('count', 'N/A')}")
+        print(f"  - Outlier percentage: {outliers.get('percentage', 'N/A')}")
+        if "iqr" in outliers:
+            print(f"  - IQR method: {outliers['iqr']}")
+        if "zscore" in outliers:
+            print(f"  - Z-score method: {outliers['zscore']}")
+    else:
+        print("  - Advanced outlier statistics not included in this profile")
+        print("  - Note: The analyze() function focuses on essential statistics")
+        print(
+            "  - For specialized outlier detection, consider using dedicated ML libraries"
+        )
 
     # 5. Pattern Analysis
     print("\n" + "=" * 60)
