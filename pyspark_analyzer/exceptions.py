@@ -5,6 +5,8 @@ This module defines domain-specific exceptions to provide better error handling
 and more meaningful error messages for users.
 """
 
+from typing import Optional
+
 
 class ProfilingError(Exception):
     """Base exception for all profiling-related errors."""
@@ -39,7 +41,7 @@ class ConfigurationError(ProfilingError):
 class SparkOperationError(ProfilingError):
     """Raised when Spark operations fail."""
 
-    def __init__(self, message: str, original_exception: Exception = None):
+    def __init__(self, message: str, original_exception: Optional[Exception] = None):
         super().__init__(message)
         self.original_exception = original_exception
 

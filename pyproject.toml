@@ -117,6 +117,14 @@ warn_unused_ignores = true
 module = "pyspark.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "pandas.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "py4j.*"
+ignore_missing_imports = true
+
 [tool.ruff]
 line-length = 88
 target-version = "py312"
