@@ -7,7 +7,7 @@ for all columns including null counts, data type specific metrics, and performan
 
 from .api import analyze
 
-__version__ = "3.2.0"
+__version__ = "4.0.0"
 __all__ = [
     "analyze",
 ]
