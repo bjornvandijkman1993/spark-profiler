@@ -19,7 +19,7 @@ from .exceptions import (
 from .sampling import SamplingConfig
 from .logging import configure_logging, set_log_level, disable_logging, get_logger
 
-__version__ = "4.1.0"
+__version__ = "4.2.0"
 __all__ = [
     "analyze",
     # Exceptions
