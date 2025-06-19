@@ -208,9 +208,7 @@ class TestDataFrameProfilerSampling:
     def test_sampling_with_optimization(self, large_dataframe):
         """Test sampling combined with performance optimization."""
         config = SamplingConfig(fraction=0.5)  # 50% sample
-        profiler = DataFrameProfiler(
-            large_dataframe, sampling_config=config, optimize_for_large_datasets=True
-        )
+        profiler = DataFrameProfiler(large_dataframe, sampling_config=config)
         profile = profiler.profile(output_format="dict")
 
         sampling_info = profile["sampling"]

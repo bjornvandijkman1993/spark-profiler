@@ -113,9 +113,7 @@ class TestEndToEndProfiling:
         from pyspark_analyzer.sampling import SamplingConfig
 
         sampling_config = SamplingConfig(fraction=0.5)  # Sample 50% of data
-        profiler = DataFrameProfiler(
-            large_df, optimize_for_large_datasets=True, sampling_config=sampling_config
-        )
+        profiler = DataFrameProfiler(large_df, sampling_config=sampling_config)
         profile = profiler.profile(output_format="dict")
 
         # Verify sampling was applied
