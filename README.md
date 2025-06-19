@@ -137,21 +137,6 @@ profile_df.to_parquet("profile.parquet")
 profile_df.to_html("profile.html")
 ```
 
-### Using the Traditional API
-
-The library maintains backward compatibility with the class-based approach:
-
-```python
-from pyspark_analyzer import DataFrameProfiler, SamplingConfig
-
-# Traditional usage
-config = SamplingConfig(target_rows=50000)
-profiler = DataFrameProfiler(df, sampling_config=config)
-profile = profiler.profile()
-
-# Access to internal components for advanced use cases
-stats_computer = profiler.stats_computer
-```
 
 ## 📊 Example Output
 
@@ -206,7 +191,7 @@ profile_dict = analyze(df, output_format="dict")
 
 ### Core Components
 
-- **`DataFrameProfiler`**: Main interface for profiling operations
+- **`analyze()`**: Simple, unified API for all profiling operations
 - **`StatisticsComputer`**: Handles individual column statistics computation
 - **`SamplingConfig`**: Simple, clear configuration for sampling behavior
 - **`BatchStatisticsComputer`**: Optimized batch processing for large datasets

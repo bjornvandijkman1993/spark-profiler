@@ -39,7 +39,7 @@ Quick Start
 .. code-block:: python
 
    from pyspark.sql import SparkSession
-   from pyspark_analyzer import DataFrameProfiler
+   from pyspark_analyzer import analyze
 
    # Create a Spark session
    spark = SparkSession.builder.appName("ProfilerExample").getOrCreate()
@@ -47,12 +47,12 @@ Quick Start
    # Load your DataFrame
    df = spark.read.csv("data.csv", header=True, inferSchema=True)
 
-   # Create profiler and generate profile
-   profiler = DataFrameProfiler(df)
-   profile = profiler.profile()
+   # Analyze the DataFrame
+   profile = analyze(df)
 
-   # Print summary report
-   print(profiler.get_profile("summary"))
+   # Get summary report
+   summary = analyze(df, output_format="summary")
+   print(summary)
 
 .. toctree::
    :maxdepth: 2
