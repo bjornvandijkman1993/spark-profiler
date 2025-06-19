@@ -1,138 +1,93 @@
 #!/usr/bin/env python3
 """
-Installation verification example for the PySpark DataFrame Profiler.
-
-This script verifies that the pyspark-analyzer package is correctly installed
-and demonstrates basic functionality with a sample dataset.
+Installation verification for pyspark-analyzer.
 """
 
 import sys
 from pyspark.sql import SparkSession
-from pyspark.sql.types import (
-    StructType,
-    StructField,
-    StringType,
-    IntegerType,
-    DoubleType,
-    TimestampType,
-)
-from datetime import datetime
 from pyspark_analyzer import analyze
 
 
 def verify_installation():
     """Verify the profiler installation and basic functionality."""
-    print("🚀 Verifying PySpark DataFrame Profiler Installation...")
+    print("Verifying PySpark DataFrame Profiler Installation...")
 
     # Create Spark session
-    print("📊 Creating Spark session...")
+    print("Creating Spark session...")
     spark = (
         SparkSession.builder.appName("ProfilerTest").master("local[*]").getOrCreate()
     )
-    spark.conf.set("spark.sql.adaptive.enabled", "false")  # Simplify for testing
+    spark.conf.set("spark.sql.adaptive.enabled", "false")
 
     try:
         # Create test data
-        print("📋 Creating test DataFrame...")
-        schema = StructType(
-            [
-                StructField("id", IntegerType(), True),
-                StructField("name", StringType(), True),
-                StructField("age", IntegerType(), True),
-                StructField("salary", DoubleType(), True),
-                StructField("department", StringType(), True),
-                StructField("hire_date", TimestampType(), True),
-            ]
-        )
-
+        print("Creating test DataFrame...")
         data = [
-            (1, "John Doe", 30, 75000.0, "Engineering", datetime(2020, 1, 15)),
-            (2, "Jane Smith", 25, 65000.0, "Marketing", datetime(2021, 3, 10)),
-            (3, "Bob Johnson", 35, 85000.0, "Engineering", datetime(2019, 7, 20)),
-            (4, None, 28, 70000.0, "Sales", datetime(2022, 2, 5)),
-            (5, "Alice Brown", None, 80000.0, "Engineering", datetime(2020, 11, 30)),
-            (6, "Charlie Wilson", 32, None, "Marketing", datetime(2021, 8, 15)),
-            (7, "", 29, 72000.0, "Sales", None),
-            (8, "Diana Prince", 31, 78000.0, "Engineering", datetime(2020, 5, 12)),
+            (1, "John", 30, 75000.0, "Engineering"),
+            (2, "Jane", 25, 65000.0, "Marketing"),
+            (3, "Bob", 35, 85000.0, "Engineering"),
+            (4, None, 28, 70000.0, "Sales"),
+            (5, "Alice", None, 80000.0, "Engineering"),
         ]
+        df = spark.createDataFrame(data, ["id", "name", "age", "salary", "department"])
 
-        df = spark.createDataFrame(data, schema)
-
-        print("📈 Sample data:")
-        df.show(5)
+        print("\nTest data:")
+        df.show()
 
         # Test basic profiling
-        print("\n🔍 Running basic profiling...")
-        # Get profile as dictionary for easier access
+        print("Running basic profiling...")
         profile = analyze(df, output_format="dict", sampling=False)
 
         # Display results
         overview = profile["overview"]
-        print(f"✅ Total Rows: {overview['total_rows']}")
-        print(f"✅ Total Columns: {overview['total_columns']}")
-        print(f"✅ Column Types: {list(overview['column_types'].keys())}")
+        print(f"✓ Total Rows: {overview['total_rows']}")
+        print(f"✓ Total Columns: {overview['total_columns']}")
+        print(f"✓ Column Types: {list(overview['column_types'].keys())}")
 
         # Test specific column profiling
-        print("\n🎯 Testing specific column profiling...")
+        print("\nTesting column profiling...")
         numeric_profile = analyze(
             df, columns=["age", "salary"], output_format="dict", sampling=False
         )
 
-        for col_name, stats in numeric_profile["columns"].items():
+        for col, stats in numeric_profile["columns"].items():
             print(
-                f"✅ {col_name}: min={stats.get('min')}, max={stats.get('max')}, mean={stats.get('mean', 0):.2f}"
+                f"✓ {col}: min={stats['min']}, max={stats['max']}, mean={stats['mean']:.0f}"
             )
 
-        # Test performance optimization
-        print("\n⚡ Testing performance optimization...")
-        optimized_profile = analyze(
-            df, optimize_for_large_datasets=True, output_format="dict", sampling=False
-        )
-
-        print(
-            f"✅ Optimized profiling completed for {len(optimized_profile['columns'])} columns"
-        )
-
-        # Test pandas output (new default)
-        print("\n🐼 Testing pandas output format...")
-        pandas_profile = analyze(df, sampling=False)  # Default is pandas
-        print(f"✅ Pandas DataFrame shape: {pandas_profile.shape}")
-        print(f"✅ Columns in pandas output: {list(pandas_profile.columns)[:5]}...")
+        # Test pandas output
+        print("\nTesting pandas output...")
+        pandas_profile = analyze(df, sampling=False)
+        print(f"✓ Pandas DataFrame shape: {pandas_profile.shape}")
 
         # Test output formatting
-        print("\n📄 Testing output formatting...")
+        print("\nTesting output formatting...")
         from pyspark_analyzer.utils import format_profile_output
 
         summary = format_profile_output(profile, format_type="summary")
-        print("✅ Summary format generated successfully")
-        print(f"Summary length: {len(summary)} characters")
+        print(f"✓ Summary format: {len(summary)} characters")
 
         json_output = format_profile_output(profile, format_type="json")
-        print("✅ JSON format generated successfully")
-        print(f"JSON length: {len(json_output)} characters")
+        print(f"✓ JSON format: {len(json_output)} characters")
 
-        print(
-            "\n🎉 Installation verification successful! The library is working correctly."
-        )
-        print("\n📖 Next steps:")
-        print("   - Check out examples/basic_usage.py for comprehensive usage examples")
-        print("   - Try examples/sampling_example.py for advanced sampling features")
-        print("   - Read CLAUDE.md for development guidance")
+        print("\nInstallation verification successful!")
+        print("\nNext steps:")
+        print("  - Check examples/basic_usage.py for usage examples")
+        print("  - Try examples/sampling_example.py for large datasets")
         return True
 
     except Exception as e:
-        print(f"❌ Installation verification failed: {e}")
-        print("\n🔧 Troubleshooting:")
-        print("   - Ensure PySpark is installed: pip install pyspark")
-        print("   - Verify Java is installed and accessible")
-        print("   - Check that JAVA_HOME is set correctly")
+        print(f"\nInstallation verification failed: {e}")
+        print("\nTroubleshooting:")
+        print("  - Ensure PySpark is installed: pip install pyspark")
+        print("  - Verify Java is installed (version 8+)")
+        print("  - Check JAVA_HOME environment variable")
         import traceback
 
         traceback.print_exc()
         return False
 
     finally:
-        # Clean up
         spark.stop()
 
 
