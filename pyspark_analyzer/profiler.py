@@ -15,6 +15,9 @@ from .statistics import StatisticsComputer
 from .utils import get_column_data_types, format_profile_output
 from .performance import optimize_dataframe_for_profiling
 from .sampling import SamplingConfig, SamplingMetadata, apply_sampling
+from .logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def profile_dataframe(
@@ -41,16 +44,31 @@ def profile_dataframe(
         Profile results in requested format
     """
     if not isinstance(dataframe, DataFrame):
+        logger.error("Input must be a PySpark DataFrame")
         raise TypeError("Input must be a PySpark DataFrame")
+
+    logger.info(f"Starting profile_dataframe with {len(dataframe.columns)} columns")
 
     # Set up sampling with default config if not provided
     if sampling_config is None:
         sampling_config = SamplingConfig()
 
     # Apply sampling
+    logger.debug("Applying sampling configuration")
     sampled_df, sampling_metadata = apply_sampling(dataframe, sampling_config)
 
+    if sampling_metadata.is_sampled:
+        logger.info(
+            f"Sampling applied: {sampling_metadata.original_size} rows -> "
+            f"{sampling_metadata.sample_size} rows (fraction: {sampling_metadata.sampling_fraction:.4f})"
+        )
+    else:
+        logger.debug(
+            f"No sampling applied, using full dataset with {sampling_metadata.sample_size} rows"
+        )
+
     # Always optimize DataFrame for better performance
+    logger.debug("Optimizing DataFrame for profiling")
     sampled_df = optimize_dataframe_for_profiling(
         sampled_df, row_count=sampling_metadata.sample_size
     )
@@ -65,7 +83,12 @@ def profile_dataframe(
     # Validate columns exist
     invalid_columns = set(columns) - set(sampled_df.columns)
     if invalid_columns:
+        logger.error(f"Columns not found in DataFrame: {invalid_columns}")
         raise ValueError(f"Columns not found in DataFrame: {invalid_columns}")
+
+    logger.info(
+        f"Profiling {len(columns)} columns: {columns[:5]}{'...' if len(columns) > 5 else ''}"
+    )
 
     # Create profile result
     profile_result: Dict[str, Any] = {
@@ -80,10 +103,13 @@ def profile_dataframe(
     )
 
     # Always use batch processing for optimal performance
+    logger.debug("Starting batch column profiling")
     profile_result["columns"] = stats_computer.compute_all_columns_batch(
         columns, include_advanced=include_advanced, include_quality=include_quality
     )
+    logger.info("Column profiling completed")
 
+    logger.debug(f"Formatting output as {output_format}")
     return format_profile_output(profile_result, output_format)
 
 
@@ -237,6 +263,7 @@ class DataFrameProfiler:
         )
 
         if not isinstance(dataframe, DataFrame):
+            logger.error("Input must be a PySpark DataFrame")
             raise TypeError("Input must be a PySpark DataFrame")
 
         # Set up sampling with default config if not provided

@@ -26,6 +26,9 @@ from pyspark.sql.functions import (
     abs as spark_abs,
 )
 from .utils import escape_column_name
+from .logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class LazyRowCount:
@@ -52,7 +55,9 @@ class LazyRowCount:
     def value(self) -> int:
         """Get total row count, computing if not cached."""
         if self._count is None:
+            logger.debug("Computing DataFrame row count")
             self._count = self.df.count()
+            logger.debug(f"Row count computed: {self._count:,}")
         return self._count
 
     def get_conditional_count(self, condition_key: str, condition_expr: Any) -> int:
@@ -134,6 +139,9 @@ class StatisticsComputer:
         # Use LazyRowCount for efficient row counting
         self.lazy_row_count = LazyRowCount(dataframe, initial_count=total_rows)
         self.cache_enabled = False
+        logger.debug(
+            f"StatisticsComputer initialized with {'cached' if total_rows else 'lazy'} row count"
+        )
 
     def _get_total_rows(self) -> int:
         """Get total row count using lazy evaluation."""
@@ -149,6 +157,7 @@ class StatisticsComputer:
         Returns:
             Dictionary with basic statistics
         """
+        logger.debug(f"Computing basic statistics for column: {column_name}")
         # Use lazy evaluation - total_rows will only be computed if needed
         total_rows = self._get_total_rows()
 
@@ -192,6 +201,9 @@ class StatisticsComputer:
         Returns:
             Dictionary with numeric statistics
         """
+        logger.debug(
+            f"Computing numeric statistics for column: {column_name}, advanced={advanced}"
+        )
         # Build aggregation list dynamically for performance
         agg_list = [
             spark_min(col(column_name)).alias("min_value"),
@@ -219,6 +231,7 @@ class StatisticsComputer:
             )
 
         # Single aggregation for all numeric stats
+        logger.debug(f"Executing numeric aggregation with {len(agg_list)} expressions")
         result = self.df.agg(*agg_list).collect()[0]
 
         stats = {
@@ -410,6 +423,9 @@ class StatisticsComputer:
         Returns:
             Dictionary with outlier statistics
         """
+        logger.debug(
+            f"Computing outlier statistics for column: {column_name}, method={method}"
+        )
         if method == "iqr":
             # IQR method: outliers are values outside [Q1 - 1.5*IQR, Q3 + 1.5*IQR]
             result = self.df.agg(
@@ -636,6 +652,8 @@ class StatisticsComputer:
         if columns is None:
             columns = self.df.columns
 
+        logger.info(f"Starting batch computation for {len(columns)} columns")
+
         # Enable caching for multiple operations
         self.enable_caching()
 
@@ -659,6 +677,9 @@ class StatisticsComputer:
 
             # Execute single aggregation for all columns
             if all_agg_exprs:
+                logger.debug(
+                    f"Executing batch aggregation with {len(all_agg_exprs)} expressions"
+                )
                 result_row = self.df.agg(*all_agg_exprs).collect()[0]
 
                 # Get total rows if not cached
@@ -676,6 +697,7 @@ class StatisticsComputer:
                         include_quality,
                     )
 
+                logger.info(f"Batch computation completed for {len(results)} columns")
                 return results
             else:
                 return {}
