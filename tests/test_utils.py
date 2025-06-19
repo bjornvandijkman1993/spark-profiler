@@ -5,97 +5,12 @@ Test cases for utility functions.
 import pytest
 import json
 from datetime import datetime, date
-from pyspark.sql.types import (
-    StructType,
-    StructField,
-    StringType,
-    IntegerType,
-    DoubleType,
-    LongType,
-    BooleanType,
-    DateType,
-    TimestampType,
-    ArrayType,
-    MapType,
-)
 
 from pyspark_analyzer import ConfigurationError
 from pyspark_analyzer.utils import (
-    get_column_data_types,
     format_profile_output,
     _create_summary_report,
 )
-
-
-class TestGetColumnDataTypes:
-    """Test cases for get_column_data_types function."""
-
-    def test_simple_schema(self, spark_session):
-        """Test getting data types from a simple DataFrame."""
-        data = [(1, "Alice", 25.5)]
-        columns = ["id", "name", "score"]
-        df = spark_session.createDataFrame(data, columns)
-
-        result = get_column_data_types(df)
-
-        assert len(result) == 3
-        assert result["id"] == LongType()
-        assert result["name"] == StringType()
-        assert result["score"] == DoubleType()
-
-    def test_complex_schema(self, spark_session):
-        """Test getting data types from a DataFrame with complex types."""
-        schema = StructType(
-            [
-                StructField("id", IntegerType(), True),
-                StructField("name", StringType(), True),
-                StructField("active", BooleanType(), True),
-                StructField("scores", ArrayType(DoubleType()), True),
-                StructField("metadata", MapType(StringType(), StringType()), True),
-                StructField("created_date", DateType(), True),
-                StructField("updated_time", TimestampType(), True),
-            ]
-        )
-
-        data = [
-            (
-                1,
-                "Alice",
-                True,
-                [85.5, 90.0],
-                {"department": "IT", "level": "senior"},
-                date(2023, 1, 1),
-                datetime(2023, 1, 1, 12, 0),
-            )
-        ]
-
-        df = spark_session.createDataFrame(data, schema)
-        result = get_column_data_types(df)
-
-        assert len(result) == 7
-        assert result["id"] == IntegerType()
-        assert result["name"] == StringType()
-        assert result["active"] == BooleanType()
-        assert isinstance(result["scores"], ArrayType)
-        assert isinstance(result["metadata"], MapType)
-        assert result["created_date"] == DateType()
-        assert result["updated_time"] == TimestampType()
-
-    def test_empty_dataframe(self, spark_session):
-        """Test getting data types from an empty DataFrame."""
-        schema = StructType(
-            [
-                StructField("id", IntegerType(), True),
-                StructField("name", StringType(), True),
-            ]
-        )
-
-        df = spark_session.createDataFrame([], schema)
-        result = get_column_data_types(df)
-
-        assert len(result) == 2
-        assert result["id"] == IntegerType()
-        assert result["name"] == StringType()
 
 
 class TestFormatProfileOutput:

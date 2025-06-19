@@ -14,121 +14,30 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-from pyspark_analyzer.statistics import StatisticsComputer, LazyRowCount
+from pyspark_analyzer.statistics import StatisticsComputer
 
 
-class TestLazyRowCount:
-    """Test cases for LazyRowCount class."""
-
-    def test_init(self, spark_session):
-        """Test LazyRowCount initialization."""
-        data = [(1, "a"), (2, "b"), (3, "c")]
-        df = spark_session.createDataFrame(data, ["id", "value"])
-
-        lazy_count = LazyRowCount(df)
-        assert lazy_count.df is df
-        assert lazy_count._count is None
-        assert lazy_count._conditional_counts == {}
-
-    def test_init_with_initial_count(self, spark_session):
-        """Test LazyRowCount initialization with pre-computed count."""
-        data = [(1, "a"), (2, "b"), (3, "c")]
-        df = spark_session.createDataFrame(data, ["id", "value"])
-
-        lazy_count = LazyRowCount(df, initial_count=3)
-        assert lazy_count._count == 3
-        assert lazy_count.value == 3  # Should not trigger computation
-
-    def test_lazy_computation(self, spark_session):
-        """Test that count is computed lazily."""
-        data = [(1, "a"), (2, "b"), (3, "c")]
-        df = spark_session.createDataFrame(data, ["id", "value"])
-
-        lazy_count = LazyRowCount(df)
-
-        # Should be None initially
-        assert lazy_count._count is None
-
-        # First access should compute
-        count = lazy_count.value
-        assert count == 3
-        assert lazy_count._count == 3
-
-        # Second access should use cached value
-        count2 = lazy_count.value
-        assert count2 == 3
-
-    def test_conditional_counting(self, spark_session):
-        """Test conditional counting functionality."""
-        from pyspark.sql.functions import col
-
-        data = [(1, "a"), (2, "b"), (3, "c"), (4, None)]
-        df = spark_session.createDataFrame(data, ["id", "value"])
-
-        lazy_count = LazyRowCount(df)
-
-        # Test single conditional count
-        null_count = lazy_count.get_conditional_count(
-            "null_values", col("value").isNull()
-        )
-        assert null_count == 1
-
-        # Should be cached
-        assert "null_values" in lazy_count._conditional_counts
-        assert lazy_count._conditional_counts["null_values"] == 1
-
-    def test_multiple_conditional_counts(self, spark_session):
-        """Test batch conditional counting."""
-        from pyspark.sql.functions import col
-
-        data = [(1, "a"), (2, "b"), (3, "c"), (4, None)]
-        df = spark_session.createDataFrame(data, ["id", "value"])
-
-        lazy_count = LazyRowCount(df)
-
-        conditions = {
-            "null_values": col("value").isNull(),
-            "non_null_values": col("value").isNotNull(),
-            "id_greater_than_2": col("id") > 2,
-        }
-
-        counts = lazy_count.get_multiple_conditional_counts(conditions)
-
-        assert counts["null_values"] == 1
-        assert counts["non_null_values"] == 3
-        assert counts["id_greater_than_2"] == 2
-
-        # Should all be cached
-        for key in conditions:
-            assert key in lazy_count._conditional_counts
+# LazyRowCount class has been removed from the library
 
 
 class TestStatisticsComputer:
     """Test cases for StatisticsComputer class."""
 
     def test_init(self, sample_dataframe):
-        """Test initialization of StatisticsComputer with LazyRowCount."""
+        """Test initialization of StatisticsComputer."""
         computer = StatisticsComputer(sample_dataframe)
         assert computer.df is sample_dataframe
-        assert isinstance(computer.lazy_row_count, LazyRowCount)
-        assert computer.lazy_row_count._count is None  # Should be lazy
 
     def test_get_total_rows(self, spark_session):
-        """Test cached total rows calculation with LazyRowCount."""
+        """Test total rows calculation."""
         data = [(1, "a"), (2, "b"), (3, "c")]
         df = spark_session.createDataFrame(data, ["id", "value"])
 
         computer = StatisticsComputer(df)
 
-        # First call should compute
-        assert computer.lazy_row_count._count is None
+        # Test total rows computation
         total = computer._get_total_rows()
         assert total == 3
-        assert computer.lazy_row_count._count == 3
-
-        # Second call should use cached value
-        total2 = computer._get_total_rows()
-        assert total2 == 3
 
     def test_compute_basic_stats(self, sample_dataframe):
         """Test basic statistics computation with real data."""

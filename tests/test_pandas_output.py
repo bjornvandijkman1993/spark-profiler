@@ -14,7 +14,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-from pyspark_analyzer.profiler import DataFrameProfiler, SamplingConfig
+from pyspark_analyzer import analyze
 from pyspark_analyzer.utils import format_profile_output
 
 
@@ -46,16 +46,14 @@ class TestPandasOutput:
 
     def test_default_output_is_pandas(self, sample_dataframe):
         """Test that default output format is pandas DataFrame."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        result = profiler.profile()
+        result = analyze(sample_dataframe)
 
         assert isinstance(result, pd.DataFrame)
         assert not result.empty
 
     def test_pandas_output_structure(self, sample_dataframe):
         """Test the structure of pandas DataFrame output."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        df = profiler.profile(output_format="pandas")
+        df = analyze(sample_dataframe, output_format="pandas")
 
         # Check DataFrame shape
         assert len(df) == 4  # 4 columns in sample data
@@ -79,8 +77,7 @@ class TestPandasOutput:
 
     def test_pandas_output_metadata(self, sample_dataframe):
         """Test that metadata is stored in DataFrame.attrs."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        df = profiler.profile(output_format="pandas")
+        df = analyze(sample_dataframe, output_format="pandas")
 
         # Check metadata exists
         assert "overview" in df.attrs
@@ -99,8 +96,7 @@ class TestPandasOutput:
 
     def test_numeric_column_statistics(self, sample_dataframe):
         """Test that numeric columns have appropriate statistics."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        df = profiler.profile(output_format="pandas")
+        df = analyze(sample_dataframe, output_format="pandas")
 
         # Find numeric columns
         numeric_rows = df[df["column_name"].isin(["id", "score"])]
@@ -114,8 +110,7 @@ class TestPandasOutput:
 
     def test_string_column_statistics(self, sample_dataframe):
         """Test that string columns have appropriate statistics."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        df = profiler.profile(output_format="pandas")
+        df = analyze(sample_dataframe, output_format="pandas")
 
         # Find string column
         string_row = df[df["column_name"] == "name"].iloc[0]
@@ -126,8 +121,7 @@ class TestPandasOutput:
 
     def test_temporal_column_statistics(self, sample_dataframe):
         """Test that temporal columns have appropriate statistics."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        df = profiler.profile(output_format="pandas")
+        df = analyze(sample_dataframe, output_format="pandas")
 
         # Find temporal column
         temporal_row = df[df["column_name"] == "created_at"].iloc[0]
@@ -138,8 +132,7 @@ class TestPandasOutput:
 
     def test_format_profile_output_function(self, sample_dataframe):
         """Test the format_profile_output utility function."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        profile_dict = profiler.profile(output_format="dict")
+        profile_dict = analyze(sample_dataframe, output_format="dict")
 
         # Test pandas format
         df = format_profile_output(profile_dict, "pandas")
@@ -153,8 +146,7 @@ class TestPandasOutput:
 
     def test_convenience_methods(self, sample_dataframe, tmp_path):
         """Test saving profile outputs using pandas methods directly."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        profile_df = profiler.profile(output_format="pandas")
+        profile_df = analyze(sample_dataframe, output_format="pandas")
 
         # Test to_csv
         csv_path = tmp_path / "profile.csv"
@@ -176,16 +168,15 @@ class TestPandasOutput:
             pass
 
         # Test different output formats
-        dict_output = profiler.profile(output_format="dict")
+        dict_output = analyze(sample_dataframe, output_format="dict")
         assert isinstance(dict_output, dict)
 
-        pandas_output = profiler.profile(output_format="pandas")
+        pandas_output = analyze(sample_dataframe, output_format="pandas")
         assert isinstance(pandas_output, pd.DataFrame)
 
     def test_column_order(self, sample_dataframe):
         """Test that columns are in the expected order."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        df = profiler.profile(output_format="pandas")
+        df = analyze(sample_dataframe, output_format="pandas")
 
         # Check that column_name is first
         assert df.columns[0] == "column_name"
@@ -201,9 +192,8 @@ class TestPandasOutput:
     def test_empty_dataframe(self, spark_session):
         """Test handling of empty DataFrame."""
         empty_df = spark_session.createDataFrame([], StructType([]))
-        profiler = DataFrameProfiler(empty_df)
 
-        result = profiler.profile(output_format="pandas")
+        result = analyze(empty_df, output_format="pandas")
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 0
 
@@ -213,9 +203,7 @@ class TestPandasOutput:
 
     def test_with_sampling(self, sample_dataframe):
         """Test pandas output with sampling enabled."""
-        sampling_config = SamplingConfig(fraction=0.5)
-        profiler = DataFrameProfiler(sample_dataframe, sampling_config=sampling_config)
-        df = profiler.profile(output_format="pandas")
+        df = analyze(sample_dataframe, fraction=0.5, output_format="pandas")
 
         # Check that sampling info is in metadata
         assert df.attrs["sampling"]["is_sampled"] is True
@@ -224,8 +212,7 @@ class TestPandasOutput:
 
     def test_null_handling(self, sample_dataframe):
         """Test that null values are handled correctly."""
-        profiler = DataFrameProfiler(sample_dataframe)
-        df = profiler.profile(output_format="pandas")
+        df = analyze(sample_dataframe, output_format="pandas")
 
         # Check null counts
         name_row = df[df["column_name"] == "name"].iloc[0]
@@ -238,18 +225,16 @@ class TestPandasOutput:
 
     def test_explicit_format_parameter(self, sample_dataframe):
         """Test that explicit format parameter works correctly."""
-        profiler = DataFrameProfiler(sample_dataframe)
-
         # Test each format explicitly
-        pandas_result = profiler.profile(output_format="pandas")
+        pandas_result = analyze(sample_dataframe, output_format="pandas")
         assert isinstance(pandas_result, pd.DataFrame)
 
-        dict_result = profiler.profile(output_format="dict")
+        dict_result = analyze(sample_dataframe, output_format="dict")
         assert isinstance(dict_result, dict)
 
-        json_result = profiler.profile(output_format="json")
+        json_result = analyze(sample_dataframe, output_format="json")
         assert isinstance(json_result, str)
 
-        summary_result = profiler.profile(output_format="summary")
+        summary_result = analyze(sample_dataframe, output_format="summary")
         assert isinstance(summary_result, str)
         assert "DataFrame Profile Summary" in summary_result
