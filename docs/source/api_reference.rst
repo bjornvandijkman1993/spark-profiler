@@ -3,17 +3,13 @@ API Reference
 
 This section provides detailed API documentation for all public classes and functions in pyspark-analyzer.
 
-Core Classes
-------------
+Main Function
+-------------
 
-DataFrameProfiler
-~~~~~~~~~~~~~~~~~
+analyze
+~~~~~~~
 
-.. autoclass:: pyspark_analyzer.DataFrameProfiler
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :special-members: __init__
+.. autofunction:: pyspark_analyzer.analyze
 
 
 Sampling
@@ -78,20 +74,32 @@ Examples
 
 Basic profiling::
 
-    from pyspark_analyzer import DataFrameProfiler
+    from pyspark_analyzer import analyze
 
-    profiler = DataFrameProfiler(df)
-    profile = profiler.profile()
+    # Get profile as pandas DataFrame
+    profile = analyze(df)
 
 With sampling configuration::
 
-    from pyspark_analyzer import DataFrameProfiler, SamplingConfig
+    from pyspark_analyzer import analyze
 
-    config = SamplingConfig(target_size=100_000)
-    profiler = DataFrameProfiler(df, sampling_config=config)
-    profile = profiler.profile()
+    # Sample to 100,000 rows
+    profile = analyze(df, target_rows=100_000)
+
+    # Or sample 10% of data
+    profile = analyze(df, fraction=0.1)
 
 Optimized for large datasets::
 
-    profiler = DataFrameProfiler(df, optimize_for_large_datasets=True)
-    profile = profiler.profile()
+    profile = analyze(df, optimize_for_large_datasets=True)
+
+Different output formats::
+
+    # Get as dictionary
+    profile_dict = analyze(df, output_format="dict")
+
+    # Get as JSON
+    profile_json = analyze(df, output_format="json")
+
+    # Get human-readable summary
+    summary = analyze(df, output_format="summary")

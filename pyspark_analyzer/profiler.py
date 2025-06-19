@@ -4,6 +4,8 @@ Internal DataFrame profiler implementation for PySpark DataFrames.
 This module is for internal use only. Use the `analyze()` function from the main package instead.
 """
 
+import warnings
+
 import pandas as pd
 from typing import Dict, Any, List, Optional, Union
 from pyspark.sql import DataFrame
@@ -15,9 +17,215 @@ from .performance import optimize_dataframe_for_profiling
 from .sampling import SamplingConfig, SamplingMetadata, apply_sampling
 
 
+def profile_dataframe(
+    dataframe: DataFrame,
+    columns: Optional[List[str]] = None,
+    output_format: str = "pandas",
+    include_advanced: bool = True,
+    include_quality: bool = True,
+    optimize_for_large_datasets: bool = False,
+    sampling_config: Optional[SamplingConfig] = None,
+) -> Union[pd.DataFrame, Dict[str, Any], str]:
+    """
+    Generate a comprehensive profile of a PySpark DataFrame.
+
+    Args:
+        dataframe: PySpark DataFrame to profile
+        columns: List of specific columns to profile. If None, profiles all columns.
+        output_format: Output format ("pandas", "dict", "json", "summary").
+                      Defaults to "pandas" for easy analysis.
+        include_advanced: Include advanced statistics (skewness, kurtosis, outliers, etc.)
+        include_quality: Include data quality metrics
+        optimize_for_large_datasets: If True, use optimized batch processing for better performance
+        sampling_config: Sampling configuration. If None, auto-sampling is enabled for large datasets.
+
+    Returns:
+        Profile results in requested format
+    """
+    if not isinstance(dataframe, DataFrame):
+        raise TypeError("Input must be a PySpark DataFrame")
+
+    # Set up sampling with default config if not provided
+    if sampling_config is None:
+        sampling_config = SamplingConfig()
+
+    # Apply sampling
+    sampled_df, sampling_metadata = apply_sampling(dataframe, sampling_config)
+
+    # Optimize DataFrame if requested (after sampling)
+    if optimize_for_large_datasets:
+        sampled_df = optimize_dataframe_for_profiling(
+            sampled_df, row_count=sampling_metadata.sample_size
+        )
+
+    # Get column types
+    column_types = get_column_data_types(sampled_df)
+
+    # Select columns to profile
+    if columns is None:
+        columns = sampled_df.columns
+
+    # Validate columns exist
+    invalid_columns = set(columns) - set(sampled_df.columns)
+    if invalid_columns:
+        raise ValueError(f"Columns not found in DataFrame: {invalid_columns}")
+
+    # Create profile result
+    profile_result: Dict[str, Any] = {
+        "overview": _get_overview(sampled_df, column_types, sampling_metadata),
+        "columns": {},
+        "sampling": _get_sampling_info(sampling_metadata),
+    }
+
+    # Initialize stats computer
+    stats_computer = StatisticsComputer(
+        sampled_df, total_rows=sampling_metadata.sample_size
+    )
+
+    # Use batch processing for large datasets if enabled
+    if optimize_for_large_datasets:
+        profile_result["columns"] = stats_computer.compute_all_columns_batch(columns)
+    else:
+        # Standard column-by-column processing
+        for column in columns:
+            profile_result["columns"][column] = _profile_column(
+                sampled_df,
+                column,
+                column_types,
+                stats_computer,
+                sampling_metadata,
+                include_advanced=include_advanced,
+                include_quality=include_quality,
+            )
+
+    return format_profile_output(profile_result, output_format)
+
+
+def _get_overview(
+    df: DataFrame,
+    column_types: Dict[str, Any],
+    sampling_metadata: SamplingMetadata,
+) -> Dict[str, Any]:
+    """Get overview statistics for the entire DataFrame."""
+    total_rows = sampling_metadata.sample_size
+    total_columns = len(df.columns)
+
+    return {
+        "total_rows": total_rows,
+        "total_columns": total_columns,
+        "column_types": {col: str(dtype) for col, dtype in column_types.items()},
+    }
+
+
+def _profile_column(
+    df: DataFrame,
+    column_name: str,
+    column_types: Dict[str, Any],
+    stats_computer: StatisticsComputer,
+    sampling_metadata: SamplingMetadata,
+    include_advanced: bool = True,
+    include_quality: bool = True,
+) -> Dict[str, Any]:
+    """
+    Profile a single column.
+
+    Args:
+        df: DataFrame to profile
+        column_name: Name of the column to profile
+        column_types: Dictionary of column types
+        stats_computer: Statistics computer instance
+        sampling_metadata: Sampling metadata
+        include_advanced: Include advanced statistics
+        include_quality: Include data quality metrics
+
+    Returns:
+        Dictionary containing column statistics
+    """
+    column_type = column_types[column_name]
+
+    # Handle empty DataFrame case
+    if sampling_metadata.sample_size == 0:
+        return {
+            "data_type": str(column_type),
+            "total_count": 0,
+            "non_null_count": 0,
+            "null_count": 0,
+            "null_percentage": 0.0,
+            "distinct_count": 0,
+            "distinct_percentage": 0.0,
+        }
+
+    # Basic statistics for all columns
+    basic_stats = stats_computer.compute_basic_stats(column_name)
+
+    column_profile = {"data_type": str(column_type), **basic_stats}
+
+    # Add type-specific statistics
+    if isinstance(column_type, NumericType):
+        numeric_stats = stats_computer.compute_numeric_stats(
+            column_name, advanced=include_advanced
+        )
+        column_profile.update(numeric_stats)
+
+        # Add outlier statistics for numeric columns
+        if include_advanced:
+            outlier_stats = stats_computer.compute_outlier_stats(column_name)
+            column_profile["outliers"] = outlier_stats
+
+    elif isinstance(column_type, StringType):
+        string_stats = stats_computer.compute_string_stats(
+            column_name,
+            top_n=10 if include_advanced else 0,
+            pattern_detection=include_advanced,
+        )
+        column_profile.update(string_stats)
+
+    elif isinstance(column_type, (TimestampType, DateType)):
+        temporal_stats = stats_computer.compute_temporal_stats(column_name)
+        column_profile.update(temporal_stats)
+
+    # Add data quality metrics if requested
+    if include_quality:
+        # Determine quality check type based on column type
+        if isinstance(column_type, NumericType):
+            quality_type = "numeric"
+        elif isinstance(column_type, StringType):
+            quality_type = "string"
+        else:
+            # For complex types (arrays, structs, etc.), skip type-specific quality checks
+            quality_type = "other"
+
+        quality_stats = stats_computer.compute_data_quality_stats(
+            column_name,
+            column_type=quality_type,
+        )
+        column_profile["quality"] = quality_stats
+
+    return column_profile
+
+
+def _get_sampling_info(sampling_metadata: Optional[SamplingMetadata]) -> Dict[str, Any]:
+    """Get sampling information for the profile."""
+    if not sampling_metadata:
+        return {"is_sampled": False}
+
+    return {
+        "is_sampled": sampling_metadata.is_sampled,
+        "original_size": sampling_metadata.original_size,
+        "sample_size": sampling_metadata.sample_size,
+        "sampling_fraction": sampling_metadata.sampling_fraction,
+        "sampling_time": sampling_metadata.sampling_time,
+        "estimated_speedup": sampling_metadata.speedup_estimate,
+    }
+
+
+# Backwards compatibility: Keep the DataFrameProfiler class but add deprecation warning
 class DataFrameProfiler:
     """
     Main profiler class for generating comprehensive statistics for PySpark DataFrames.
+
+    .. deprecated:: 3.0.0
+        DataFrameProfiler is deprecated. Use the `analyze()` function instead.
 
     This class analyzes a PySpark DataFrame and computes various statistics for each column,
     including basic counts, data type specific metrics, and null value analysis.
@@ -37,6 +245,13 @@ class DataFrameProfiler:
             optimize_for_large_datasets: If True, use optimized batch processing for better performance
             sampling_config: Sampling configuration. If None, auto-sampling is enabled for large datasets.
         """
+        warnings.warn(
+            "DataFrameProfiler is deprecated and will be removed in a future version. "
+            "Use the analyze() function instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         if not isinstance(dataframe, DataFrame):
             raise TypeError("Input must be a PySpark DataFrame")
 
@@ -109,41 +324,16 @@ class DataFrameProfiler:
         Returns:
             Profile results in requested format
         """
-        # Ensure sampling is applied before profiling
-        self._apply_sampling()
-
-        if columns is None:
-            columns = self.df.columns
-
-        # Validate columns exist
-        invalid_columns = set(columns) - set(self.df.columns)
-        if invalid_columns:
-            raise ValueError(f"Columns not found in DataFrame: {invalid_columns}")
-
-        profile_result: Dict[str, Any] = {
-            "overview": self._get_overview(),
-            "columns": {},
-            "sampling": self._get_sampling_info(),
-        }
-
-        # Get stats computer with lazy initialization
-        stats_computer = self._ensure_stats_computer()
-
-        # Use batch processing for large datasets if enabled
-        if self.optimize_for_large_datasets:
-            profile_result["columns"] = stats_computer.compute_all_columns_batch(
-                columns
-            )
-        else:
-            # Standard column-by-column processing
-            for column in columns:
-                profile_result["columns"][column] = self._profile_column(
-                    column,
-                    include_advanced=include_advanced,
-                    include_quality=include_quality,
-                )
-
-        return format_profile_output(profile_result, output_format)
+        # Use the new standalone function
+        return profile_dataframe(
+            dataframe=self._original_dataframe,
+            columns=columns,
+            output_format=output_format,
+            include_advanced=include_advanced,
+            include_quality=include_quality,
+            optimize_for_large_datasets=self.optimize_for_large_datasets,
+            sampling_config=self.sampling_config,
+        )
 
     def _get_overview(self) -> Dict[str, Any]:
         """Get overview statistics for the entire DataFrame."""

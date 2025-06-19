@@ -2,7 +2,7 @@ from typing import Optional, List, Union, Any
 import pandas as pd
 from pyspark.sql import DataFrame
 
-from .profiler import DataFrameProfiler
+from .profiler import profile_dataframe
 from .sampling import SamplingConfig
 
 
@@ -72,18 +72,15 @@ def analyze(
         seed=seed,
     )
 
-    # Create profiler and generate profile
-    profiler = DataFrameProfiler(
-        df,
-        optimize_for_large_datasets=optimize_for_large_datasets,
-        sampling_config=sampling_config,
-    )
-
-    return profiler.profile(
+    # Use the new standalone function directly
+    return profile_dataframe(
+        dataframe=df,
         columns=columns,
         output_format=output_format,
         include_advanced=include_advanced,
         include_quality=include_quality,
+        optimize_for_large_datasets=optimize_for_large_datasets,
+        sampling_config=sampling_config,
     )
 
 

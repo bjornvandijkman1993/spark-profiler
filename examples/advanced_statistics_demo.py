@@ -231,10 +231,14 @@ def main():
     print("4. OUTLIER DETECTION COMPARISON")
     print("=" * 60)
 
-    # For advanced usage, we need to create a profiler instance directly
+    # Note: For very advanced usage (like accessing internal components directly),
+    # you might still need to use DataFrameProfiler. However, this is not recommended
+    # for general use. The analyze() function should cover most use cases.
+    # Here we show it for demonstration purposes only.
     from pyspark_analyzer.profiler import DataFrameProfiler
     from pyspark_analyzer.sampling import SamplingConfig
 
+    # This will show a deprecation warning
     profiler = DataFrameProfiler(df, sampling_config=SamplingConfig(enabled=False))
     # Force initialization of stats computer
     profiler._ensure_stats_computer()
