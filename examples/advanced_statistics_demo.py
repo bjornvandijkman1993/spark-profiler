@@ -1,23 +1,43 @@
 """
-Demonstration of advanced statistics features in pyspark-analyzer.
+Advanced statistics features in pyspark-analyzer.
 """
 
-# flake8: noqa: S311
-
 from pyspark.sql import SparkSession
-from pyspark.sql.types import (
-    StructType,
-    StructField,
-    IntegerType,
-    DoubleType,
-    StringType,
-    DateType,
-)
-from datetime import date, timedelta
-import random
 import numpy as np
 from pyspark_analyzer import analyze
 
+# Create Spark session
+spark = SparkSession.builder.appName("AdvancedStats").master("local[*]").getOrCreate()
+
+# Create data with outliers and patterns
+np.random.seed(42)
+data = []
+for i in range(1000):
+    # Create data with outliers
+    if i < 10:
+        price = 1000.0 + i * 100  # Outliers
+    else:
+        price = max(0.1, np.random.normal(50, 15))  # Normal distribution
+
+    # Add email patterns
+    email = f"user{i}@example.com" if i % 10 != 0 else "invalid-email"
+
+    # Add quantity with skew
+    quantity = np.random.randint(100, 200) if i < 50 else np.random.randint(1, 10)
+
+    data.append((i, f"Product_{i}", price, email, quantity))
+
+df = spark.createDataFrame(data, ["id", "product", "price", "email", "quantity"])
+
+# Full profile with advanced statistics
+print("Advanced Statistics Profile:")
+profile = analyze(
+    df,
+    output_format="dict",
+    include_advanced=True,
+    include_quality=True,
+    sampling=False,
+)
 
 def create_sample_data(spark):
     """Create a sample dataset with various data quality issues."""
@@ -283,6 +303,4 @@ def main():
     print("  - Top frequent values for categorical analysis")
     print("=" * 60)
 
-
-if __name__ == "__main__":
-    main()
+spark.stop()
