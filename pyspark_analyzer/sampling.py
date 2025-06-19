@@ -6,7 +6,10 @@ import time
 from typing import Tuple, Optional
 from dataclasses import dataclass
 from pyspark.sql import DataFrame
+from pyspark.sql.utils import AnalysisException
+from py4j.protocol import Py4JError, Py4JJavaError
 
+from .exceptions import ConfigurationError, SamplingError, SparkOperationError
 from .logging import get_logger
 
 logger = get_logger(__name__)
@@ -32,17 +35,14 @@ class SamplingConfig:
     def __post_init__(self) -> None:
         """Validate configuration after initialization."""
         if self.target_rows is not None and self.target_rows <= 0:
-            logger.error(f"Invalid target_rows: {self.target_rows}")
-            raise ValueError("target_rows must be positive")
+            raise ConfigurationError("target_rows must be positive")
 
         if self.fraction is not None:
             if not (0 < self.fraction <= 1.0):
-                logger.error(f"Invalid fraction: {self.fraction}")
-                raise ValueError("fraction must be between 0 and 1")
+                raise ConfigurationError("fraction must be between 0 and 1")
 
         if self.target_rows is not None and self.fraction is not None:
-            logger.error("Both target_rows and fraction specified")
-            raise ValueError("Cannot specify both target_rows and fraction")
+            raise ConfigurationError("Cannot specify both target_rows and fraction")
 
 
 @dataclass
@@ -82,7 +82,13 @@ def apply_sampling(
     # Get row count if not provided
     if row_count is None:
         logger.debug("Computing row count for sampling decision")
-        row_count = df.count()
+        try:
+            row_count = df.count()
+        except (AnalysisException, Py4JError, Py4JJavaError) as e:
+            logger.error(f"Failed to count DataFrame rows: {str(e)}")
+            raise SparkOperationError(
+                f"Failed to count DataFrame rows during sampling: {str(e)}", e
+            )
 
     logger.debug(f"DataFrame has {row_count:,} rows")
 
@@ -138,10 +144,16 @@ def apply_sampling(
         logger.debug(
             f"Applying sampling with fraction {sampling_fraction:.4f} and seed {config.seed}"
         )
-        sample_df = df.sample(fraction=sampling_fraction, seed=config.seed)
-        sample_size = sample_df.count()
-        is_sampled = True
-        logger.info(f"Sampling completed: {row_count:,} -> {sample_size:,} rows")
+        try:
+            sample_df = df.sample(fraction=sampling_fraction, seed=config.seed)
+            sample_size = sample_df.count()
+            is_sampled = True
+            logger.info(f"Sampling completed: {row_count:,} -> {sample_size:,} rows")
+        except (AnalysisException, Py4JError, Py4JJavaError) as e:
+            logger.error(f"Failed to sample DataFrame: {str(e)}")
+            raise SamplingError(
+                f"Failed to sample DataFrame with fraction {sampling_fraction}: {str(e)}"
+            )
     else:
         sample_df = df
         sample_size = row_count

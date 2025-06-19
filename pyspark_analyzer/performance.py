@@ -4,7 +4,10 @@ Performance optimization utilities for large dataset profiling.
 
 from typing import Optional
 from pyspark.sql import DataFrame
+from pyspark.sql.utils import AnalysisException
+from py4j.protocol import Py4JError, Py4JJavaError
 
+from .exceptions import SparkOperationError
 from .logging import get_logger
 
 logger = get_logger(__name__)
@@ -66,8 +69,12 @@ def _adaptive_partition(df: DataFrame, row_count: Optional[int] = None) -> DataF
     spark = df.sparkSession
 
     # Check if AQE is enabled - if so, let Spark handle partition optimization
-    aqe_setting = spark.conf.get("spark.sql.adaptive.enabled", "false")
-    aqe_enabled = aqe_setting.lower() == "true" if aqe_setting else False
+    try:
+        aqe_setting = spark.conf.get("spark.sql.adaptive.enabled", "false")
+        aqe_enabled = aqe_setting.lower() == "true" if aqe_setting else False
+    except Exception as e:
+        logger.warning(f"Could not check AQE setting, assuming disabled: {str(e)}")
+        aqe_enabled = False
     if aqe_enabled:
         logger.debug(
             "Adaptive Query Execution is enabled, deferring to Spark optimization"
@@ -96,15 +103,22 @@ def _adaptive_partition(df: DataFrame, row_count: Optional[int] = None) -> DataF
     )
 
     # Get cluster configuration hints
-    default_parallelism = spark.sparkContext.defaultParallelism
-    shuffle_partitions_setting = spark.conf.get("spark.sql.shuffle.partitions", "200")
-    shuffle_partitions = (
-        int(shuffle_partitions_setting) if shuffle_partitions_setting else 200
-    )
-    logger.debug(
-        f"Cluster config: default_parallelism={default_parallelism}, "
-        f"shuffle_partitions={shuffle_partitions}"
-    )
+    try:
+        default_parallelism = spark.sparkContext.defaultParallelism
+        shuffle_partitions_setting = spark.conf.get(
+            "spark.sql.shuffle.partitions", "200"
+        )
+        shuffle_partitions = (
+            int(shuffle_partitions_setting) if shuffle_partitions_setting else 200
+        )
+        logger.debug(
+            f"Cluster config: default_parallelism={default_parallelism}, "
+            f"shuffle_partitions={shuffle_partitions}"
+        )
+    except Exception as e:
+        logger.warning(f"Could not get cluster configuration, using defaults: {str(e)}")
+        default_parallelism = 8
+        shuffle_partitions = 200
 
     # Optimal partition size targets (in bytes)
     # These are based on Spark best practices
@@ -112,7 +126,13 @@ def _adaptive_partition(df: DataFrame, row_count: Optional[int] = None) -> DataF
 
     # If we don't have row count, get it
     if row_count is None:
-        row_count = df.count()
+        try:
+            row_count = df.count()
+        except (AnalysisException, Py4JError, Py4JJavaError) as e:
+            logger.error(f"Failed to count DataFrame rows for optimization: {str(e)}")
+            raise SparkOperationError(
+                f"Failed to count DataFrame rows during optimization: {str(e)}", e
+            )
 
     # Estimate average row size (this is a heuristic)
     # For profiling, we typically deal with mixed data types

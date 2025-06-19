@@ -7,6 +7,7 @@ import pandas as pd
 from pyspark.sql import DataFrame
 from pyspark.sql.types import DataType
 
+from .exceptions import ConfigurationError
 from .logging import get_logger
 
 logger = get_logger(__name__)
@@ -79,7 +80,9 @@ def format_profile_output(
         return _create_pandas_dataframe(profile_data)
     else:
         logger.error(f"Unsupported format type: {format_type}")
-        raise ValueError(f"Unsupported format type: {format_type}")
+        raise ConfigurationError(
+            f"Unsupported format type: {format_type}. Supported formats are: dict, json, summary, pandas"
+        )
 
 
 def _create_summary_report(profile_data: Dict[str, Any]) -> str:

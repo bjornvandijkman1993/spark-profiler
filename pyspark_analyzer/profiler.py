@@ -10,11 +10,19 @@ import pandas as pd
 from typing import Dict, Any, List, Optional, Union
 from pyspark.sql import DataFrame
 from pyspark.sql.types import NumericType, StringType, TimestampType, DateType
+from pyspark.sql.utils import AnalysisException
+from py4j.protocol import Py4JError, Py4JJavaError
 
 from .statistics import StatisticsComputer
 from .utils import get_column_data_types, format_profile_output
 from .performance import optimize_dataframe_for_profiling
 from .sampling import SamplingConfig, SamplingMetadata, apply_sampling
+from .exceptions import (
+    DataTypeError,
+    ColumnNotFoundError,
+    SparkOperationError,
+    StatisticsError,
+)
 from .logging import get_logger
 
 logger = get_logger(__name__)
@@ -45,7 +53,7 @@ def profile_dataframe(
     """
     if not isinstance(dataframe, DataFrame):
         logger.error("Input must be a PySpark DataFrame")
-        raise TypeError("Input must be a PySpark DataFrame")
+        raise DataTypeError("Input must be a PySpark DataFrame")
 
     logger.info(f"Starting profile_dataframe with {len(dataframe.columns)} columns")
 
@@ -84,7 +92,7 @@ def profile_dataframe(
     invalid_columns = set(columns) - set(sampled_df.columns)
     if invalid_columns:
         logger.error(f"Columns not found in DataFrame: {invalid_columns}")
-        raise ValueError(f"Columns not found in DataFrame: {invalid_columns}")
+        raise ColumnNotFoundError(list(invalid_columns), sampled_df.columns)
 
     logger.info(
         f"Profiling {len(columns)} columns: {columns[:5]}{'...' if len(columns) > 5 else ''}"
@@ -104,10 +112,21 @@ def profile_dataframe(
 
     # Always use batch processing for optimal performance
     logger.debug("Starting batch column profiling")
-    profile_result["columns"] = stats_computer.compute_all_columns_batch(
-        columns, include_advanced=include_advanced, include_quality=include_quality
-    )
-    logger.info("Column profiling completed")
+    try:
+        profile_result["columns"] = stats_computer.compute_all_columns_batch(
+            columns, include_advanced=include_advanced, include_quality=include_quality
+        )
+        logger.info("Column profiling completed")
+    except (AnalysisException, Py4JError, Py4JJavaError) as e:
+        logger.error(f"Spark error during batch profiling: {str(e)}")
+        raise SparkOperationError(
+            f"Failed to profile DataFrame due to Spark error: {str(e)}", e
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error during batch profiling: {str(e)}")
+        raise StatisticsError(
+            f"Failed to compute statistics during batch profiling: {str(e)}"
+        )
 
     logger.debug(f"Formatting output as {output_format}")
     return format_profile_output(profile_result, output_format)
@@ -264,7 +283,7 @@ class DataFrameProfiler:
 
         if not isinstance(dataframe, DataFrame):
             logger.error("Input must be a PySpark DataFrame")
-            raise TypeError("Input must be a PySpark DataFrame")
+            raise DataTypeError("Input must be a PySpark DataFrame")
 
         # Set up sampling with default config if not provided
         if sampling_config is None:

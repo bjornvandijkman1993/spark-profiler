@@ -1,9 +1,11 @@
 from typing import Optional, List, Union, Any
 import pandas as pd
 from pyspark.sql import DataFrame
+from pyspark.sql.utils import AnalysisException
 
 from .profiler import profile_dataframe
 from .sampling import SamplingConfig
+from .exceptions import ConfigurationError, SparkOperationError
 from .logging import get_logger
 
 logger = get_logger(__name__)
@@ -94,6 +96,11 @@ def analyze(
         )
         logger.info("DataFrame analysis completed successfully")
         return result
+    except AnalysisException as e:
+        logger.error(f"Spark analysis error during profiling: {str(e)}")
+        raise SparkOperationError(
+            f"Failed to analyze DataFrame due to Spark error: {str(e)}", e
+        )
     except Exception as e:
         logger.error(f"Error during DataFrame analysis: {str(e)}", exc_info=True)
         raise
@@ -122,7 +129,7 @@ def _build_sampling_config(
     """
     if target_rows is not None and fraction is not None:
         logger.error("Cannot specify both target_rows and fraction")
-        raise ValueError("Cannot specify both target_rows and fraction")
+        raise ConfigurationError("Cannot specify both target_rows and fraction")
 
     # If sampling is explicitly disabled
     if sampling is False:
