@@ -17,7 +17,6 @@ def analyze(
     include_advanced: bool = True,
     include_quality: bool = True,
     optimize_for_large_datasets: bool = False,
-    auto_threshold: Optional[int] = None,
     seed: Optional[int] = None,
 ) -> Union[pd.DataFrame, dict, str]:
     """
@@ -37,7 +36,6 @@ def analyze(
         include_advanced: Include advanced statistics (skewness, kurtosis, outliers, etc.)
         include_quality: Include data quality metrics
         optimize_for_large_datasets: Use optimized batch processing for better performance
-        auto_threshold: Custom threshold for auto-sampling (default: 10,000,000 rows)
         seed: Random seed for reproducible sampling
 
     Returns:
@@ -71,7 +69,6 @@ def analyze(
         sampling=sampling,
         target_rows=target_rows,
         fraction=fraction,
-        auto_threshold=auto_threshold,
         seed=seed,
     )
 
@@ -94,7 +91,6 @@ def _build_sampling_config(
     sampling: Optional[bool],
     target_rows: Optional[int],
     fraction: Optional[float],
-    auto_threshold: Optional[int],
     seed: Optional[int],
 ) -> SamplingConfig:
     """
@@ -104,7 +100,6 @@ def _build_sampling_config(
         sampling: Whether to enable sampling
         target_rows: Target number of rows to sample
         fraction: Fraction of data to sample
-        auto_threshold: Custom auto-sampling threshold
         seed: Random seed
 
     Returns:
@@ -131,9 +126,6 @@ def _build_sampling_config(
 
     if fraction is not None:
         config_params["fraction"] = fraction
-
-    if auto_threshold is not None:
-        config_params["auto_threshold"] = auto_threshold
 
     if seed is not None:
         config_params["seed"] = seed

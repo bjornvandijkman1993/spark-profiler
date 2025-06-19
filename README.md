@@ -99,19 +99,15 @@ profile = analyze(df, target_rows=100_000, seed=42)
 # Option 3: Sample by fraction
 profile = analyze(df, fraction=0.1, seed=42)  # 10% sample
 
-# Option 4: Custom auto-sampling threshold
-# Auto-sample only if dataset has more than 5M rows
-profile = analyze(df, auto_threshold=5_000_000)
-
-# Option 5: Auto-sampling (default behavior)
-# Automatically samples large datasets (>10M rows by default)
+# Option 4: Auto-sampling (default behavior)
+# Automatically samples large datasets (>10M rows)
 profile = analyze(df)
 
 # Check sampling information (with dict output)
 profile_dict = analyze(df, output_format="dict")
 sampling_info = profile_dict['sampling']
 if sampling_info['is_sampled']:
-    print(f"Sample Quality: {sampling_info['quality_score']:.3f}")
+    print(f"Sample size: {sampling_info['sample_size']:,} rows")
     print(f"Speedup: {sampling_info['estimated_speedup']:.1f}x")
 ```
 
