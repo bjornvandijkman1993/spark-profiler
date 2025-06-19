@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [3.2.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v3.1.0...v3.2.0) (2025-06-19)
+
+
+### Features
+
+* simplify and improve example scripts for better user experience ([7233b56](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/7233b56fec1a1bad1a97aa3333265f5cc3c6e8a1))
+
 # [3.1.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v3.0.0...v3.1.0) (2025-06-19)
 
 
