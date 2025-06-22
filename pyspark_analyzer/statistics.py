@@ -27,12 +27,29 @@ from pyspark.sql.functions import (
 )
 from pyspark.sql.utils import AnalysisException
 from py4j.protocol import Py4JError, Py4JJavaError
+from pyspark import __version__ as pyspark_version
 
 from .utils import escape_column_name
 from .exceptions import StatisticsError, SparkOperationError
 from .logging import get_logger
 
+# Check if median function is available (PySpark 3.4.0+)
+try:
+    from pyspark.sql.functions import median
+
+    HAS_MEDIAN = True
+except ImportError:
+    HAS_MEDIAN = False
+
 logger = get_logger(__name__)
+
+# Log which median calculation method will be used
+if HAS_MEDIAN:
+    logger.debug(f"Using native median function (PySpark {pyspark_version})")
+else:
+    logger.debug(
+        f"Using percentile_approx for median calculation (PySpark {pyspark_version})"
+    )
 
 
 class StatisticsComputer:
@@ -141,10 +158,22 @@ class StatisticsComputer:
             spark_max(col(column_name)).alias("max_value"),
             mean(col(column_name)).alias("mean_value"),
             stddev(col(column_name)).alias("std_value"),
-            expr(f"percentile_approx({column_name}, 0.5)").alias("median_value"),
-            expr(f"percentile_approx({column_name}, 0.25)").alias("q1_value"),
-            expr(f"percentile_approx({column_name}, 0.75)").alias("q3_value"),
         ]
+
+        # Use median function if available (PySpark 3.4.0+), otherwise use percentile_approx
+        if HAS_MEDIAN:
+            agg_list.append(median(col(column_name)).alias("median_value"))
+        else:
+            agg_list.append(
+                expr(f"percentile_approx({column_name}, 0.5)").alias("median_value")
+            )
+
+        agg_list.extend(
+            [
+                expr(f"percentile_approx({column_name}, 0.25)").alias("q1_value"),
+                expr(f"percentile_approx({column_name}, 0.75)").alias("q3_value"),
+            ]
+        )
 
         if advanced:
             # Add advanced statistics in the same aggregation for efficiency
@@ -733,16 +762,30 @@ class StatisticsComputer:
                 spark_max(col(escaped_name)).alias(f"{column_name}_max"),
                 mean(col(escaped_name)).alias(f"{column_name}_mean"),
                 stddev(col(escaped_name)).alias(f"{column_name}_std"),
-                expr(f"percentile_approx({escaped_name}, 0.5)").alias(
-                    f"{column_name}_median"
-                ),
-                expr(f"percentile_approx({escaped_name}, 0.25)").alias(
-                    f"{column_name}_q1"
-                ),
-                expr(f"percentile_approx({escaped_name}, 0.75)").alias(
-                    f"{column_name}_q3"
-                ),
             ]
+
+            # Use median function if available (PySpark 3.4.0+), otherwise use percentile_approx
+            if HAS_MEDIAN:
+                numeric_aggs.append(
+                    median(col(escaped_name)).alias(f"{column_name}_median")
+                )
+            else:
+                numeric_aggs.append(
+                    expr(f"percentile_approx({escaped_name}, 0.5)").alias(
+                        f"{column_name}_median"
+                    )
+                )
+
+            numeric_aggs.extend(
+                [
+                    expr(f"percentile_approx({escaped_name}, 0.25)").alias(
+                        f"{column_name}_q1"
+                    ),
+                    expr(f"percentile_approx({escaped_name}, 0.75)").alias(
+                        f"{column_name}_q3"
+                    ),
+                ]
+            )
 
             # Add advanced statistics if requested
             if include_advanced:

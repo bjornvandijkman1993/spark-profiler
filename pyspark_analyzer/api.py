@@ -29,6 +29,10 @@ def analyze(
     This is the simplified entry point for profiling DataFrames. It automatically
     handles sampling configuration based on the provided parameters.
 
+    Note: Compatible with PySpark 3.0.0+. Uses native median() function when available
+    (PySpark 3.4.0+) for better performance, with automatic fallback to percentile_approx
+    for older versions.
+
     Args:
         df: PySpark DataFrame to analyze
         sampling: Whether to enable sampling. If None, auto-sampling is enabled for large datasets.

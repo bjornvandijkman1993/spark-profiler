@@ -3,7 +3,7 @@
 ## Requirements
 
 - Python >= 3.8
-- Apache Spark >= 3.0
+- Apache Spark >= 3.0 (native median function available in 3.4.0+, fallback for older versions)
 - Java 8 or 11 (required by Spark)
 
 ## Install from PyPI

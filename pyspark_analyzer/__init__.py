@@ -3,6 +3,10 @@ PySpark DataFrame Profiler
 
 A library for generating comprehensive profiles of PySpark DataFrames with statistics
 for all columns including null counts, data type specific metrics, and performance optimizations.
+
+Requirements:
+    - PySpark >= 3.5.0 (required for median function support)
+    - Python >= 3.8
 """
 
 from .api import analyze
