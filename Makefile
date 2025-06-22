@@ -1,6 +1,6 @@
 .PHONY: help install install-dev test test-cov test-quick test-integration test-unit test-watch test-parallel coverage-html \
         lint format format-check typecheck security security-scan secrets-scan clean clean-all build build-check dist-check \
-        docs docs-build docs-serve docs-clean setup-dev diagnose setup-java pre-commit-install pre-commit-run pre-commit-update \
+        docs docs-build docs-serve docs-clean diagnose setup-java pre-commit-install pre-commit-run pre-commit-update \
         deps-check deps-update deps-licenses sbom examples example-basic example-verify version changelog \
         lint-all quality check dev all ci release-dry-run env reinstall
 
@@ -21,7 +21,6 @@ help:
 	@echo "  make build        Build distribution packages"
 	@echo "  make docs-build   Build HTML documentation"
 	@echo "  make docs-serve   Build and serve documentation locally"
-	@echo "  make setup-dev    Run development environment setup script"
 	@echo "  make diagnose     Run Java diagnostic script"
 	@echo "  make pre-commit-install  Install pre-commit hooks"
 	@echo "  make deps-check   Check for outdated dependencies"
@@ -198,9 +197,6 @@ docs-serve: docs-build
 docs-clean:
 	cd docs && uv run make clean
 
-# Development setup targets
-setup-dev:
-	./scripts/setup-dev.sh
 
 diagnose:
 	./scripts/diagnose_java.sh

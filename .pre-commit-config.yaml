@@ -53,3 +53,10 @@ repos:
     hooks:
       - id: conventional-pre-commit
     stages: [commit-msg]
+
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.1
+    hooks:
+      - id: nbstripout
+        description: 'Strip output from Jupyter notebooks'
+        files: '\.ipynb$'

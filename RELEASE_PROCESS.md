@@ -79,23 +79,6 @@ If you need to trigger a release manually:
 - GitHub release with notes
 - PyPI package publication
 
-## Migration from Old System
-
-The old manual version bumping system has been disabled:
-- `.github/workflows/version-bump.yml` → disabled
-- `.github/workflows/release.yml` → disabled (legacy)
-- `.bumpversion.cfg` → kept for reference but not used
-
-## Setup Git Message Template (Optional)
-
-To use the conventional commit template:
-
-```bash
-git config commit.template .gitmessage
-```
-
-This will show the template when you run `git commit` without `-m`.
-
 ## Troubleshooting
 
 ### No Release Triggered
