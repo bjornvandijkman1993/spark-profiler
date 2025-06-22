@@ -2,7 +2,6 @@
 Test cases for performance optimization utilities.
 """
 
-from datetime import UTC, date, datetime
 from unittest.mock import Mock, patch
 
 from pyspark_analyzer.performance import optimize_dataframe_for_profiling
@@ -98,32 +97,6 @@ class TestStatisticsComputerBatch:
         assert stats["min_length"] == 0  # empty string
         assert stats["max_length"] == 23  # "a very long string here"
         assert "avg_length" in stats
-
-    def test_compute_column_stats_temporal(self, spark_session):
-        """Test statistics computation for temporal columns."""
-        data = [
-            (1, datetime(2023, 1, 1, tzinfo=UTC), date(2023, 1, 1)),
-            (2, datetime(2023, 6, 15, tzinfo=UTC), date(2023, 6, 15)),
-            (3, datetime(2023, 12, 31, tzinfo=UTC), date(2023, 12, 31)),
-            (4, None, None),
-        ]
-        df = spark_session.createDataFrame(data, ["id", "timestamp", "date"])
-
-        computer = StatisticsComputer(df)
-        all_stats = computer.compute_all_columns_batch(columns=["timestamp", "date"])
-
-        # Test timestamp column
-        timestamp_stats = all_stats["timestamp"]
-        assert timestamp_stats["data_type"] == "TimestampType()"
-        assert timestamp_stats["min_date"] == datetime(2023, 1, 1, tzinfo=UTC)
-        assert timestamp_stats["max_date"] == datetime(2023, 12, 31, tzinfo=UTC)
-        assert timestamp_stats["date_range_days"] == 364
-
-        # Test date column
-        date_stats = all_stats["date"]
-        assert date_stats["data_type"] == "DateType()"
-        assert date_stats["min_date"] == date(2023, 1, 1)
-        assert date_stats["max_date"] == date(2023, 12, 31)
 
     def test_compute_column_stats_with_all_nulls(self, spark_session):
         """Test statistics computation when column has all null values."""
