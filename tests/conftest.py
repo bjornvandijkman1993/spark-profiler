@@ -1,10 +1,11 @@
 """Shared test fixtures and configuration for pytest."""
 
 import os
-import sys
 import subprocess
-import pytest
+import sys
 from unittest.mock import Mock
+
+import pytest
 from pyspark.sql import SparkSession
 
 

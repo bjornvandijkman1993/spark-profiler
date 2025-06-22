@@ -2,28 +2,29 @@
 Statistics computation with minimal DataFrame scans.
 """
 
-from typing import Dict, Any, List, Optional
-from pyspark.sql import DataFrame
-from pyspark.sql.utils import AnalysisException
+from typing import Any
+
 from py4j.protocol import Py4JError, Py4JJavaError
-from pyspark.sql import functions as F
+from pyspark.sql import DataFrame
+from pyspark.sql import functions as F  # noqa: N812
 from pyspark.sql import types as t
+from pyspark.sql.utils import AnalysisException
 
 from .constants import (
-    PATTERNS,
-    OUTLIER_IQR_MULTIPLIER,
     APPROX_DISTINCT_RSD,
     DEFAULT_TOP_VALUES_LIMIT,
     ID_COLUMN_UNIQUENESS_THRESHOLD,
+    OUTLIER_IQR_MULTIPLIER,
+    PATTERNS,
     QUALITY_OUTLIER_PENALTY_MAX,
 )
-from .utils import escape_column_name
-from .exceptions import StatisticsError, SparkOperationError
+from .exceptions import SparkOperationError, StatisticsError
 from .logging import get_logger
+from .utils import escape_column_name
 
 # Check if median function is available (PySpark 3.4.0+)
 try:
-    F.median
+    _median_check = F.median
     HAS_MEDIAN = True
 except AttributeError:
     HAS_MEDIAN = False
@@ -34,7 +35,7 @@ logger = get_logger(__name__)
 class StatisticsComputer:
     """Computes statistics for DataFrame columns using type-specific calculators."""
 
-    def __init__(self, dataframe: DataFrame, total_rows: Optional[int] = None):
+    def __init__(self, dataframe: DataFrame, total_rows: int | None = None):
         """
         Initialize with a PySpark DataFrame.
 
@@ -61,10 +62,11 @@ class StatisticsComputer:
 
     def compute_all_columns_batch(
         self,
-        columns: Optional[List[str]] = None,
+        columns: list[str] | None = None,
         include_advanced: bool = True,
         include_quality: bool = True,
-    ) -> Dict[str, Dict[str, Any]]:
+        progress_tracker: Any = None,
+    ) -> dict[str, dict[str, Any]]:
         """
         Compute statistics for multiple columns with minimal DataFrame scans.
 
@@ -72,6 +74,7 @@ class StatisticsComputer:
             columns: List of columns to profile. If None, profiles all columns.
             include_advanced: Include advanced statistics (always True)
             include_quality: Include data quality metrics
+            progress_tracker: Optional progress tracker for reporting progress
 
         Returns:
             Dictionary mapping column names to their statistics
@@ -90,6 +93,11 @@ class StatisticsComputer:
 
         total_rows = self._get_total_rows()
 
+        # Update progress tracker with actual column count
+        if progress_tracker:
+            progress_tracker.total_items = len(valid_columns)
+            progress_tracker.start()
+
         # Build aggregation expressions for all columns
         agg_exprs = self._build_aggregation_expressions(
             valid_columns, include_quality, include_advanced
@@ -107,11 +115,18 @@ class StatisticsComputer:
         try:
             # Execute single aggregation for all statistics
             logger.debug(f"Executing aggregation with {len(agg_exprs)} expressions")
+            if progress_tracker:
+                progress_tracker.update("Executing aggregations")
             result_row = self.df.agg(*agg_exprs).collect()[0]
 
             # Unpack results into column dictionaries
             results = self._unpack_results(
-                result_row, valid_columns, total_rows, include_quality, include_advanced
+                result_row,
+                valid_columns,
+                total_rows,
+                include_quality,
+                include_advanced,
+                progress_tracker,
             )
 
             # Compute special cases that require separate scans
@@ -128,17 +143,19 @@ class StatisticsComputer:
             return results
 
         except (AnalysisException, Py4JError, Py4JJavaError) as e:
-            logger.error(f"Spark error during batch computation: {str(e)}")
+            logger.error(f"Spark error during batch computation: {e!s}")
             raise SparkOperationError(
-                f"Failed to compute statistics in batch: {str(e)}", e
-            )
+                f"Failed to compute statistics in batch: {e!s}", e
+            ) from e
         except Exception as e:
-            logger.error(f"Unexpected error during batch computation: {str(e)}")
-            raise StatisticsError(f"Failed to compute statistics in batch: {str(e)}")
+            logger.error(f"Unexpected error during batch computation: {e!s}")
+            raise StatisticsError(
+                f"Failed to compute statistics in batch: {e!s}"
+            ) from e
 
     def _build_aggregation_expressions(
-        self, columns: List[str], include_quality: bool, include_advanced: bool
-    ) -> List:
+        self, columns: list[str], include_quality: bool, include_advanced: bool
+    ) -> list:
         """Build aggregation expressions for all columns in a single pass."""
         agg_exprs = []
 
@@ -180,14 +197,14 @@ class StatisticsComputer:
                     )
 
             # Temporal column statistics
-            elif isinstance(col_type, (t.TimestampType, t.DateType)):
+            elif isinstance(col_type, t.TimestampType | t.DateType):
                 agg_exprs.extend(self._build_temporal_expressions(col_name, escaped))
 
         return agg_exprs
 
     def _build_numeric_expressions(
         self, col_name: str, escaped: str, include_advanced: bool
-    ) -> List:
+    ) -> list:
         """Build numeric-specific aggregation expressions."""
         exprs = [
             F.min(F.col(escaped)).alias(f"{col_name}__min"),
@@ -230,7 +247,7 @@ class StatisticsComputer:
 
         return exprs
 
-    def _build_numeric_quality_expressions(self, col_name: str, escaped: str) -> List:
+    def _build_numeric_quality_expressions(self, col_name: str, escaped: str) -> list:
         """Build numeric quality-specific expressions."""
         return [
             F.count(F.when(F.isnan(F.col(escaped)), 1)).alias(f"{col_name}__nan_count"),
@@ -244,7 +261,7 @@ class StatisticsComputer:
 
     def _build_string_expressions(
         self, col_name: str, escaped: str, include_advanced: bool
-    ) -> List:
+    ) -> list:
         """Build string-specific aggregation expressions."""
         exprs = [
             F.min(F.length(F.col(escaped))).alias(f"{col_name}__min_length"),
@@ -295,7 +312,7 @@ class StatisticsComputer:
 
         return exprs
 
-    def _build_string_quality_expressions(self, col_name: str, escaped: str) -> List:
+    def _build_string_quality_expressions(self, col_name: str, escaped: str) -> list:
         """Build string quality-specific expressions."""
         return [
             F.count(F.when(F.trim(F.col(escaped)) == "", 1)).alias(
@@ -309,7 +326,7 @@ class StatisticsComputer:
             ),
         ]
 
-    def _build_temporal_expressions(self, col_name: str, escaped: str) -> List:
+    def _build_temporal_expressions(self, col_name: str, escaped: str) -> list:
         """Build temporal-specific aggregation expressions."""
         return [
             F.min(F.col(escaped)).alias(f"{col_name}__min_date"),
@@ -319,15 +336,20 @@ class StatisticsComputer:
     def _unpack_results(
         self,
         result_row: Any,
-        columns: List[str],
+        columns: list[str],
         total_rows: int,
         include_quality: bool,
         include_advanced: bool,
-    ) -> Dict[str, Dict[str, Any]]:
+        progress_tracker: Any = None,
+    ) -> dict[str, dict[str, Any]]:
         """Unpack flat aggregation results into column-specific dictionaries."""
         results = {}
 
         for col_name in columns:
+            # Update progress for each column
+            if progress_tracker:
+                progress_tracker.update(f"Processing {col_name}")
+
             col_type = self._column_types[col_name]
 
             # Basic statistics - common to all types
@@ -335,7 +357,7 @@ class StatisticsComputer:
             null_count = result_row[f"{col_name}__null_count"]
             distinct_count = result_row[f"{col_name}__distinct_count"]
 
-            stats: Dict[str, Any] = {
+            stats: dict[str, Any] = {
                 "data_type": str(col_type),
                 "total_count": int(total_rows),
                 "non_null_count": non_null_count,
@@ -365,7 +387,7 @@ class StatisticsComputer:
                 self._unpack_string(
                     stats, result_row, col_name, include_advanced, include_quality
                 )
-            elif isinstance(col_type, (t.TimestampType, t.DateType)):
+            elif isinstance(col_type, t.TimestampType | t.DateType):
                 self._unpack_temporal(stats, result_row, col_name)
 
             # Add quality score if requested
@@ -381,7 +403,7 @@ class StatisticsComputer:
 
     def _unpack_numeric(
         self,
-        stats: Dict[str, Any],
+        stats: dict[str, Any],
         result_row: Any,
         col_name: str,
         total_rows: int,
@@ -465,7 +487,7 @@ class StatisticsComputer:
 
     def _unpack_string(
         self,
-        stats: Dict[str, Any],
+        stats: dict[str, Any],
         result_row: Any,
         col_name: str,
         include_advanced: bool,
@@ -511,7 +533,7 @@ class StatisticsComputer:
             )
 
     def _unpack_temporal(
-        self, stats: Dict[str, Any], result_row: Any, col_name: str
+        self, stats: dict[str, Any], result_row: Any, col_name: str
     ) -> None:
         """Unpack temporal statistics from result row."""
         min_date = result_row[f"{col_name}__min_date"]
@@ -535,8 +557,8 @@ class StatisticsComputer:
             stats["date_range_days"] = None
 
     def _calculate_quality_metrics(
-        self, stats: Dict[str, Any], column_type: Any, col_name: str
-    ) -> Dict[str, Any]:
+        self, stats: dict[str, Any], column_type: Any, col_name: str
+    ) -> dict[str, Any]:
         """Calculate overall quality metrics for a column."""
         null_percentage = stats.get("null_percentage", 0.0)
         distinct_percentage = stats.get("distinct_percentage", 0.0)
@@ -582,24 +604,23 @@ class StatisticsComputer:
         """Get simplified type name for reporting."""
         if isinstance(column_type, t.NumericType):
             return "numeric"
-        elif isinstance(column_type, t.StringType):
+        if isinstance(column_type, t.StringType):
             return "string"
-        elif isinstance(column_type, (t.TimestampType, t.DateType)):
+        if isinstance(column_type, t.TimestampType | t.DateType):
             return "temporal"
-        else:
-            return "other"
+        return "other"
 
     def _compute_special_cases(
         self,
-        columns: List[str],
-        results: Dict[str, Dict[str, Any]],
+        columns: list[str],
+        results: dict[str, dict[str, Any]],
         include_advanced: bool,
-    ) -> Dict[str, Dict[str, Any]]:
+    ) -> dict[str, dict[str, Any]]:
         """
         Compute statistics that require separate scans.
         Optimized to minimize the number of additional scans.
         """
-        special_stats: Dict[str, Dict[str, Any]] = {}
+        special_stats: dict[str, dict[str, Any]] = {}
 
         # Group columns by what special processing they need
         numeric_cols_needing_outliers = []
@@ -646,8 +667,8 @@ class StatisticsComputer:
         return special_stats
 
     def _compute_outlier_counts_batch(
-        self, columns: List[str], results: Dict[str, Dict[str, Any]]
-    ) -> Dict[str, Dict[str, Any]]:
+        self, columns: list[str], results: dict[str, dict[str, Any]]
+    ) -> dict[str, dict[str, Any]]:
         """Compute outlier counts for multiple numeric columns in one scan."""
         agg_exprs = []
         bounds_map = {}
@@ -706,7 +727,7 @@ class StatisticsComputer:
 
     def _get_top_values(
         self, column_name: str, limit: int = DEFAULT_TOP_VALUES_LIMIT
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get top frequent values for a column."""
         escaped = escape_column_name(column_name)
 
@@ -724,5 +745,5 @@ class StatisticsComputer:
                 {"value": row[column_name], "count": row["count"]} for row in top_values
             ]
         except Exception as e:
-            logger.warning(f"Failed to compute top values for {column_name}: {str(e)}")
+            logger.warning(f"Failed to compute top values for {column_name}: {e!s}")
             return []

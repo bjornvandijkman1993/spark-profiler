@@ -11,8 +11,8 @@ Welcome to pyspark-analyzer's documentation!
    :target: https://pypi.python.org/pypi/pyspark-analyzer
    :alt: Python versions
 
-.. image:: https://github.com/yourusername/pyspark-analyzer/workflows/CI/badge.svg
-   :target: https://github.com/yourusername/pyspark-analyzer/actions
+.. image:: https://github.com/bjornvandijkman1993/pyspark-analyzer/workflows/CI/badge.svg
+   :target: https://github.com/bjornvandijkman1993/pyspark-analyzer/actions
    :alt: CI Status
 
 **pyspark-analyzer** is a comprehensive profiling library for Apache Spark DataFrames, designed to help data engineers and scientists understand their data quickly and efficiently.

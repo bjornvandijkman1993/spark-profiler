@@ -5,16 +5,17 @@ Advanced statistics features in pyspark-analyzer.
 import random
 from datetime import date, timedelta
 
+import numpy as np
 from pyspark.sql import SparkSession
 from pyspark.sql.types import (
-    StructType,
-    StructField,
+    DateType,
+    DoubleType,
     IntegerType,
     StringType,
-    DoubleType,
-    DateType,
+    StructField,
+    StructType,
 )
-import numpy as np
+
 from pyspark_analyzer import analyze
 
 # Create Spark session
@@ -25,10 +26,7 @@ np.random.seed(42)
 data = []
 for i in range(1000):
     # Create data with outliers
-    if i < 10:
-        price = 1000.0 + i * 100  # Outliers
-    else:
-        price = max(0.1, np.random.normal(50, 15))  # Normal distribution
+    price = 1000.0 + i * 100 if i < 10 else max(0.1, np.random.normal(50, 15))
 
     # Add email patterns
     email = f"user{i}@example.com" if i % 10 != 0 else "invalid-email"
@@ -95,24 +93,17 @@ def create_sample_data(spark):
             price = max(0.1, np.random.normal(50, 15))
 
         # Email (with patterns)
-        if i % 20 == 0:
-            email = random.choice(emails)  # nosec B311
-        else:
-            email = f"customer{i}@example.com"
+        email = (
+            random.choice(emails) if i % 20 == 0 else f"customer{i}@example.com"
+        )  # nosec B311
 
         # Date
-        if i % 50 == 0:
-            order_date = None
-        else:
-            order_date = date(2023, 1, 1) + timedelta(days=i % 365)
+        order_date = None if i % 50 == 0 else date(2023, 1, 1) + timedelta(days=i % 365)
 
         # Quantity (for demonstrating skewness)
-        if i < 50:
-            quantity = random.randint(
-                100, 200
-            )  # High values for skewness  # nosec B311
-        else:
-            quantity = random.randint(1, 10)  # nosec B311
+        quantity = (
+            random.randint(100, 200) if i < 50 else random.randint(1, 10)
+        )  # nosec B311
 
         data.append((row_id, product, price, email, order_date, quantity))
 

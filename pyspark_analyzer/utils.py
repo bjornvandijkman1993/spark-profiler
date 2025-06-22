@@ -2,7 +2,8 @@
 Utility functions for the DataFrame profiler.
 """
 
-from typing import Dict, Any, Union
+from typing import Any
+
 import pandas as pd
 
 from .exceptions import ConfigurationError
@@ -41,8 +42,8 @@ def escape_column_name(column_name: str) -> str:
 
 
 def format_profile_output(
-    profile_data: Dict[str, Any], format_type: str = "dict"
-) -> Union[pd.DataFrame, Dict[str, Any], str]:
+    profile_data: dict[str, Any], format_type: str = "dict"
+) -> pd.DataFrame | dict[str, Any] | str:
     """
     Format the profile output in different formats.
 
@@ -55,22 +56,21 @@ def format_profile_output(
     """
     if format_type == "dict":
         return profile_data
-    elif format_type == "json":
+    if format_type == "json":
         import json
 
         return json.dumps(profile_data, indent=2, default=str)
-    elif format_type == "summary":
+    if format_type == "summary":
         return _create_summary_report(profile_data)
-    elif format_type == "pandas":
+    if format_type == "pandas":
         return _create_pandas_dataframe(profile_data)
-    else:
-        logger.error(f"Unsupported format type: {format_type}")
-        raise ConfigurationError(
-            f"Unsupported format type: {format_type}. Supported formats are: dict, json, summary, pandas"
-        )
+    logger.error(f"Unsupported format type: {format_type}")
+    raise ConfigurationError(
+        f"Unsupported format type: {format_type}. Supported formats are: dict, json, summary, pandas"
+    )
 
 
-def _create_summary_report(profile_data: Dict[str, Any]) -> str:
+def _create_summary_report(profile_data: dict[str, Any]) -> str:
     """
     Create a human-readable summary report.
 
@@ -85,7 +85,7 @@ def _create_summary_report(profile_data: Dict[str, Any]) -> str:
 
     total_rows = overview.get("total_rows", "N/A")
     total_rows_str = (
-        f"{total_rows:,}" if isinstance(total_rows, (int, float)) else str(total_rows)
+        f"{total_rows:,}" if isinstance(total_rows, int | float) else str(total_rows)
     )
 
     report_lines = [
@@ -141,7 +141,7 @@ def _create_summary_report(profile_data: Dict[str, Any]) -> str:
     return "\n".join(report_lines)
 
 
-def _create_pandas_dataframe(profile_data: Dict[str, Any]) -> pd.DataFrame:
+def _create_pandas_dataframe(profile_data: dict[str, Any]) -> pd.DataFrame:
     """
     Create a pandas DataFrame from profile data.
 

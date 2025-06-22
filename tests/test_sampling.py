@@ -4,16 +4,15 @@ Test cases for sampling functionality.
 
 import pytest
 from pyspark.sql.types import (
-    StructType,
-    StructField,
-    StringType,
-    IntegerType,
     DoubleType,
+    IntegerType,
+    StringType,
+    StructField,
+    StructType,
 )
 
 from pyspark_analyzer import ConfigurationError, analyze
-from pyspark_analyzer.sampling import SamplingConfig
-from pyspark_analyzer.sampling import SamplingMetadata, apply_sampling
+from pyspark_analyzer.sampling import SamplingConfig, SamplingMetadata, apply_sampling
 
 
 @pytest.fixture

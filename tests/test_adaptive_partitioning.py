@@ -3,16 +3,17 @@
 import pytest
 from pyspark.sql import SparkSession
 from pyspark.sql.types import (
-    StructType,
-    StructField,
+    DoubleType,
     IntegerType,
     StringType,
-    DoubleType,
+    StructField,
+    StructType,
 )
+
 from pyspark_analyzer.performance import (
-    optimize_dataframe_for_profiling,
     _adaptive_partition,
     _estimate_row_size,
+    optimize_dataframe_for_profiling,
 )
 
 

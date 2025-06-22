@@ -139,9 +139,30 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-# Start with basic flake8-equivalent rules
-select = ["E", "F", "W"]
-ignore = ["E203", "E501"]  # E501 is line length, handled by formatter
+# Extended rule set for better code quality
+select = [
+    "E",      # pycodestyle errors
+    "F",      # pyflakes (includes F401 unused imports, F841 unused variables)
+    "W",      # pycodestyle warnings
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "DTZ",    # flake8-datetimez
+    "T10",    # flake8-debugger
+    "RET",    # flake8-return
+    "SIM",    # flake8-simplify
+    "TID",    # flake8-tidy-imports
+    "RUF",    # Ruff-specific rules
+]
+ignore = [
+    "E203",   # whitespace before ':'
+    "E501",   # line length, handled by formatter
+    "N802",   # function name should be lowercase (for DataFrame methods)
+    "N803",   # argument name should be lowercase (for DataFrame)
+    "N806",   # variable in function should be lowercase (for DataFrames)
+]
 
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".venv"]
@@ -191,4 +212,5 @@ dev = [
     "pytest-cov>=5.0.0",
     "pytest-mock>=3.14.1",
     "ruff>=0.11.13",
+    "vulture>=2.14",
 ]

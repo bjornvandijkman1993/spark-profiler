@@ -2,8 +2,8 @@
 Test cases for performance optimization utilities.
 """
 
+from datetime import UTC, date, datetime
 from unittest.mock import Mock, patch
-from datetime import datetime, date
 
 from pyspark_analyzer.performance import optimize_dataframe_for_profiling
 from pyspark_analyzer.statistics import StatisticsComputer
@@ -102,9 +102,9 @@ class TestStatisticsComputerBatch:
     def test_compute_column_stats_temporal(self, spark_session):
         """Test statistics computation for temporal columns."""
         data = [
-            (1, datetime(2023, 1, 1), date(2023, 1, 1)),
-            (2, datetime(2023, 6, 15), date(2023, 6, 15)),
-            (3, datetime(2023, 12, 31), date(2023, 12, 31)),
+            (1, datetime(2023, 1, 1, tzinfo=UTC), date(2023, 1, 1)),
+            (2, datetime(2023, 6, 15, tzinfo=UTC), date(2023, 6, 15)),
+            (3, datetime(2023, 12, 31, tzinfo=UTC), date(2023, 12, 31)),
             (4, None, None),
         ]
         df = spark_session.createDataFrame(data, ["id", "timestamp", "date"])
@@ -115,8 +115,8 @@ class TestStatisticsComputerBatch:
         # Test timestamp column
         timestamp_stats = all_stats["timestamp"]
         assert timestamp_stats["data_type"] == "TimestampType()"
-        assert timestamp_stats["min_date"] == datetime(2023, 1, 1)
-        assert timestamp_stats["max_date"] == datetime(2023, 12, 31)
+        assert timestamp_stats["min_date"] == datetime(2023, 1, 1, tzinfo=UTC)
+        assert timestamp_stats["max_date"] == datetime(2023, 12, 31, tzinfo=UTC)
         assert timestamp_stats["date_range_days"] == 364
 
         # Test date column
@@ -127,7 +127,7 @@ class TestStatisticsComputerBatch:
 
     def test_compute_column_stats_with_all_nulls(self, spark_session):
         """Test statistics computation when column has all null values."""
-        from pyspark.sql.types import StructType, StructField, IntegerType, DoubleType
+        from pyspark.sql.types import DoubleType, IntegerType, StructField, StructType
 
         schema = StructType(
             [
@@ -150,7 +150,7 @@ class TestStatisticsComputerBatch:
     def test_error_handling_in_batch_compute(self, spark_session):
         """Test error handling during batch computation."""
         # Create a DataFrame with an invalid column type that will cause an error
-        from pyspark.sql.types import StructType, StructField, StringType, ArrayType
+        from pyspark.sql.types import ArrayType, StringType, StructField, StructType
 
         schema = StructType(
             [
@@ -229,15 +229,19 @@ class TestOptimizeDataFrameForProfiling:
     def test_repartitioning_large_dataset(self, sample_dataframe):
         """Test repartitioning optimization for large datasets."""
         # Use context managers for proper mocking
-        with patch.object(sample_dataframe, "count", return_value=2_000_000):
-            with patch.object(sample_dataframe.rdd, "getNumPartitions", return_value=2):
-                with patch.object(sample_dataframe, "repartition") as mock_repartition:
-                    # Mock repartition to return a new DataFrame mock
-                    mock_repartitioned_df = Mock()
-                    mock_repartitioned_df.rdd.getNumPartitions.return_value = 8
-                    mock_repartition.return_value = mock_repartitioned_df
+        with patch.object(
+            sample_dataframe, "count", return_value=2_000_000
+        ), patch.object(
+            sample_dataframe.rdd, "getNumPartitions", return_value=2
+        ), patch.object(
+            sample_dataframe, "repartition"
+        ) as mock_repartition:
+            # Mock repartition to return a new DataFrame mock
+            mock_repartitioned_df = Mock()
+            mock_repartitioned_df.rdd.getNumPartitions.return_value = 8
+            mock_repartition.return_value = mock_repartitioned_df
 
-                    result = optimize_dataframe_for_profiling(sample_dataframe)
+            result = optimize_dataframe_for_profiling(sample_dataframe)
 
         # With adaptive partitioning, the logic is more sophisticated
         # It considers data size and cluster configuration

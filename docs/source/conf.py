@@ -4,14 +4,14 @@ Configuration file for the Sphinx documentation builder.
 
 import os
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 
 # Add the project root to the Python path
 sys.path.insert(0, os.path.abspath("../.."))
 
 # Project information
 project = "pyspark-analyzer"
-copyright = f"{datetime.now().year}, Bjorn van Dijkman"
+copyright = f"{datetime.now(tz=UTC).year}, Bjorn van Dijkman"
 author = "Bjorn van Dijkman"
 release = "0.1.0"
 

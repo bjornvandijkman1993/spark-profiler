@@ -118,7 +118,7 @@ Documentation is automatically built and deployed via GitHub Actions:
 
 ### GitHub Pages
 
-Accessible at: https://yourusername.github.io/pyspark-analyzer/
+Accessible at: https://bjornvandijkman1993.github.io/pyspark-analyzer/
 
 ### Read the Docs
 

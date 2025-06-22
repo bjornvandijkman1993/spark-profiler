@@ -3,14 +3,13 @@ Test cases for statistics computation module.
 """
 
 from pyspark.sql.types import (
-    StructType,
-    StructField,
-    StringType,
     IntegerType,
+    StringType,
+    StructField,
+    StructType,
 )
 
 from pyspark_analyzer.statistics import StatisticsComputer
-
 
 # LazyRowCount class has been removed from the library
 
@@ -48,7 +47,7 @@ class TestStatisticsComputer:
         assert "salary" in stats
 
         # Check basic structure of results
-        for col_name, col_stats in stats.items():
+        for _col_name, col_stats in stats.items():
             assert "total_count" in col_stats
             assert "non_null_count" in col_stats
             assert "null_count" in col_stats

@@ -2,15 +2,16 @@
 
 import logging
 from io import StringIO
+
 import pytest
 from pyspark.sql import SparkSession
 
 import pyspark_analyzer
 from pyspark_analyzer.logging import (
-    get_logger,
-    set_log_level,
     configure_logging,
     disable_logging,
+    get_logger,
+    set_log_level,
 )
 
 

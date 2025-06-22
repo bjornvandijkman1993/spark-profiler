@@ -2,8 +2,6 @@
 
 import logging
 import os
-from typing import Optional
-
 
 _PACKAGE_NAME = "pyspark_analyzer"
 _DEFAULT_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -40,8 +38,8 @@ def set_log_level(level: str) -> None:
 
 
 def configure_logging(
-    level: Optional[str] = None,
-    format_string: Optional[str] = None,
+    level: str | None = None,
+    format_string: str | None = None,
     disable_existing_loggers: bool = False,
 ) -> None:
     """Configure logging for the pyspark-analyzer package.

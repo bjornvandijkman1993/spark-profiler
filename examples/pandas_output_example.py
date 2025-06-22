@@ -3,6 +3,7 @@ Working with pandas DataFrame output from pyspark-analyzer.
 """
 
 from pyspark.sql import SparkSession
+
 from pyspark_analyzer import analyze
 
 # Create Spark session
