@@ -4120,7 +4120,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/9d/0e/5b38d51f1b1c2618c
 
 [[package]]
 name = "pyspark-analyzer"
-version = "4.5.0"
+version = "4.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "pandas", version = "2.0.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
@@ -4169,6 +4169,8 @@ dev = [
     { name = "cyclonedx-bom", version = "6.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
     { name = "ipykernel" },
     { name = "jupyter" },
+    { name = "mypy", version = "1.14.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "mypy", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
     { name = "nbstripout" },
     { name = "notebook", version = "7.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "notebook", version = "7.4.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
@@ -4215,6 +4217,7 @@ dev = [
     { name = "cyclonedx-bom", specifier = ">=5.5.0" },
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "jupyter", specifier = ">=1.1.1" },
+    { name = "mypy", specifier = ">=1.14.1" },
     { name = "nbstripout", specifier = ">=0.8.1" },
     { name = "notebook", specifier = ">=7.3.3" },
     { name = "pandas-stubs", specifier = ">=2.0.3.230814" },

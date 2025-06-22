@@ -109,6 +109,7 @@ def profile_dataframe(
 
     # Always use batch processing for optimal performance
     logger.debug("Starting batch column profiling")
+    logger.debug("Starting batch computation")
     try:
         profile_result["columns"] = stats_computer.compute_all_columns_batch(
             columns, include_advanced=include_advanced, include_quality=include_quality
