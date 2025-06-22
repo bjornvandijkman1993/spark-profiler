@@ -4120,7 +4120,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/9d/0e/5b38d51f1b1c2618c
 
 [[package]]
 name = "pyspark-analyzer"
-version = "4.2.1"
+version = "4.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "pandas", version = "2.0.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
@@ -4198,7 +4198,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=1.0.0" },
     { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.0.0" },
     { name = "pip-licenses", marker = "extra == 'dev'", specifier = ">=4.0.0" },
-    { name = "pyspark", specifier = ">=3.5.0" },
+    { name = "pyspark", specifier = ">=3.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=6.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=2.0.0" },
     { name = "safety", marker = "extra == 'dev'", specifier = ">=2.0.0" },

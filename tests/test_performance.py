@@ -2,7 +2,6 @@
 Test cases for performance optimization utilities.
 """
 
-import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime, date
 
@@ -17,41 +16,7 @@ class TestStatisticsComputerBatch:
         """Test initialization of StatisticsComputer."""
         computer = StatisticsComputer(sample_dataframe)
         assert computer.df is sample_dataframe
-        assert computer.cache_enabled is False
-
-    def test_enable_caching(self, sample_dataframe):
-        """Test enabling DataFrame caching."""
-        computer = StatisticsComputer(sample_dataframe)
-
-        # Mock the cache method
-        sample_dataframe.cache = Mock(return_value=sample_dataframe)
-
-        computer.enable_caching()
-        assert computer.cache_enabled is True
-        sample_dataframe.cache.assert_called_once()
-
-        # Test that enabling again doesn't cache twice
-        computer.enable_caching()
-        sample_dataframe.cache.assert_called_once()
-
-    def test_disable_caching(self, sample_dataframe):
-        """Test disabling DataFrame caching."""
-        computer = StatisticsComputer(sample_dataframe)
-
-        # Mock cache and unpersist methods
-        sample_dataframe.cache = Mock(return_value=sample_dataframe)
-        sample_dataframe.unpersist = Mock(return_value=sample_dataframe)
-
-        # Enable then disable caching
-        computer.enable_caching()
-        computer.disable_caching()
-
-        assert computer.cache_enabled is False
-        sample_dataframe.unpersist.assert_called_once()
-
-        # Test that disabling again doesn't unpersist twice
-        computer.disable_caching()
-        sample_dataframe.unpersist.assert_called_once()
+        # Removed cache_enabled check as caching methods were removed
 
     def test_compute_all_columns_batch(self, sample_dataframe):
         """Test batch computation of statistics for all columns."""
@@ -78,7 +43,7 @@ class TestStatisticsComputerBatch:
         assert results["name"]["empty_count"] == 0  # No empty strings in sample data
 
         # Check that caching was cleaned up
-        assert computer.cache_enabled is False
+        # Removed cache_enabled check as caching methods were removed
 
     def test_compute_all_columns_batch_specific_columns(self, sample_dataframe):
         """Test batch computation for specific columns only."""
@@ -182,19 +147,33 @@ class TestStatisticsComputerBatch:
         assert stats["null_percentage"] == 100.0
         assert stats["distinct_percentage"] == 0.0
 
-    def test_error_handling_in_batch_compute(self, sample_dataframe):
+    def test_error_handling_in_batch_compute(self, spark_session):
         """Test error handling during batch computation."""
-        computer = StatisticsComputer(sample_dataframe)
+        # Create a DataFrame with an invalid column type that will cause an error
+        from pyspark.sql.types import StructType, StructField, StringType, ArrayType
 
-        # Mock enable_caching to raise an exception
-        computer.enable_caching = Mock(side_effect=Exception("Cache error"))
+        schema = StructType(
+            [
+                StructField("id", StringType(), True),
+                StructField("array_col", ArrayType(StringType()), True),
+            ]
+        )
 
-        # Should handle error and still return empty results
-        with pytest.raises(Exception):
-            computer.compute_all_columns_batch()
+        data = [("1", ["a", "b"]), ("2", ["c", "d"])]
+        df = spark_session.createDataFrame(data, schema)
 
-        # Ensure caching is disabled even on error
-        assert computer.cache_enabled is False
+        computer = StatisticsComputer(df)
+
+        # The batch compute should handle array types gracefully
+        results = computer.compute_all_columns_batch()
+
+        # Should successfully compute stats for the string column
+        assert "id" in results
+        assert results["id"]["data_type"] == "StringType()"
+
+        # Array column should also be processed (with basic stats only)
+        assert "array_col" in results
+        assert "ArrayType(StringType(), True)" in results["array_col"]["data_type"]
 
 
 class TestOptimizeDataFrameForProfiling:
