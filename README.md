@@ -28,6 +28,7 @@ A comprehensive PySpark DataFrame profiler for generating detailed statistics an
 ### Prerequisites
 
 - Python >=3.8
+- PySpark >=3.5.0 (required for median function support)
 - Java 17+ (required for PySpark)
   - macOS: `brew install openjdk@17`
   - Ubuntu/Debian: `sudo apt-get install openjdk-17-jdk`
@@ -301,7 +302,7 @@ pre-commit run --all-files
 ## 📋 Requirements
 
 - **Python**: 3.8+
-- **PySpark**: 3.0.0+
+- **PySpark**: 3.5.0+ (required for median function support)
 - **Java**: 17+ (required by PySpark)
 
 ## 📚 Documentation

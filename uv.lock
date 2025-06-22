@@ -4198,7 +4198,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=1.0.0" },
     { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.0.0" },
     { name = "pip-licenses", marker = "extra == 'dev'", specifier = ">=4.0.0" },
-    { name = "pyspark", specifier = ">=3.0.0" },
+    { name = "pyspark", specifier = ">=3.5.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=6.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=2.0.0" },
     { name = "safety", marker = "extra == 'dev'", specifier = ">=2.0.0" },

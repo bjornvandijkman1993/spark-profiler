@@ -11,6 +11,7 @@ from pyspark.sql.functions import (
     min as spark_min,
     max as spark_max,
     mean,
+    median,
     stddev,
     expr,
     length,
@@ -141,7 +142,7 @@ class StatisticsComputer:
             spark_max(col(column_name)).alias("max_value"),
             mean(col(column_name)).alias("mean_value"),
             stddev(col(column_name)).alias("std_value"),
-            expr(f"percentile_approx({column_name}, 0.5)").alias("median_value"),
+            median(col(column_name)).alias("median_value"),
             expr(f"percentile_approx({column_name}, 0.25)").alias("q1_value"),
             expr(f"percentile_approx({column_name}, 0.75)").alias("q3_value"),
         ]
@@ -733,9 +734,7 @@ class StatisticsComputer:
                 spark_max(col(escaped_name)).alias(f"{column_name}_max"),
                 mean(col(escaped_name)).alias(f"{column_name}_mean"),
                 stddev(col(escaped_name)).alias(f"{column_name}_std"),
-                expr(f"percentile_approx({escaped_name}, 0.5)").alias(
-                    f"{column_name}_median"
-                ),
+                median(col(escaped_name)).alias(f"{column_name}_median"),
                 expr(f"percentile_approx({escaped_name}, 0.25)").alias(
                     f"{column_name}_q1"
                 ),
