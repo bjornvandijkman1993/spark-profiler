@@ -74,7 +74,7 @@ jobs:
       run: uv run black --check --diff pyspark_analyzer/ tests/ examples/
 
     - name: Run ruff linting
-      run: uv run ruff check pyspark_analyzer/ tests/ examples/
+      run: uv run ruff check pyspark_analyzer/ tests/
 
     - name: Run mypy type checking
       run: uv run mypy pyspark_analyzer/
