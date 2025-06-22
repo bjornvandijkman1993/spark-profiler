@@ -22,6 +22,7 @@ A comprehensive PySpark DataFrame profiler for generating detailed statistics an
 - **🎨 Flexible Output**: Dictionary, JSON, and human-readable summary formats
 - **📈 Large Dataset Support**: Intelligent caching, partitioning, and sampling options
 - **🎯 Adaptive Partitioning**: Smart partition optimization considering AQE, data size, and cluster configuration
+- **📊 Progress Tracking**: Visual progress indicators for long-running operations
 
 ## 🚀 Quick Start
 
@@ -131,6 +132,15 @@ profile_df = analyze(df)                    # Default: pandas DataFrame
 profile_dict = analyze(df, output_format="dict")    # Dictionary format
 summary = analyze(df, output_format="summary")      # Human-readable summary
 
+# Progress tracking for long-running operations
+profile = analyze(df, show_progress=True)    # Show progress bar
+profile = analyze(df, show_progress=False)   # Disable progress
+
+# Control via environment variable
+# export PYSPARK_ANALYZER_PROGRESS=always  # Always show progress
+# export PYSPARK_ANALYZER_PROGRESS=never   # Never show progress
+# export PYSPARK_ANALYZER_PROGRESS=auto    # Auto-detect (default)
+
 # Save pandas output to various formats
 profile_df = analyze(df)
 profile_df.to_csv("profile.csv")
@@ -220,6 +230,7 @@ Check out the [examples](./examples/) directory for comprehensive usage examples
 - [`sampling_example.py`](./examples/sampling_example.py) - All sampling configuration options
 - [`pandas_output_example.py`](./examples/pandas_output_example.py) - Working with pandas DataFrame output
 - [`advanced_statistics_demo.py`](./examples/advanced_statistics_demo.py) - Advanced features and data quality analysis
+- [`progress_tracking_example.py`](./examples/progress_tracking_example.py) - Progress indicators for long-running operations
 
 ## 🧪 Development
 

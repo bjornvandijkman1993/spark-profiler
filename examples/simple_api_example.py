@@ -38,4 +38,9 @@ print("\n5. With sampling:")
 profile = analyze(df, target_rows=50, output_format="dict")
 print(f"Sample size: {profile['sampling']['sample_size']} rows")
 
+# 6. With progress tracking
+print("\n6. With progress tracking:")
+profile = analyze(df, show_progress=True)
+print("Analysis completed with progress tracking!")
+
 spark.stop()

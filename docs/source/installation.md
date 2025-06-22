@@ -17,7 +17,7 @@ pip install pyspark-analyzer
 ### Using pip
 
 ```bash
-git clone https://github.com/yourusername/pyspark-analyzer.git
+git clone https://github.com/bjornvandijkman1993/pyspark-analyzer.git
 cd pyspark-analyzer
 pip install -e .
 ```
@@ -25,7 +25,7 @@ pip install -e .
 ### Using uv (recommended for development)
 
 ```bash
-git clone https://github.com/yourusername/pyspark-analyzer.git
+git clone https://github.com/bjornvandijkman1993/pyspark-analyzer.git
 cd pyspark-analyzer
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync
@@ -61,4 +61,4 @@ export SPARK_HOME=/path/to/spark
 export PYTHONPATH=$SPARK_HOME/python:$PYTHONPATH
 ```
 
-For more detailed troubleshooting, see our [Troubleshooting Guide](https://github.com/yourusername/pyspark-analyzer/blob/main/TROUBLESHOOTING.md).
+For more detailed troubleshooting, see our [Troubleshooting Guide](https://github.com/bjornvandijkman1993/pyspark-analyzer/blob/main/TROUBLESHOOTING.md).
