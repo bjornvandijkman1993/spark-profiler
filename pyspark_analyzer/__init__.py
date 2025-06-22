@@ -23,7 +23,7 @@ from .exceptions import (
 from .sampling import SamplingConfig
 from .logging import configure_logging, set_log_level, disable_logging, get_logger
 
-__version__ = "5.0.0"
+__version__ = "5.0.1"
 __all__ = [
     "analyze",
     # Exceptions

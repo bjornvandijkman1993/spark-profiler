@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.1](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v5.0.0...v5.0.1) (2025-06-22)
+
+
+### Performance Improvements
+
+* eliminate extra collection when sampling is applied ([ae98e95](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/ae98e954dcf6af3065f4ee3b2407f66fed9a0562))
+
 # [5.0.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v4.5.1...v5.0.0) (2025-06-22)
 
 
