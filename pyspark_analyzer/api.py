@@ -1,11 +1,9 @@
-from typing import Optional, List, Union, Any
+from typing import Optional, List, Union
 import pandas as pd
 from pyspark.sql import DataFrame
-from pyspark.sql.utils import AnalysisException
 
 from .profiler import profile_dataframe
 from .sampling import SamplingConfig
-from .exceptions import ConfigurationError, SparkOperationError
 from .logging import get_logger
 
 logger = get_logger(__name__)
@@ -71,14 +69,9 @@ def analyze(
         >>> # Get results as dictionary
         >>> profile = analyze(df, output_format="dict")
     """
-    logger.info(
-        f"Starting DataFrame analysis with parameters: "
-        f"sampling={sampling}, target_rows={target_rows}, "
-        f"fraction={fraction}, columns={columns}, "
-        f"output_format={output_format}"
-    )
+    logger.info(f"Starting DataFrame analysis with output_format={output_format}")
 
-    # Build sampling configuration based on parameters
+    # Build sampling configuration
     sampling_config = _build_sampling_config(
         sampling=sampling,
         target_rows=target_rows,
@@ -86,9 +79,7 @@ def analyze(
         seed=seed,
     )
 
-    logger.debug(f"Sampling configuration: {sampling_config}")
-
-    # Use the new standalone function directly
+    # Delegate to profiler
     try:
         result = profile_dataframe(
             dataframe=df,
@@ -100,11 +91,6 @@ def analyze(
         )
         logger.info("DataFrame analysis completed successfully")
         return result
-    except AnalysisException as e:
-        logger.error(f"Spark analysis error during profiling: {str(e)}")
-        raise SparkOperationError(
-            f"Failed to analyze DataFrame due to Spark error: {str(e)}", e
-        )
     except Exception as e:
         logger.error(f"Error during DataFrame analysis: {str(e)}", exc_info=True)
         raise
@@ -127,34 +113,15 @@ def _build_sampling_config(
 
     Returns:
         SamplingConfig instance
-
-    Raises:
-        ValueError: If both target_rows and fraction are specified
     """
-    if target_rows is not None and fraction is not None:
-        logger.error("Cannot specify both target_rows and fraction")
-        raise ConfigurationError("Cannot specify both target_rows and fraction")
-
     # If sampling is explicitly disabled
     if sampling is False:
-        logger.debug("Sampling explicitly disabled")
         return SamplingConfig(enabled=False)
 
-    # Build config with specified parameters
-    config_params: dict[str, Any] = {}
-
-    if sampling is not None:
-        config_params["enabled"] = sampling
-
-    if target_rows is not None:
-        config_params["target_rows"] = target_rows
-        logger.debug(f"Target rows set to {target_rows}")
-
-    if fraction is not None:
-        config_params["fraction"] = fraction
-        logger.debug(f"Fraction set to {fraction}")
-
-    if seed is not None:
-        config_params["seed"] = seed
-
-    return SamplingConfig(**config_params)
+    # Let SamplingConfig handle validation
+    return SamplingConfig(
+        enabled=sampling if sampling is not None else True,
+        target_rows=target_rows,
+        fraction=fraction,
+        seed=seed if seed is not None else 42,
+    )
