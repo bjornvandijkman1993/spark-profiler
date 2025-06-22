@@ -230,7 +230,6 @@ Check out the [examples](./examples/) directory for comprehensive usage examples
 - [`sampling_example.py`](./examples/sampling_example.py) - All sampling configuration options
 - [`pandas_output_example.py`](./examples/pandas_output_example.py) - Working with pandas DataFrame output
 - [`advanced_statistics_demo.py`](./examples/advanced_statistics_demo.py) - Advanced features and data quality analysis
-- [`progress_tracking_example.py`](./examples/progress_tracking_example.py) - Progress indicators for long-running operations
 
 ## 🧪 Development
 
