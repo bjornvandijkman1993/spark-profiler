@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [4.5.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v4.4.0...v4.5.0) (2025-06-22)
+
+
+### Bug Fixes
+
+* clean up pycache files and add Jupyter notebook support ([5570b74](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/5570b74713431b38ba59186e7d0ac4d32f258653))
+
+
+### Features
+
+* add backward compatibility for PySpark versions 3.0.0+ ([845edde](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/845edde12b13130faaab28b2e4dc897f59317f17))
+
 # [4.4.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v4.3.0...v4.4.0) (2025-06-22)
 
 
