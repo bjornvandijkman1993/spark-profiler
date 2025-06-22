@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [5.0.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v4.5.1...v5.0.0) (2025-06-22)
+
+
+### Bug Fixes
+
+* resolve mypy type errors in statistics module ([c42e532](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/c42e532a1ea94d075965a944a2e6f67b1bc01a00))
+* resolve test failures in advanced statistics and logging ([945e03b](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/945e03be5ffda8b26428e84fc0c639a496479cc8))
+
+
+### Code Refactoring
+
+* simplify statistics module for better maintainability ([cecb9ad](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/cecb9ad9c68c60c1be61b30e860429e326418593))
+
+
+### BREAKING CHANGES
+
+* Removes backward compatibility methods like compute_basic_stats,
+compute_numeric_stats, etc. Only compute_all_columns_batch is preserved.
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+
 ## [4.5.1](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v4.5.0...v4.5.1) (2025-06-22)
 
 
