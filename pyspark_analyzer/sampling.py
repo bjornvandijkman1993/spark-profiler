@@ -50,7 +50,7 @@ class SamplingMetadata:
     """Metadata about a sampling operation."""
 
     original_size: int
-    sample_size: int
+    sample_size: int  # Estimated when sampling is applied
     sampling_fraction: float
     sampling_time: float
     is_sampled: bool
@@ -146,9 +146,12 @@ def apply_sampling(
         )
         try:
             sample_df = df.sample(fraction=sampling_fraction, seed=config.seed)
-            sample_size = sample_df.count()
+            # Estimate sample size instead of counting to avoid extra collection
+            sample_size = int(row_count * sampling_fraction)
             is_sampled = True
-            logger.info(f"Sampling completed: {row_count:,} -> {sample_size:,} rows")
+            logger.info(
+                f"Sampling completed: {row_count:,} -> ~{sample_size:,} rows (estimated)"
+            )
         except (AnalysisException, Py4JError, Py4JJavaError) as e:
             logger.error(f"Failed to sample DataFrame: {str(e)}")
             raise SamplingError(
