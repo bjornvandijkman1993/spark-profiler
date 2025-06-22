@@ -2,15 +2,16 @@
 Unit tests for pandas DataFrame output functionality.
 """
 
-import pytest
+from datetime import UTC, datetime
+
 import pandas as pd
-from datetime import datetime
+import pytest
 from pyspark.sql.types import (
-    StructType,
-    StructField,
+    DoubleType,
     IntegerType,
     StringType,
-    DoubleType,
+    StructField,
+    StructType,
     TimestampType,
 )
 
@@ -31,11 +32,11 @@ def sample_dataframe(spark_session):
     )
 
     data = [
-        (1, "Alice", 85.5, datetime(2023, 1, 1)),
-        (2, "Bob", None, datetime(2023, 1, 2)),
-        (3, None, 92.0, datetime(2023, 1, 3)),
+        (1, "Alice", 85.5, datetime(2023, 1, 1, tzinfo=UTC)),
+        (2, "Bob", None, datetime(2023, 1, 2, tzinfo=UTC)),
+        (3, None, 92.0, datetime(2023, 1, 3, tzinfo=UTC)),
         (4, "Charlie", 78.5, None),
-        (5, "David", 88.0, datetime(2023, 1, 5)),
+        (5, "David", 88.0, datetime(2023, 1, 5, tzinfo=UTC)),
     ]
 
     return spark_session.createDataFrame(data, schema)

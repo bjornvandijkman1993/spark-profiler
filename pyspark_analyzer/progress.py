@@ -2,10 +2,12 @@
 
 import os
 import sys
-import time
 import threading
-from typing import Optional, Callable, Any
+import time
+from collections.abc import Callable
 from contextlib import contextmanager
+from typing import Any
+
 from .logging import get_logger
 
 logger = get_logger(__name__)
@@ -18,7 +20,7 @@ class ProgressTracker:
         self,
         total_items: int,
         description: str = "Processing",
-        show_progress: Optional[bool] = None,
+        show_progress: bool | None = None,
         update_interval: float = 0.1,
     ):
         """
@@ -33,7 +35,7 @@ class ProgressTracker:
         self.total_items = total_items
         self.description = description
         self.current_item = 0
-        self.start_time: Optional[float] = None
+        self.start_time: float | None = None
         self.last_update_time: float = 0
         self.update_interval = update_interval
         self._lock = threading.Lock()
@@ -54,7 +56,7 @@ class ProgressTracker:
         env_progress = os.environ.get("PYSPARK_ANALYZER_PROGRESS", "auto").lower()
         if env_progress == "never":
             return False
-        elif env_progress == "always":
+        if env_progress == "always":
             return True
 
         # Auto mode - check if we're in an interactive terminal
@@ -88,7 +90,7 @@ class ProgressTracker:
             else:
                 logger.info(f"Starting {self.description}...")
 
-    def update(self, item_name: Optional[str] = None, increment: int = 1) -> None:
+    def update(self, item_name: str | None = None, increment: int = 1) -> None:
         """Update progress."""
         with self._lock:
             self.current_item += increment
@@ -117,7 +119,7 @@ class ProgressTracker:
             else:
                 logger.info(f"Completed {self.description} in {elapsed_time:.1f}s")
 
-    def _display_progress_bar(self, item_name: Optional[str] = None) -> None:
+    def _display_progress_bar(self, item_name: str | None = None) -> None:
         """Display a progress bar in the terminal."""
         if self.total_items == 0:
             return
@@ -150,7 +152,7 @@ class ProgressTracker:
         # Print with carriage return
         print(f"\r{status}", end="", flush=True)
 
-    def _display_log_progress(self, item_name: Optional[str] = None) -> None:
+    def _display_log_progress(self, item_name: str | None = None) -> None:
         """Display progress using logging."""
         if self.total_items == 0:
             return
@@ -174,8 +176,8 @@ class ProgressTracker:
 def track_progress(
     total_items: int,
     description: str = "Processing",
-    show_progress: Optional[bool] = None,
-    callback: Optional[Callable[[ProgressTracker], Any]] = None,
+    show_progress: bool | None = None,
+    callback: Callable[[ProgressTracker], Any] | None = None,
 ) -> Any:
     """
     Context manager for progress tracking.
@@ -210,7 +212,7 @@ class ProgressStage:
     """Track multi-stage operations with sub-progress."""
 
     def __init__(
-        self, stages: list[tuple[str, int]], show_progress: Optional[bool] = None
+        self, stages: list[tuple[str, int]], show_progress: bool | None = None
     ):
         """
         Initialize multi-stage progress tracker.
@@ -224,8 +226,8 @@ class ProgressStage:
         self.current_stage_idx = 0
         self.current_stage_progress = 0
         self.show_progress = show_progress
-        self._overall_tracker: Optional[ProgressTracker] = None
-        self._stage_tracker: Optional[ProgressTracker] = None
+        self._overall_tracker: ProgressTracker | None = None
+        self._stage_tracker: ProgressTracker | None = None
 
     def start(self) -> None:
         """Start tracking progress."""
@@ -236,7 +238,7 @@ class ProgressStage:
             self._overall_tracker.start()
             self._start_stage(0)
 
-    def next_stage(self) -> Optional[ProgressTracker]:
+    def next_stage(self) -> ProgressTracker | None:
         """Move to the next stage and return its tracker."""
         if self.current_stage_idx < len(self.stages) - 1:
             # Complete current stage

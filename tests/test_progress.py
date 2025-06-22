@@ -1,10 +1,11 @@
 """Tests for progress tracking functionality."""
 
-import time
 import threading
+import time
 from io import StringIO
-from unittest.mock import patch, MagicMock
-from pyspark_analyzer.progress import ProgressTracker, track_progress, ProgressStage
+from unittest.mock import MagicMock, patch
+
+from pyspark_analyzer.progress import ProgressStage, ProgressTracker, track_progress
 
 
 class TestProgressTracker:
@@ -83,17 +84,18 @@ class TestProgressTracker:
     @patch("sys.stdout", new_callable=StringIO)
     def test_progress_bar_output(self, mock_stdout):
         """Test progress bar output."""
-        with patch("sys.stdout.isatty", return_value=True):
-            with patch("os.get_terminal_size", return_value=MagicMock(columns=80)):
-                tracker = ProgressTracker(10, "Testing", show_progress=True)
-                tracker.use_progress_bar = True
-                tracker.start()
-                tracker.update("item1")
+        with patch("sys.stdout.isatty", return_value=True), patch(
+            "os.get_terminal_size", return_value=MagicMock(columns=80)
+        ):
+            tracker = ProgressTracker(10, "Testing", show_progress=True)
+            tracker.use_progress_bar = True
+            tracker.start()
+            tracker.update("item1")
 
-                output = mock_stdout.getvalue()
-                assert "Testing:" in output
-                assert "10%" in output
-                assert "item1" in output
+            output = mock_stdout.getvalue()
+            assert "Testing:" in output
+            assert "10%" in output
+            assert "item1" in output
 
     def test_context_manager(self):
         """Test context manager usage."""

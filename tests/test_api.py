@@ -2,18 +2,19 @@
 Tests for the simplified analyze() API.
 """
 
-import pytest
-import pandas as pd
 import json
+from datetime import UTC, datetime
+
+import pandas as pd
+import pytest
 from pyspark.sql.types import (
-    StructType,
-    StructField,
-    StringType,
-    IntegerType,
     DoubleType,
+    IntegerType,
+    StringType,
+    StructField,
+    StructType,
     TimestampType,
 )
-from datetime import datetime
 
 from pyspark_analyzer import analyze
 
@@ -22,10 +23,10 @@ from pyspark_analyzer import analyze
 def sample_dataframe(spark_session):
     """Create a sample DataFrame for testing."""
     data = [
-        (1, "Alice", 25, 50000.0, datetime(2021, 1, 1)),
-        (2, "Bob", 30, 60000.0, datetime(2021, 2, 1)),
-        (3, None, 35, 70000.0, datetime(2021, 3, 1)),
-        (4, "David", None, 80000.0, datetime(2021, 4, 1)),
+        (1, "Alice", 25, 50000.0, datetime(2021, 1, 1, tzinfo=UTC)),
+        (2, "Bob", 30, 60000.0, datetime(2021, 2, 1, tzinfo=UTC)),
+        (3, None, 35, 70000.0, datetime(2021, 3, 1, tzinfo=UTC)),
+        (4, "David", None, 80000.0, datetime(2021, 4, 1, tzinfo=UTC)),
         (5, "Eve", 40, None, None),
     ]
 
@@ -146,7 +147,7 @@ class TestAnalyzeAPI:
 
     def test_invalid_parameters(self, sample_dataframe):
         """Test error handling for invalid parameters."""
-        from pyspark_analyzer import ConfigurationError, ColumnNotFoundError
+        from pyspark_analyzer import ColumnNotFoundError, ConfigurationError
 
         # Both target_rows and fraction
         with pytest.raises(ConfigurationError, match="Cannot specify both"):
@@ -226,7 +227,7 @@ class TestAnalyzeAPI:
                     f"User_{i % 100}",
                     20 + (i % 50),
                     30000.0 + (i * 100),
-                    datetime(2020, 1 + (i % 12), 1 + (i % 28)),
+                    datetime(2020, 1 + (i % 12), 1 + (i % 28), tzinfo=UTC),
                 )
             )
 

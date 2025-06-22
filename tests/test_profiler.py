@@ -105,7 +105,7 @@ class TestStatisticsComputer:
         assert len(stats) == len(sample_dataframe.columns)
 
         # Verify basic structure
-        for col_name, col_stats in stats.items():
+        for _, col_stats in stats.items():
             assert "total_count" in col_stats
             assert "non_null_count" in col_stats
             assert "data_type" in col_stats

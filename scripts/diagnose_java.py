@@ -2,9 +2,9 @@
 """Diagnostic script to check Java and PySpark setup."""
 
 import os
-import sys
-import subprocess  # nosec B404
 import platform
+import subprocess  # nosec B404
+import sys
 
 
 def check_java():
@@ -95,7 +95,7 @@ def check_pyspark():
 
         except Exception as e:
             print(f"❌ Failed to create SparkSession: {type(e).__name__}")
-            print(f"   Error: {str(e)}")
+            print(f"   Error: {e!s}")
 
             # Common error hints
             if "Java gateway process exited" in str(e):

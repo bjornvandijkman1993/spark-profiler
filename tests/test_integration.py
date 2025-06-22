@@ -2,18 +2,19 @@
 Integration tests for spark-profiler with real Spark DataFrames.
 """
 
-import pytest
-from datetime import date
 import json
+from datetime import date
+
+import pytest
 from pyspark.sql.types import (
-    StructType,
-    StructField,
-    StringType,
-    IntegerType,
-    DoubleType,
-    DateType,
-    BooleanType,
     ArrayType,
+    BooleanType,
+    DateType,
+    DoubleType,
+    IntegerType,
+    StringType,
+    StructField,
+    StructType,
 )
 
 from pyspark_analyzer import ColumnNotFoundError, ConfigurationError, analyze
@@ -176,11 +177,11 @@ class TestEndToEndProfiling:
     def test_profile_edge_cases(self, spark_session):
         """Test profiling edge cases."""
         from pyspark.sql.types import (
-            StructType,
-            StructField,
+            DoubleType,
             IntegerType,
             StringType,
-            DoubleType,
+            StructField,
+            StructType,
         )
 
         # Empty DataFrame

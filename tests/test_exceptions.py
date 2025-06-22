@@ -3,21 +3,21 @@ Test cases for custom exception handling.
 """
 
 import pytest
-from pyspark.sql.types import StructType, StructField, StringType
+from pyspark.sql.types import StringType, StructField, StructType
 
 from pyspark_analyzer import (
-    analyze,
+    ColumnNotFoundError,
     ConfigurationError,
     DataTypeError,
-    ColumnNotFoundError,
-    SparkOperationError,
-    SamplingError,
-    StatisticsError,
-    ProfilingError,
     InvalidDataError,
+    ProfilingError,
+    SamplingError,
+    SparkOperationError,
+    StatisticsError,
+    analyze,
 )
-from pyspark_analyzer.sampling import SamplingConfig
 from pyspark_analyzer.exceptions import SparkOperationError as SparkOpError
+from pyspark_analyzer.sampling import SamplingConfig
 
 
 class TestExceptionHandling:
@@ -91,11 +91,10 @@ class TestExceptionHandling:
             from pyspark_analyzer.profiler import DataFrameProfiler
 
             # If it exists, it should raise a deprecation warning on use
-            with pytest.warns(DeprecationWarning):
-                with pytest.raises(
-                    DataTypeError, match="Input must be a PySpark DataFrame"
-                ):
-                    DataFrameProfiler("not a dataframe")
+            with pytest.warns(DeprecationWarning), pytest.raises(
+                DataTypeError, match="Input must be a PySpark DataFrame"
+            ):
+                DataFrameProfiler("not a dataframe")
         except ImportError:
             # DataFrameProfiler has been removed, which is expected
             pass

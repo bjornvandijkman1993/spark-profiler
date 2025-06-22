@@ -2,10 +2,9 @@
 Performance optimization utilities for large dataset profiling.
 """
 
-from typing import Optional
+from py4j.protocol import Py4JError, Py4JJavaError
 from pyspark.sql import DataFrame
 from pyspark.sql.utils import AnalysisException
-from py4j.protocol import Py4JError, Py4JJavaError
 
 from .exceptions import SparkOperationError
 from .logging import get_logger
@@ -15,8 +14,8 @@ logger = get_logger(__name__)
 
 def optimize_dataframe_for_profiling(
     df: DataFrame,
-    sample_fraction: Optional[float] = None,
-    row_count: Optional[int] = None,
+    sample_fraction: float | None = None,
+    row_count: int | None = None,
 ) -> DataFrame:
     """
     Optimize DataFrame for profiling operations with lazy evaluation support.
@@ -44,12 +43,10 @@ def optimize_dataframe_for_profiling(
 
     # Use adaptive partitioning for better performance
     # Pass row_count to avoid unnecessary count operations in lazy evaluation context
-    optimized_df = _adaptive_partition(optimized_df, row_count)
-
-    return optimized_df
+    return _adaptive_partition(optimized_df, row_count)
 
 
-def _adaptive_partition(df: DataFrame, row_count: Optional[int] = None) -> DataFrame:
+def _adaptive_partition(df: DataFrame, row_count: int | None = None) -> DataFrame:
     """
     Intelligently partition DataFrame based on data characteristics and cluster configuration.
 
@@ -73,7 +70,7 @@ def _adaptive_partition(df: DataFrame, row_count: Optional[int] = None) -> DataF
         aqe_setting = spark.conf.get("spark.sql.adaptive.enabled", "false")
         aqe_enabled = aqe_setting.lower() == "true" if aqe_setting else False
     except Exception as e:
-        logger.warning(f"Could not check AQE setting, assuming disabled: {str(e)}")
+        logger.warning(f"Could not check AQE setting, assuming disabled: {e!s}")
         aqe_enabled = False
     if aqe_enabled:
         logger.debug(
@@ -116,7 +113,7 @@ def _adaptive_partition(df: DataFrame, row_count: Optional[int] = None) -> DataF
             f"shuffle_partitions={shuffle_partitions}"
         )
     except Exception as e:
-        logger.warning(f"Could not get cluster configuration, using defaults: {str(e)}")
+        logger.warning(f"Could not get cluster configuration, using defaults: {e!s}")
         default_parallelism = 8
         shuffle_partitions = 200
 
@@ -129,10 +126,10 @@ def _adaptive_partition(df: DataFrame, row_count: Optional[int] = None) -> DataF
         try:
             row_count = df.count()
         except (AnalysisException, Py4JError, Py4JJavaError) as e:
-            logger.error(f"Failed to count DataFrame rows for optimization: {str(e)}")
+            logger.error(f"Failed to count DataFrame rows for optimization: {e!s}")
             raise SparkOperationError(
-                f"Failed to count DataFrame rows during optimization: {str(e)}", e
-            )
+                f"Failed to count DataFrame rows during optimization: {e!s}", e
+            ) from e
 
     # Estimate average row size (this is a heuristic)
     # For profiling, we typically deal with mixed data types
@@ -178,14 +175,13 @@ def _adaptive_partition(df: DataFrame, row_count: Optional[int] = None) -> DataF
                 f"(ratio: {partition_ratio:.2f})"
             )
             return df.coalesce(optimal_partitions)
-        else:
-            # Increase partitions - requires shuffle
-            # Consider using repartitionByRange for better distribution if there's a sortable key
-            logger.info(
-                f"Repartitioning: {current_partitions} -> {optimal_partitions} "
-                f"(ratio: {partition_ratio:.2f})"
-            )
-            return df.repartition(optimal_partitions)
+        # Increase partitions - requires shuffle
+        # Consider using repartitionByRange for better distribution if there's a sortable key
+        logger.info(
+            f"Repartitioning: {current_partitions} -> {optimal_partitions} "
+            f"(ratio: {partition_ratio:.2f})"
+        )
+        return df.repartition(optimal_partitions)
 
     # No significant benefit from repartitioning
     logger.debug(

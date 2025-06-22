@@ -2,14 +2,15 @@
 Test cases for utility functions.
 """
 
-import pytest
 import json
-from datetime import datetime, date
+from datetime import UTC, date, datetime
+
+import pytest
 
 from pyspark_analyzer import ConfigurationError
 from pyspark_analyzer.utils import (
-    format_profile_output,
     _create_summary_report,
+    format_profile_output,
 )
 
 
@@ -56,7 +57,7 @@ class TestFormatProfileOutput:
         profile_data = {
             "columns": {
                 "date_col": {
-                    "min_date": datetime(2023, 1, 1),
+                    "min_date": datetime(2023, 1, 1, tzinfo=UTC),
                     "max_date": date(2023, 12, 31),
                 }
             }

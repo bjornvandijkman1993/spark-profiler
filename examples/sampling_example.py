@@ -3,9 +3,11 @@
 Sampling capabilities for efficient profiling of large datasets.
 """
 
-from pyspark.sql import SparkSession
-from pyspark_analyzer import analyze
 import time
+
+from pyspark.sql import SparkSession
+
+from pyspark_analyzer import analyze
 
 # Create Spark session
 spark = SparkSession.builder.appName("SamplingExample").master("local[*]").getOrCreate()

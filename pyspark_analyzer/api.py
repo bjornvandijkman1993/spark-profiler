@@ -1,10 +1,9 @@
-from typing import Optional, List, Union
 import pandas as pd
 from pyspark.sql import DataFrame
 
+from .logging import get_logger
 from .profiler import profile_dataframe
 from .sampling import SamplingConfig
-from .logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -12,16 +11,16 @@ logger = get_logger(__name__)
 def analyze(
     df: DataFrame,
     *,
-    sampling: Optional[bool] = None,
-    target_rows: Optional[int] = None,
-    fraction: Optional[float] = None,
-    columns: Optional[List[str]] = None,
+    sampling: bool | None = None,
+    target_rows: int | None = None,
+    fraction: float | None = None,
+    columns: list[str] | None = None,
     output_format: str = "pandas",
     include_advanced: bool = True,
     include_quality: bool = True,
-    seed: Optional[int] = None,
-    show_progress: Optional[bool] = None,
-) -> Union[pd.DataFrame, dict, str]:
+    seed: int | None = None,
+    show_progress: bool | None = None,
+) -> pd.DataFrame | dict | str:
     """
     Analyze a PySpark DataFrame and generate comprehensive statistics.
 
@@ -95,15 +94,15 @@ def analyze(
         logger.info("DataFrame analysis completed successfully")
         return result
     except Exception as e:
-        logger.error(f"Error during DataFrame analysis: {str(e)}", exc_info=True)
+        logger.error(f"Error during DataFrame analysis: {e!s}", exc_info=True)
         raise
 
 
 def _build_sampling_config(
-    sampling: Optional[bool],
-    target_rows: Optional[int],
-    fraction: Optional[float],
-    seed: Optional[int],
+    sampling: bool | None,
+    target_rows: int | None,
+    fraction: float | None,
+    seed: int | None,
 ) -> SamplingConfig:
     """
     Build SamplingConfig from simplified parameters.

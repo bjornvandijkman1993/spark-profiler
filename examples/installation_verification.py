@@ -4,7 +4,9 @@ Installation verification for pyspark-analyzer.
 """
 
 import sys
+
 from pyspark.sql import SparkSession
+
 from pyspark_analyzer import analyze
 
 

@@ -4,6 +4,7 @@ Simple examples of the analyze() API.
 """
 
 from pyspark.sql import SparkSession
+
 from pyspark_analyzer import analyze
 
 # Create Spark session

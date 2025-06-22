@@ -1,10 +1,11 @@
 """Shared test fixtures and configuration for pytest."""
 
 import os
-import sys
 import subprocess
-import pytest
+import sys
 from unittest.mock import Mock
+
+import pytest
 from pyspark.sql import SparkSession
 
 
@@ -85,6 +86,9 @@ def spark_session():
         )  # Disable AQE for predictable tests
         .config("spark.driver.memory", "1g")
         .config("spark.executor.memory", "1g")
+        .config(
+            "spark.sql.session.timeZone", "UTC"
+        )  # Use UTC for consistent timestamp handling
         .getOrCreate()
     )
 

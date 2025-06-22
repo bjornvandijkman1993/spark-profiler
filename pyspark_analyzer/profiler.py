@@ -4,37 +4,38 @@ Internal DataFrame profiler implementation for PySpark DataFrames.
 This module is for internal use only. Use the `analyze()` function from the main package instead.
 """
 
+from typing import Any
+
 import pandas as pd
-from typing import Dict, Any, List, Optional, Union
+from py4j.protocol import Py4JError, Py4JJavaError
 from pyspark.sql import DataFrame
 from pyspark.sql.utils import AnalysisException
-from py4j.protocol import Py4JError, Py4JJavaError
 
-from .statistics import StatisticsComputer
-from .utils import format_profile_output
-from .performance import optimize_dataframe_for_profiling
-from .sampling import SamplingConfig, SamplingMetadata, apply_sampling
 from .exceptions import (
-    DataTypeError,
     ColumnNotFoundError,
+    DataTypeError,
     SparkOperationError,
     StatisticsError,
 )
 from .logging import get_logger
+from .performance import optimize_dataframe_for_profiling
 from .progress import ProgressStage
+from .sampling import SamplingConfig, SamplingMetadata, apply_sampling
+from .statistics import StatisticsComputer
+from .utils import format_profile_output
 
 logger = get_logger(__name__)
 
 
 def profile_dataframe(
     dataframe: DataFrame,
-    columns: Optional[List[str]] = None,
+    columns: list[str] | None = None,
     output_format: str = "pandas",
     include_advanced: bool = True,
     include_quality: bool = True,
-    sampling_config: Optional[SamplingConfig] = None,
-    show_progress: Optional[bool] = None,
-) -> Union[pd.DataFrame, Dict[str, Any], str]:
+    sampling_config: SamplingConfig | None = None,
+    show_progress: bool | None = None,
+) -> pd.DataFrame | dict[str, Any] | str:
     """
     Generate a comprehensive profile of a PySpark DataFrame.
 
@@ -114,7 +115,7 @@ def profile_dataframe(
     )
 
     # Create profile result
-    profile_result: Dict[str, Any] = {
+    profile_result: dict[str, Any] = {
         "overview": _get_overview(sampled_df, column_types, sampling_metadata),
         "columns": {},
         "sampling": _get_sampling_info(sampling_metadata),
@@ -140,15 +141,18 @@ def profile_dataframe(
         )
         logger.info("Column profiling completed")
     except (AnalysisException, Py4JError, Py4JJavaError) as e:
-        logger.error(f"Spark error during batch profiling: {str(e)}")
+        logger.error(f"Spark error during batch profiling: {e!s}")
         raise SparkOperationError(
-            f"Failed to profile DataFrame due to Spark error: {str(e)}", e
-        )
+            f"Failed to profile DataFrame due to Spark error: {e!s}", e
+        ) from e
     except Exception as e:
-        logger.error(f"Unexpected error during batch profiling: {str(e)}")
+        logger.error(f"Unexpected error during batch profiling: {e!s}")
         raise StatisticsError(
-            f"Failed to compute statistics during batch profiling: {str(e)}"
-        )
+            f"Failed to compute statistics during batch profiling: {e!s}"
+        ) from e
+
+    # Move to formatting stage
+    progress_stage.next_stage()
 
     # Move to formatting stage
     progress_stage.next_stage()
@@ -164,9 +168,9 @@ def profile_dataframe(
 
 def _get_overview(
     df: DataFrame,
-    column_types: Dict[str, Any],
+    column_types: dict[str, Any],
     sampling_metadata: SamplingMetadata,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get overview statistics for the entire DataFrame."""
     total_rows = sampling_metadata.sample_size
     total_columns = len(df.columns)
@@ -178,7 +182,7 @@ def _get_overview(
     }
 
 
-def _get_sampling_info(sampling_metadata: Optional[SamplingMetadata]) -> Dict[str, Any]:
+def _get_sampling_info(sampling_metadata: SamplingMetadata | None) -> dict[str, Any]:
     """Get sampling information for the profile."""
     if not sampling_metadata:
         return {"is_sampled": False}

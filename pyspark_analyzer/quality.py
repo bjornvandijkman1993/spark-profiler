@@ -1,8 +1,9 @@
 """Data quality calculation module."""
 
-from typing import Dict, Any
+from typing import Any
+
 from pyspark.sql import DataFrame
-from pyspark.sql import functions as F
+from pyspark.sql import functions as F  # noqa: N812
 from pyspark.sql import types as t
 
 from .constants import ID_COLUMN_UNIQUENESS_THRESHOLD, QUALITY_OUTLIER_PENALTY_MAX
@@ -20,8 +21,8 @@ class QualityCalculator:
         self.total_rows = total_rows
 
     def calculate_quality(
-        self, stats: Dict[str, Any], column_type: Any
-    ) -> Dict[str, Any]:
+        self, stats: dict[str, Any], column_type: Any
+    ) -> dict[str, Any]:
         """
         Calculate quality metrics based on column statistics.
 
@@ -57,7 +58,7 @@ class QualityCalculator:
         return quality_metrics
 
     def _add_numeric_quality(
-        self, quality_metrics: Dict[str, Any], stats: Dict[str, Any]
+        self, quality_metrics: dict[str, Any], stats: dict[str, Any]
     ) -> None:
         """Add numeric-specific quality metrics."""
         # Check for numeric quality issues
@@ -84,7 +85,7 @@ class QualityCalculator:
                 "outlier_percentage", 0.0
             )
 
-    def _add_string_quality(self, quality_metrics: Dict[str, Any]) -> None:
+    def _add_string_quality(self, quality_metrics: dict[str, Any]) -> None:
         """Add string-specific quality metrics."""
         result = self.df.agg(
             F.count(F.when(F.trim(F.col(self.column_name)) == "", 1)).alias(
@@ -106,7 +107,7 @@ class QualityCalculator:
             }
         )
 
-    def _calculate_quality_score(self, quality_metrics: Dict[str, Any]) -> float:
+    def _calculate_quality_score(self, quality_metrics: dict[str, Any]) -> float:
         """Calculate overall quality score (0-1)."""
         quality_score = quality_metrics["completeness"]
 
@@ -133,7 +134,6 @@ class QualityCalculator:
         """Get simplified type name for quality reporting."""
         if isinstance(column_type, t.NumericType):
             return "numeric"
-        elif isinstance(column_type, t.StringType):
+        if isinstance(column_type, t.StringType):
             return "string"
-        else:
-            return "other"
+        return "other"
