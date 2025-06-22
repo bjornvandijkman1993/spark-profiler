@@ -154,6 +154,9 @@ def profile_dataframe(
     # Move to formatting stage
     progress_stage.next_stage()
 
+    # Move to formatting stage
+    progress_stage.next_stage()
+
     logger.debug(f"Formatting output as {output_format}")
     result = format_profile_output(profile_result, output_format)
 
