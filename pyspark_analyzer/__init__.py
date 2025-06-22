@@ -5,7 +5,7 @@ A library for generating comprehensive profiles of PySpark DataFrames with stati
 for all columns including null counts, data type specific metrics, and performance optimizations.
 
 Requirements:
-    - PySpark >= 3.5.0 (required for median function support)
+    - PySpark >= 3.0.0
     - Python >= 3.8
 """
 
@@ -22,6 +22,7 @@ from .exceptions import (
 )
 from .sampling import SamplingConfig
 from .logging import configure_logging, set_log_level, disable_logging, get_logger
+from .progress import ProgressTracker, track_progress
 
 __version__ = "5.0.1"
 __all__ = [
@@ -41,4 +42,7 @@ __all__ = [
     "set_log_level",
     "disable_logging",
     "get_logger",
+    # Progress tracking
+    "ProgressTracker",
+    "track_progress",
 ]

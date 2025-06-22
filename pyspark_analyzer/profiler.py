@@ -21,6 +21,7 @@ from .exceptions import (
     StatisticsError,
 )
 from .logging import get_logger
+from .progress import ProgressStage
 
 logger = get_logger(__name__)
 
@@ -32,6 +33,7 @@ def profile_dataframe(
     include_advanced: bool = True,
     include_quality: bool = True,
     sampling_config: Optional[SamplingConfig] = None,
+    show_progress: Optional[bool] = None,
 ) -> Union[pd.DataFrame, Dict[str, Any], str]:
     """
     Generate a comprehensive profile of a PySpark DataFrame.
@@ -44,6 +46,7 @@ def profile_dataframe(
         include_advanced: Include advanced statistics (skewness, kurtosis, outliers, etc.)
         include_quality: Include data quality metrics
         sampling_config: Sampling configuration. If None, auto-sampling is enabled for large datasets.
+        show_progress: Show progress indicators during profiling. If None, auto-detects based on environment.
 
     Returns:
         Profile results in requested format
@@ -58,9 +61,24 @@ def profile_dataframe(
     if sampling_config is None:
         sampling_config = SamplingConfig()
 
+    # Set up progress tracking
+    progress_stage = ProgressStage(
+        [
+            ("Counting rows", 1),
+            ("Applying sampling", 1),
+            ("Computing statistics", 5),
+            ("Formatting output", 1),
+        ],
+        show_progress=show_progress,
+    )
+    progress_stage.start()
+
     # Apply sampling
     logger.debug("Applying sampling configuration")
     sampled_df, sampling_metadata = apply_sampling(dataframe, sampling_config)
+
+    # Move to next stage after sampling
+    progress_stage.next_stage()
 
     if sampling_metadata.is_sampled:
         logger.info(
@@ -107,12 +125,18 @@ def profile_dataframe(
         sampled_df, total_rows=sampling_metadata.sample_size
     )
 
+    # Move to statistics computation stage
+    stats_tracker = progress_stage.next_stage()
+
     # Always use batch processing for optimal performance
     logger.debug("Starting batch column profiling")
     logger.debug("Starting batch computation")
     try:
         profile_result["columns"] = stats_computer.compute_all_columns_batch(
-            columns, include_advanced=include_advanced, include_quality=include_quality
+            columns,
+            include_advanced=include_advanced,
+            include_quality=include_quality,
+            progress_tracker=stats_tracker,
         )
         logger.info("Column profiling completed")
     except (AnalysisException, Py4JError, Py4JJavaError) as e:
@@ -126,8 +150,16 @@ def profile_dataframe(
             f"Failed to compute statistics during batch profiling: {str(e)}"
         )
 
+    # Move to formatting stage
+    progress_stage.next_stage()
+
     logger.debug(f"Formatting output as {output_format}")
-    return format_profile_output(profile_result, output_format)
+    result = format_profile_output(profile_result, output_format)
+
+    # Finish progress tracking
+    progress_stage.finish()
+
+    return result
 
 
 def _get_overview(

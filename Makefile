@@ -13,7 +13,7 @@ help:
 	@echo "  make test-cov     Run tests with coverage report"
 	@echo "  make test-quick   Run tests quickly (stop on first failure)"
 	@echo "  make test-integration  Run integration tests only"
-	@echo "  make lint         Run linting checks (flake8)"
+	@echo "  make lint         Run linting checks (ruff)"
 	@echo "  make format       Format code with black and isort"
 	@echo "  make typecheck    Run type checking with mypy"
 	@echo "  make security     Run security checks with bandit"
@@ -133,7 +133,7 @@ test-quick:
 
 # Code quality targets
 lint:
-	uv run flake8 pyspark_analyzer/ tests/
+	uv run ruff check pyspark_analyzer/
 
 format:
 	uv run black pyspark_analyzer/ tests/ examples/

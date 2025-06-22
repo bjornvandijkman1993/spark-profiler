@@ -64,6 +64,7 @@ class StatisticsComputer:
         columns: Optional[List[str]] = None,
         include_advanced: bool = True,
         include_quality: bool = True,
+        progress_tracker: Any = None,
     ) -> Dict[str, Dict[str, Any]]:
         """
         Compute statistics for multiple columns with minimal DataFrame scans.
@@ -72,6 +73,7 @@ class StatisticsComputer:
             columns: List of columns to profile. If None, profiles all columns.
             include_advanced: Include advanced statistics (always True)
             include_quality: Include data quality metrics
+            progress_tracker: Optional progress tracker for reporting progress
 
         Returns:
             Dictionary mapping column names to their statistics
@@ -90,6 +92,11 @@ class StatisticsComputer:
 
         total_rows = self._get_total_rows()
 
+        # Update progress tracker with actual column count
+        if progress_tracker:
+            progress_tracker.total_items = len(valid_columns)
+            progress_tracker.start()
+
         # Build aggregation expressions for all columns
         agg_exprs = self._build_aggregation_expressions(
             valid_columns, include_quality, include_advanced
@@ -107,11 +114,18 @@ class StatisticsComputer:
         try:
             # Execute single aggregation for all statistics
             logger.debug(f"Executing aggregation with {len(agg_exprs)} expressions")
+            if progress_tracker:
+                progress_tracker.update("Executing aggregations")
             result_row = self.df.agg(*agg_exprs).collect()[0]
 
             # Unpack results into column dictionaries
             results = self._unpack_results(
-                result_row, valid_columns, total_rows, include_quality, include_advanced
+                result_row,
+                valid_columns,
+                total_rows,
+                include_quality,
+                include_advanced,
+                progress_tracker,
             )
 
             # Compute special cases that require separate scans
@@ -323,11 +337,16 @@ class StatisticsComputer:
         total_rows: int,
         include_quality: bool,
         include_advanced: bool,
+        progress_tracker: Any = None,
     ) -> Dict[str, Dict[str, Any]]:
         """Unpack flat aggregation results into column-specific dictionaries."""
         results = {}
 
         for col_name in columns:
+            # Update progress for each column
+            if progress_tracker:
+                progress_tracker.update(f"Processing {col_name}")
+
             col_type = self._column_types[col_name]
 
             # Basic statistics - common to all types

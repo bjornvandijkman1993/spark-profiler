@@ -20,6 +20,7 @@ def analyze(
     include_advanced: bool = True,
     include_quality: bool = True,
     seed: Optional[int] = None,
+    show_progress: Optional[bool] = None,
 ) -> Union[pd.DataFrame, dict, str]:
     """
     Analyze a PySpark DataFrame and generate comprehensive statistics.
@@ -42,6 +43,7 @@ def analyze(
         include_advanced: Include advanced statistics (skewness, kurtosis, outliers, etc.)
         include_quality: Include data quality metrics
         seed: Random seed for reproducible sampling
+        show_progress: Show progress indicators during analysis. If None, auto-detects based on environment.
 
     Returns:
         Profile results in the requested format:
@@ -88,6 +90,7 @@ def analyze(
             include_advanced=include_advanced,
             include_quality=include_quality,
             sampling_config=sampling_config,
+            show_progress=show_progress,
         )
         logger.info("DataFrame analysis completed successfully")
         return result
