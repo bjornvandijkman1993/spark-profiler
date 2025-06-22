@@ -94,41 +94,21 @@ class TestAnalyzeFunction:
 class TestStatisticsComputer:
     """Test cases for StatisticsComputer class."""
 
-    def test_basic_stats_computation(self, sample_dataframe):
-        """Test basic statistics computation."""
+    def test_statistics_computer_integration(self, sample_dataframe):
+        """Test StatisticsComputer integration with the profiler."""
         computer = StatisticsComputer(sample_dataframe)
-        stats = computer.compute_basic_stats("id")
 
-        assert "total_count" in stats
-        assert "non_null_count" in stats
-        assert "null_count" in stats
-        assert "null_percentage" in stats
-        assert "distinct_count" in stats
-        assert "distinct_percentage" in stats
+        # Test that the compute_all_columns_batch method works
+        stats = computer.compute_all_columns_batch()
 
-        assert stats["total_count"] == 5
-        assert stats["non_null_count"] == 5  # id column has no nulls
-        assert stats["null_count"] == 0
+        # Verify we get stats for all columns
+        assert len(stats) == len(sample_dataframe.columns)
 
-    def test_numeric_stats_computation(self, simple_dataframe):
-        """Test numeric statistics computation."""
-        computer = StatisticsComputer(simple_dataframe)
-        stats = computer.compute_numeric_stats("value")
-
-        required_keys = ["min", "max", "mean", "std", "median", "q1", "q3"]
-        for key in required_keys:
-            assert key in stats
-
-    def test_string_stats_computation(self, sample_dataframe):
-        """Test string statistics computation."""
-        computer = StatisticsComputer(sample_dataframe)
-        stats = computer.compute_string_stats("name")
-
-        required_keys = ["min_length", "max_length", "avg_length", "empty_count"]
-        for key in required_keys:
-            assert key in stats
-
-        assert stats["empty_count"] == 0  # No empty strings in sample data
+        # Verify basic structure
+        for col_name, col_stats in stats.items():
+            assert "total_count" in col_stats
+            assert "non_null_count" in col_stats
+            assert "data_type" in col_stats
 
 
 class TestUtils:

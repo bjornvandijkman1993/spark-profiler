@@ -3,7 +3,7 @@
 from typing import Dict, Any
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
+from pyspark.sql import types as t
 
 from .constants import ID_COLUMN_UNIQUENESS_THRESHOLD, QUALITY_OUTLIER_PENALTY_MAX
 from .logging import get_logger
@@ -44,9 +44,9 @@ class QualityCalculator:
         }
 
         # Type-specific quality checks
-        if isinstance(column_type, T.NumericType):
+        if isinstance(column_type, t.NumericType):
             self._add_numeric_quality(quality_metrics, stats)
-        elif isinstance(column_type, T.StringType):
+        elif isinstance(column_type, t.StringType):
             self._add_string_quality(quality_metrics)
 
         # Calculate overall quality score
@@ -131,9 +131,9 @@ class QualityCalculator:
 
     def _get_type_name(self, column_type: Any) -> str:
         """Get simplified type name for quality reporting."""
-        if isinstance(column_type, T.NumericType):
+        if isinstance(column_type, t.NumericType):
             return "numeric"
-        elif isinstance(column_type, T.StringType):
+        elif isinstance(column_type, t.StringType):
             return "string"
         else:
             return "other"
