@@ -7,7 +7,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql.utils import AnalysisException
 from py4j.protocol import Py4JError, Py4JJavaError
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
+from pyspark.sql import types as t
 
 from .constants import (
     PATTERNS,
@@ -160,7 +160,7 @@ class StatisticsComputer:
             )
 
             # Numeric column statistics
-            if isinstance(col_type, T.NumericType):
+            if isinstance(col_type, t.NumericType):
                 agg_exprs.extend(
                     self._build_numeric_expressions(col_name, escaped, include_advanced)
                 )
@@ -170,7 +170,7 @@ class StatisticsComputer:
                     )
 
             # String column statistics
-            elif isinstance(col_type, T.StringType):
+            elif isinstance(col_type, t.StringType):
                 agg_exprs.extend(
                     self._build_string_expressions(col_name, escaped, include_advanced)
                 )
@@ -180,7 +180,7 @@ class StatisticsComputer:
                     )
 
             # Temporal column statistics
-            elif isinstance(col_type, (T.TimestampType, T.DateType)):
+            elif isinstance(col_type, (t.TimestampType, t.DateType)):
                 agg_exprs.extend(self._build_temporal_expressions(col_name, escaped))
 
         return agg_exprs
@@ -352,7 +352,7 @@ class StatisticsComputer:
             }
 
             # Type-specific statistics
-            if isinstance(col_type, T.NumericType):
+            if isinstance(col_type, t.NumericType):
                 self._unpack_numeric(
                     stats,
                     result_row,
@@ -361,11 +361,11 @@ class StatisticsComputer:
                     include_advanced,
                     include_quality,
                 )
-            elif isinstance(col_type, T.StringType):
+            elif isinstance(col_type, t.StringType):
                 self._unpack_string(
                     stats, result_row, col_name, include_advanced, include_quality
                 )
-            elif isinstance(col_type, (T.TimestampType, T.DateType)):
+            elif isinstance(col_type, (t.TimestampType, t.DateType)):
                 self._unpack_temporal(stats, result_row, col_name)
 
             # Add quality score if requested
@@ -558,7 +558,7 @@ class StatisticsComputer:
         quality_score = quality_metrics["completeness"]
 
         # Penalize for outliers in numeric columns
-        if isinstance(column_type, T.NumericType) and "outliers" in stats:
+        if isinstance(column_type, t.NumericType) and "outliers" in stats:
             outlier_percentage = stats["outliers"].get("outlier_percentage", 0.0)
             outlier_penalty = min(
                 outlier_percentage / 100.0 * QUALITY_OUTLIER_PENALTY_MAX,
@@ -580,11 +580,11 @@ class StatisticsComputer:
 
     def _get_type_name(self, column_type: Any) -> str:
         """Get simplified type name for reporting."""
-        if isinstance(column_type, T.NumericType):
+        if isinstance(column_type, t.NumericType):
             return "numeric"
-        elif isinstance(column_type, T.StringType):
+        elif isinstance(column_type, t.StringType):
             return "string"
-        elif isinstance(column_type, (T.TimestampType, T.DateType)):
+        elif isinstance(column_type, (t.TimestampType, t.DateType)):
             return "temporal"
         else:
             return "other"
@@ -610,7 +610,7 @@ class StatisticsComputer:
 
             # Numeric columns need outlier counts (only if advanced stats are requested)
             if (
-                isinstance(col_type, T.NumericType)
+                isinstance(col_type, t.NumericType)
                 and col_name in results
                 and include_advanced
             ):
@@ -618,7 +618,7 @@ class StatisticsComputer:
                     numeric_cols_needing_outliers.append(col_name)
 
             # String columns need top values (only if advanced stats are requested)
-            elif isinstance(col_type, T.StringType) and include_advanced:
+            elif isinstance(col_type, t.StringType) and include_advanced:
                 string_cols_needing_top_values.append(col_name)
 
         # Compute outlier counts for numeric columns in one scan

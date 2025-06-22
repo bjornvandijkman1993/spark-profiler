@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional
 from abc import ABC, abstractmethod
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
+from pyspark.sql import types as t
 
 from .constants import (
     PATTERNS,
@@ -321,11 +321,11 @@ def create_calculator(
     df: DataFrame, column_name: str, column_type: Any, total_rows: int
 ) -> BaseCalculator:
     """Factory function to create appropriate calculator based on column type."""
-    if isinstance(column_type, T.NumericType):
+    if isinstance(column_type, t.NumericType):
         return NumericCalculator(df, column_name, total_rows)
-    elif isinstance(column_type, T.StringType):
+    elif isinstance(column_type, t.StringType):
         return StringCalculator(df, column_name, total_rows)
-    elif isinstance(column_type, (T.TimestampType, T.DateType)):
+    elif isinstance(column_type, (t.TimestampType, t.DateType)):
         return TemporalCalculator(df, column_name, total_rows)
     else:
         # For other types (arrays, structs, etc.), return basic calculator
