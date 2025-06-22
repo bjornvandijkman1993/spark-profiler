@@ -14,6 +14,10 @@ def setup_java_environment():
     This function is called at module level to ensure Java is configured
     before any PySpark imports or operations.
     """
+    # Skip if already configured
+    if os.environ.get("_SPARK_PROFILER_JAVA_CONFIGURED"):
+        return
+
     if not os.environ.get("JAVA_HOME"):
         # Try to find Java 17 in common locations
         java_paths = [
@@ -51,6 +55,9 @@ def setup_java_environment():
 
     # Reduce Spark log verbosity
     os.environ.setdefault("SPARK_SUBMIT_OPTS", "-Dlog4j.logLevel=ERROR")
+
+    # Mark as configured to avoid repeated checks
+    os.environ["_SPARK_PROFILER_JAVA_CONFIGURED"] = "1"
 
 
 # Call setup at module level to ensure it runs before any tests
