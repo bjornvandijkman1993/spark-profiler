@@ -44,6 +44,18 @@ htmlcov/
 *.swp
 *.swo
 
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+.jupyter/
+.local/
+notebook_config/
+
+# Notebook outputs from examples
+notebooks/profile_outputs/
+notebooks/.ipynb_checkpoints/
+
 # OS
 .DS_Store
 Thumbs.db
