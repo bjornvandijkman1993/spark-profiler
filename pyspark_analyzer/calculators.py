@@ -3,27 +3,8 @@
 from typing import Dict, Any, Optional
 from abc import ABC, abstractmethod
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import (
-    col,
-    count,
-    when,
-    min as spark_min,
-    max as spark_max,
-    mean,
-    stddev,
-    expr,
-    length,
-    trim,
-    desc,
-    skewness,
-    kurtosis,
-    variance,
-    sum as spark_sum,
-    approx_count_distinct,
-    upper,
-    lower,
-)
-from pyspark.sql.types import NumericType, StringType, TimestampType, DateType
+from pyspark.sql import functions as F
+from pyspark.sql import types as T
 
 from .constants import (
     PATTERNS,
@@ -36,10 +17,9 @@ from .logging import get_logger
 
 # Check if median function is available (PySpark 3.4.0+)
 try:
-    from pyspark.sql.functions import median
-
+    F.median
     HAS_MEDIAN = True
-except ImportError:
+except AttributeError:
     HAS_MEDIAN = False
 
 logger = get_logger(__name__)
@@ -62,10 +42,10 @@ class BaseCalculator(ABC):
     def _calculate_basic_stats(self) -> Dict[str, Any]:
         """Calculate basic statistics common to all column types."""
         result = self.df.agg(
-            count(col(self.escaped_name)).alias("non_null_count"),
-            count(when(col(self.escaped_name).isNull(), 1)).alias("null_count"),
-            approx_count_distinct(
-                col(self.escaped_name), rsd=APPROX_DISTINCT_RSD
+            F.count(F.col(self.escaped_name)).alias("non_null_count"),
+            F.count(F.when(F.col(self.escaped_name).isNull(), 1)).alias("null_count"),
+            F.approx_count_distinct(
+                F.col(self.escaped_name), rsd=APPROX_DISTINCT_RSD
             ).alias("distinct_count"),
         ).collect()[0]
 
@@ -96,31 +76,31 @@ class NumericCalculator(BaseCalculator):
 
         # Build aggregation expressions
         agg_exprs = [
-            spark_min(col(self.escaped_name)).alias("min"),
-            spark_max(col(self.escaped_name)).alias("max"),
-            mean(col(self.escaped_name)).alias("mean"),
-            stddev(col(self.escaped_name)).alias("std"),
-            skewness(col(self.escaped_name)).alias("skewness"),
-            kurtosis(col(self.escaped_name)).alias("kurtosis"),
-            variance(col(self.escaped_name)).alias("variance"),
-            spark_sum(col(self.escaped_name)).alias("sum"),
-            count(when(col(self.escaped_name) == 0, 1)).alias("zero_count"),
-            count(when(col(self.escaped_name) < 0, 1)).alias("negative_count"),
+            F.min(F.col(self.escaped_name)).alias("min"),
+            F.max(F.col(self.escaped_name)).alias("max"),
+            F.mean(F.col(self.escaped_name)).alias("mean"),
+            F.stddev(F.col(self.escaped_name)).alias("std"),
+            F.skewness(F.col(self.escaped_name)).alias("skewness"),
+            F.kurtosis(F.col(self.escaped_name)).alias("kurtosis"),
+            F.variance(F.col(self.escaped_name)).alias("variance"),
+            F.sum(F.col(self.escaped_name)).alias("sum"),
+            F.count(F.when(F.col(self.escaped_name) == 0, 1)).alias("zero_count"),
+            F.count(F.when(F.col(self.escaped_name) < 0, 1)).alias("negative_count"),
         ]
 
         # Add median
         if HAS_MEDIAN:
-            agg_exprs.append(median(col(self.escaped_name)).alias("median"))
+            agg_exprs.append(F.median(F.col(self.escaped_name)).alias("median"))
         else:
             agg_exprs.append(
-                expr(f"percentile_approx({self.escaped_name}, 0.5)").alias("median")
+                F.expr(f"percentile_approx({self.escaped_name}, 0.5)").alias("median")
             )
 
         # Add percentiles
         percentiles = [0.25, 0.75, 0.05, 0.95]
         for p in percentiles:
             agg_exprs.append(
-                expr(f"percentile_approx({self.escaped_name}, {p})").alias(
+                F.expr(f"percentile_approx({self.escaped_name}, {p})").alias(
                     f"p{int(p*100)}"
                 )
             )
@@ -178,10 +158,10 @@ class NumericCalculator(BaseCalculator):
         upper_bound = q3 + OUTLIER_IQR_MULTIPLIER * iqr
 
         outlier_result = self.df.agg(
-            count(when(col(self.escaped_name) < lower_bound, 1)).alias(
+            F.count(F.when(F.col(self.escaped_name) < lower_bound, 1)).alias(
                 "lower_outliers"
             ),
-            count(when(col(self.escaped_name) > upper_bound, 1)).alias(
+            F.count(F.when(F.col(self.escaped_name) > upper_bound, 1)).alias(
                 "upper_outliers"
             ),
         ).collect()[0]
@@ -212,12 +192,12 @@ class StringCalculator(BaseCalculator):
 
         # String-specific aggregations
         result = self.df.agg(
-            spark_min(length(col(self.escaped_name))).alias("min_length"),
-            spark_max(length(col(self.escaped_name))).alias("max_length"),
-            mean(length(col(self.escaped_name))).alias("avg_length"),
-            count(when(col(self.escaped_name) == "", 1)).alias("empty_count"),
-            count(
-                when(trim(col(self.escaped_name)) != col(self.escaped_name), 1)
+            F.min(F.length(F.col(self.escaped_name))).alias("min_length"),
+            F.max(F.length(F.col(self.escaped_name))).alias("max_length"),
+            F.mean(F.length(F.col(self.escaped_name))).alias("avg_length"),
+            F.count(F.when(F.col(self.escaped_name) == "", 1)).alias("empty_count"),
+            F.count(
+                F.when(F.trim(F.col(self.escaped_name)) != F.col(self.escaped_name), 1)
             ).alias("has_whitespace_count"),
         ).collect()[0]
 
@@ -247,38 +227,38 @@ class StringCalculator(BaseCalculator):
 
         # Email pattern
         email_count = self.df.filter(
-            col(self.escaped_name).rlike(PATTERNS["email"])
+            F.col(self.escaped_name).rlike(PATTERNS["email"])
         ).count()
         pattern_counts["email_count"] = email_count
 
         # URL pattern
         url_count = self.df.filter(
-            col(self.escaped_name).rlike(PATTERNS["url"])
+            F.col(self.escaped_name).rlike(PATTERNS["url"])
         ).count()
         pattern_counts["url_count"] = url_count
 
         # Phone-like pattern
         phone_count = self.df.filter(
-            col(self.escaped_name).rlike(PATTERNS["phone"])
+            F.col(self.escaped_name).rlike(PATTERNS["phone"])
         ).count()
         pattern_counts["phone_like_count"] = phone_count
 
         # Numeric string
         numeric_count = self.df.filter(
-            col(self.escaped_name).rlike(PATTERNS["numeric_string"])
+            F.col(self.escaped_name).rlike(PATTERNS["numeric_string"])
         ).count()
         pattern_counts["numeric_string_count"] = numeric_count
 
         # Case patterns
         uppercase_count = self.df.filter(
-            (col(self.escaped_name).isNotNull())
-            & (col(self.escaped_name) == upper(col(self.escaped_name)))
+            (F.col(self.escaped_name).isNotNull())
+            & (F.col(self.escaped_name) == F.upper(F.col(self.escaped_name)))
         ).count()
         pattern_counts["uppercase_count"] = uppercase_count
 
         lowercase_count = self.df.filter(
-            (col(self.escaped_name).isNotNull())
-            & (col(self.escaped_name) == lower(col(self.escaped_name)))
+            (F.col(self.escaped_name).isNotNull())
+            & (F.col(self.escaped_name) == F.lower(F.col(self.escaped_name)))
         ).count()
         pattern_counts["lowercase_count"] = lowercase_count
 
@@ -287,10 +267,10 @@ class StringCalculator(BaseCalculator):
     def _get_top_values(self, limit: int = DEFAULT_TOP_VALUES_LIMIT) -> list:
         """Get top frequent values."""
         top_values = (
-            self.df.filter(col(self.escaped_name).isNotNull())
+            self.df.filter(F.col(self.escaped_name).isNotNull())
             .groupBy(self.column_name)
             .count()
-            .orderBy(desc("count"))
+            .orderBy(F.desc("count"))
             .limit(limit)
             .collect()
         )
@@ -310,8 +290,8 @@ class TemporalCalculator(BaseCalculator):
 
         # Temporal-specific aggregations
         result = self.df.agg(
-            spark_min(col(self.escaped_name)).alias("min_date"),
-            spark_max(col(self.escaped_name)).alias("max_date"),
+            F.min(F.col(self.escaped_name)).alias("min_date"),
+            F.max(F.col(self.escaped_name)).alias("max_date"),
         ).collect()[0]
 
         min_date = result["min_date"]
@@ -341,11 +321,11 @@ def create_calculator(
     df: DataFrame, column_name: str, column_type: Any, total_rows: int
 ) -> BaseCalculator:
     """Factory function to create appropriate calculator based on column type."""
-    if isinstance(column_type, NumericType):
+    if isinstance(column_type, T.NumericType):
         return NumericCalculator(df, column_name, total_rows)
-    elif isinstance(column_type, StringType):
+    elif isinstance(column_type, T.StringType):
         return StringCalculator(df, column_name, total_rows)
-    elif isinstance(column_type, (TimestampType, DateType)):
+    elif isinstance(column_type, (T.TimestampType, T.DateType)):
         return TemporalCalculator(df, column_name, total_rows)
     else:
         # For other types (arrays, structs, etc.), return basic calculator

@@ -2,8 +2,8 @@
 
 from typing import Dict, Any
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, count, when, trim, length
-from pyspark.sql.types import NumericType, StringType
+from pyspark.sql import functions as F
+from pyspark.sql import types as T
 
 from .constants import ID_COLUMN_UNIQUENESS_THRESHOLD, QUALITY_OUTLIER_PENALTY_MAX
 from .logging import get_logger
@@ -44,9 +44,9 @@ class QualityCalculator:
         }
 
         # Type-specific quality checks
-        if isinstance(column_type, NumericType):
+        if isinstance(column_type, T.NumericType):
             self._add_numeric_quality(quality_metrics, stats)
-        elif isinstance(column_type, StringType):
+        elif isinstance(column_type, T.StringType):
             self._add_string_quality(quality_metrics)
 
         # Calculate overall quality score
@@ -62,9 +62,11 @@ class QualityCalculator:
         """Add numeric-specific quality metrics."""
         # Check for numeric quality issues
         result = self.df.agg(
-            count(when(col(self.column_name).isNaN(), 1)).alias("nan_count"),
-            count(when(col(self.column_name) == float("inf"), 1)).alias("inf_count"),
-            count(when(col(self.column_name) == float("-inf"), 1)).alias(
+            F.count(F.when(F.col(self.column_name).isNaN(), 1)).alias("nan_count"),
+            F.count(F.when(F.col(self.column_name) == float("inf"), 1)).alias(
+                "inf_count"
+            ),
+            F.count(F.when(F.col(self.column_name) == float("-inf"), 1)).alias(
                 "neg_inf_count"
             ),
         ).collect()[0]
@@ -85,11 +87,13 @@ class QualityCalculator:
     def _add_string_quality(self, quality_metrics: Dict[str, Any]) -> None:
         """Add string-specific quality metrics."""
         result = self.df.agg(
-            count(when(trim(col(self.column_name)) == "", 1)).alias("blank_count"),
-            count(when(col(self.column_name).rlike(r"[^\x00-\x7F]"), 1)).alias(
+            F.count(F.when(F.trim(F.col(self.column_name)) == "", 1)).alias(
+                "blank_count"
+            ),
+            F.count(F.when(F.col(self.column_name).rlike(r"[^\x00-\x7F]"), 1)).alias(
                 "non_ascii_count"
             ),
-            count(when(length(col(self.column_name)) == 1, 1)).alias(
+            F.count(F.when(F.length(F.col(self.column_name)) == 1, 1)).alias(
                 "single_char_count"
             ),
         ).collect()[0]
@@ -127,9 +131,9 @@ class QualityCalculator:
 
     def _get_type_name(self, column_type: Any) -> str:
         """Get simplified type name for quality reporting."""
-        if isinstance(column_type, NumericType):
+        if isinstance(column_type, T.NumericType):
             return "numeric"
-        elif isinstance(column_type, StringType):
+        elif isinstance(column_type, T.StringType):
             return "string"
         else:
             return "other"

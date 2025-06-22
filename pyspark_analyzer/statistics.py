@@ -6,33 +6,8 @@ from typing import Dict, Any, List, Optional
 from pyspark.sql import DataFrame
 from pyspark.sql.utils import AnalysisException
 from py4j.protocol import Py4JError, Py4JJavaError
-from pyspark.sql.functions import (
-    col,
-    count,
-    when,
-    min as spark_min,
-    max as spark_max,
-    mean,
-    stddev,
-    expr,
-    length,
-    trim,
-    desc,
-    skewness,
-    kurtosis,
-    variance,
-    sum as spark_sum,
-    approx_count_distinct,
-    upper,
-    lower,
-    isnan,
-)
-from pyspark.sql.types import (
-    NumericType,
-    StringType,
-    TimestampType,
-    DateType,
-)
+from pyspark.sql import functions as F
+from pyspark.sql import types as T
 
 from .constants import (
     PATTERNS,
@@ -48,10 +23,9 @@ from .logging import get_logger
 
 # Check if median function is available (PySpark 3.4.0+)
 try:
-    from pyspark.sql.functions import median
-
+    F.median
     HAS_MEDIAN = True
-except ImportError:
+except AttributeError:
     HAS_MEDIAN = False
 
 logger = get_logger(__name__)
@@ -175,18 +149,18 @@ class StatisticsComputer:
             # Basic statistics for all column types
             agg_exprs.extend(
                 [
-                    count(col(escaped)).alias(f"{col_name}__non_null_count"),
-                    count(when(col(escaped).isNull(), 1)).alias(
+                    F.count(F.col(escaped)).alias(f"{col_name}__non_null_count"),
+                    F.count(F.when(F.col(escaped).isNull(), 1)).alias(
                         f"{col_name}__null_count"
                     ),
-                    approx_count_distinct(col(escaped), rsd=APPROX_DISTINCT_RSD).alias(
-                        f"{col_name}__distinct_count"
-                    ),
+                    F.approx_count_distinct(
+                        F.col(escaped), rsd=APPROX_DISTINCT_RSD
+                    ).alias(f"{col_name}__distinct_count"),
                 ]
             )
 
             # Numeric column statistics
-            if isinstance(col_type, NumericType):
+            if isinstance(col_type, T.NumericType):
                 agg_exprs.extend(
                     self._build_numeric_expressions(col_name, escaped, include_advanced)
                 )
@@ -196,7 +170,7 @@ class StatisticsComputer:
                     )
 
             # String column statistics
-            elif isinstance(col_type, StringType):
+            elif isinstance(col_type, T.StringType):
                 agg_exprs.extend(
                     self._build_string_expressions(col_name, escaped, include_advanced)
                 )
@@ -206,7 +180,7 @@ class StatisticsComputer:
                     )
 
             # Temporal column statistics
-            elif isinstance(col_type, (TimestampType, DateType)):
+            elif isinstance(col_type, (T.TimestampType, T.DateType)):
                 agg_exprs.extend(self._build_temporal_expressions(col_name, escaped))
 
         return agg_exprs
@@ -216,31 +190,31 @@ class StatisticsComputer:
     ) -> List:
         """Build numeric-specific aggregation expressions."""
         exprs = [
-            spark_min(col(escaped)).alias(f"{col_name}__min"),
-            spark_max(col(escaped)).alias(f"{col_name}__max"),
-            mean(col(escaped)).alias(f"{col_name}__mean"),
-            stddev(col(escaped)).alias(f"{col_name}__std"),
-            spark_sum(col(escaped)).alias(f"{col_name}__sum"),
-            count(when(col(escaped) == 0, 1)).alias(f"{col_name}__zero_count"),
-            count(when(col(escaped) < 0, 1)).alias(f"{col_name}__negative_count"),
+            F.min(F.col(escaped)).alias(f"{col_name}__min"),
+            F.max(F.col(escaped)).alias(f"{col_name}__max"),
+            F.mean(F.col(escaped)).alias(f"{col_name}__mean"),
+            F.stddev(F.col(escaped)).alias(f"{col_name}__std"),
+            F.sum(F.col(escaped)).alias(f"{col_name}__sum"),
+            F.count(F.when(F.col(escaped) == 0, 1)).alias(f"{col_name}__zero_count"),
+            F.count(F.when(F.col(escaped) < 0, 1)).alias(f"{col_name}__negative_count"),
         ]
 
         if include_advanced:
             # Add advanced statistics
             exprs.extend(
                 [
-                    skewness(col(escaped)).alias(f"{col_name}__skewness"),
-                    kurtosis(col(escaped)).alias(f"{col_name}__kurtosis"),
-                    variance(col(escaped)).alias(f"{col_name}__variance"),
+                    F.skewness(F.col(escaped)).alias(f"{col_name}__skewness"),
+                    F.kurtosis(F.col(escaped)).alias(f"{col_name}__kurtosis"),
+                    F.variance(F.col(escaped)).alias(f"{col_name}__variance"),
                 ]
             )
 
             # Add median
             if HAS_MEDIAN:
-                exprs.append(median(col(escaped)).alias(f"{col_name}__median"))
+                exprs.append(F.median(F.col(escaped)).alias(f"{col_name}__median"))
             else:
                 exprs.append(
-                    expr(f"percentile_approx({escaped}, 0.5)").alias(
+                    F.expr(f"percentile_approx({escaped}, 0.5)").alias(
                         f"{col_name}__median"
                     )
                 )
@@ -249,7 +223,7 @@ class StatisticsComputer:
             percentiles = [(0.25, "q1"), (0.75, "q3"), (0.05, "p5"), (0.95, "p95")]
             for p_val, p_name in percentiles:
                 exprs.append(
-                    expr(f"percentile_approx({escaped}, {p_val})").alias(
+                    F.expr(f"percentile_approx({escaped}, {p_val})").alias(
                         f"{col_name}__{p_name}"
                     )
                 )
@@ -259,11 +233,11 @@ class StatisticsComputer:
     def _build_numeric_quality_expressions(self, col_name: str, escaped: str) -> List:
         """Build numeric quality-specific expressions."""
         return [
-            count(when(isnan(col(escaped)), 1)).alias(f"{col_name}__nan_count"),
-            count(when(col(escaped) == float("inf"), 1)).alias(
+            F.count(F.when(F.isnan(F.col(escaped)), 1)).alias(f"{col_name}__nan_count"),
+            F.count(F.when(F.col(escaped) == float("inf"), 1)).alias(
                 f"{col_name}__inf_count"
             ),
-            count(when(col(escaped) == float("-inf"), 1)).alias(
+            F.count(F.when(F.col(escaped) == float("-inf"), 1)).alias(
                 f"{col_name}__neg_inf_count"
             ),
         ]
@@ -273,16 +247,16 @@ class StatisticsComputer:
     ) -> List:
         """Build string-specific aggregation expressions."""
         exprs = [
-            spark_min(length(col(escaped))).alias(f"{col_name}__min_length"),
-            spark_max(length(col(escaped))).alias(f"{col_name}__max_length"),
-            mean(length(col(escaped))).alias(f"{col_name}__avg_length"),
-            count(when(col(escaped) == "", 1)).alias(f"{col_name}__empty_count"),
+            F.min(F.length(F.col(escaped))).alias(f"{col_name}__min_length"),
+            F.max(F.length(F.col(escaped))).alias(f"{col_name}__max_length"),
+            F.mean(F.length(F.col(escaped))).alias(f"{col_name}__avg_length"),
+            F.count(F.when(F.col(escaped) == "", 1)).alias(f"{col_name}__empty_count"),
         ]
 
         if include_advanced:
             # Add advanced string statistics
             exprs.append(
-                count(when(trim(col(escaped)) != col(escaped), 1)).alias(
+                F.count(F.when(F.trim(F.col(escaped)) != F.col(escaped), 1)).alias(
                     f"{col_name}__has_whitespace_count"
                 )
             )
@@ -290,29 +264,29 @@ class StatisticsComputer:
             # Pattern detection
             exprs.extend(
                 [
-                    count(when(col(escaped).rlike(PATTERNS["email"]), 1)).alias(
+                    F.count(F.when(F.col(escaped).rlike(PATTERNS["email"]), 1)).alias(
                         f"{col_name}__email_count"
                     ),
-                    count(when(col(escaped).rlike(PATTERNS["url"]), 1)).alias(
+                    F.count(F.when(F.col(escaped).rlike(PATTERNS["url"]), 1)).alias(
                         f"{col_name}__url_count"
                     ),
-                    count(when(col(escaped).rlike(PATTERNS["phone"]), 1)).alias(
+                    F.count(F.when(F.col(escaped).rlike(PATTERNS["phone"]), 1)).alias(
                         f"{col_name}__phone_like_count"
                     ),
-                    count(
-                        when(col(escaped).rlike(PATTERNS["numeric_string"]), 1)
+                    F.count(
+                        F.when(F.col(escaped).rlike(PATTERNS["numeric_string"]), 1)
                     ).alias(f"{col_name}__numeric_string_count"),
-                    count(
-                        when(
-                            (col(escaped).isNotNull())
-                            & (col(escaped) == upper(col(escaped))),
+                    F.count(
+                        F.when(
+                            (F.col(escaped).isNotNull())
+                            & (F.col(escaped) == F.upper(F.col(escaped))),
                             1,
                         )
                     ).alias(f"{col_name}__uppercase_count"),
-                    count(
-                        when(
-                            (col(escaped).isNotNull())
-                            & (col(escaped) == lower(col(escaped))),
+                    F.count(
+                        F.when(
+                            (F.col(escaped).isNotNull())
+                            & (F.col(escaped) == F.lower(F.col(escaped))),
                             1,
                         )
                     ).alias(f"{col_name}__lowercase_count"),
@@ -324,11 +298,13 @@ class StatisticsComputer:
     def _build_string_quality_expressions(self, col_name: str, escaped: str) -> List:
         """Build string quality-specific expressions."""
         return [
-            count(when(trim(col(escaped)) == "", 1)).alias(f"{col_name}__blank_count"),
-            count(when(col(escaped).rlike(r"[^\x00-\x7F]"), 1)).alias(
+            F.count(F.when(F.trim(F.col(escaped)) == "", 1)).alias(
+                f"{col_name}__blank_count"
+            ),
+            F.count(F.when(F.col(escaped).rlike(r"[^\x00-\x7F]"), 1)).alias(
                 f"{col_name}__non_ascii_count"
             ),
-            count(when(length(col(escaped)) == 1, 1)).alias(
+            F.count(F.when(F.length(F.col(escaped)) == 1, 1)).alias(
                 f"{col_name}__single_char_count"
             ),
         ]
@@ -336,8 +312,8 @@ class StatisticsComputer:
     def _build_temporal_expressions(self, col_name: str, escaped: str) -> List:
         """Build temporal-specific aggregation expressions."""
         return [
-            spark_min(col(escaped)).alias(f"{col_name}__min_date"),
-            spark_max(col(escaped)).alias(f"{col_name}__max_date"),
+            F.min(F.col(escaped)).alias(f"{col_name}__min_date"),
+            F.max(F.col(escaped)).alias(f"{col_name}__max_date"),
         ]
 
     def _unpack_results(
@@ -353,45 +329,44 @@ class StatisticsComputer:
 
         for col_name in columns:
             col_type = self._column_types[col_name]
-            stats: Dict[str, Any] = {"data_type": str(col_type)}
 
-            # Basic statistics
+            # Basic statistics - common to all types
             non_null_count = result_row[f"{col_name}__non_null_count"]
             null_count = result_row[f"{col_name}__null_count"]
             distinct_count = result_row[f"{col_name}__distinct_count"]
 
-            stats.update(
-                {
-                    "total_count": int(total_rows),
-                    "non_null_count": non_null_count,
-                    "null_count": null_count,
-                    "null_percentage": (
-                        (null_count / total_rows * 100) if total_rows > 0 else 0.0
-                    ),
-                    "distinct_count": distinct_count,
-                    "distinct_percentage": (
-                        (distinct_count / non_null_count * 100)
-                        if non_null_count > 0
-                        else 0.0
-                    ),
-                }
-            )
+            stats: Dict[str, Any] = {
+                "data_type": str(col_type),
+                "total_count": int(total_rows),
+                "non_null_count": non_null_count,
+                "null_count": null_count,
+                "null_percentage": (
+                    (null_count / total_rows * 100) if total_rows > 0 else 0.0
+                ),
+                "distinct_count": distinct_count,
+                "distinct_percentage": (
+                    (distinct_count / non_null_count * 100)
+                    if non_null_count > 0
+                    else 0.0
+                ),
+            }
 
             # Type-specific statistics
-            if isinstance(col_type, NumericType):
-                self._unpack_numeric_stats(
-                    stats, result_row, col_name, total_rows, include_advanced
+            if isinstance(col_type, T.NumericType):
+                self._unpack_numeric(
+                    stats,
+                    result_row,
+                    col_name,
+                    total_rows,
+                    include_advanced,
+                    include_quality,
                 )
-                if include_quality:
-                    self._unpack_numeric_quality(stats, result_row, col_name)
-
-            elif isinstance(col_type, StringType):
-                self._unpack_string_stats(stats, result_row, col_name, include_advanced)
-                if include_quality:
-                    self._unpack_string_quality(stats, result_row, col_name)
-
-            elif isinstance(col_type, (TimestampType, DateType)):
-                self._unpack_temporal_stats(stats, result_row, col_name)
+            elif isinstance(col_type, T.StringType):
+                self._unpack_string(
+                    stats, result_row, col_name, include_advanced, include_quality
+                )
+            elif isinstance(col_type, (T.TimestampType, T.DateType)):
+                self._unpack_temporal(stats, result_row, col_name)
 
             # Add quality score if requested
             if include_quality:
@@ -404,15 +379,16 @@ class StatisticsComputer:
 
         return results
 
-    def _unpack_numeric_stats(
+    def _unpack_numeric(
         self,
         stats: Dict[str, Any],
         result_row: Any,
         col_name: str,
         total_rows: int,
         include_advanced: bool,
+        include_quality: bool,
     ) -> None:
-        """Unpack numeric statistics from result row."""
+        """Unpack all numeric statistics and quality metrics from result row."""
         # Basic numeric stats
         stats.update(
             {
@@ -430,8 +406,8 @@ class StatisticsComputer:
             }
         )
 
+        # Advanced statistics
         if include_advanced:
-            # Advanced statistics
             stats.update(
                 {
                     "median": result_row[f"{col_name}__median"],
@@ -445,7 +421,23 @@ class StatisticsComputer:
                 }
             )
 
-        # Calculate derived statistics
+        # Quality metrics
+        if include_quality:
+            nan_count = result_row[f"{col_name}__nan_count"]
+            inf_count = result_row[f"{col_name}__inf_count"]
+            neg_inf_count = result_row[f"{col_name}__neg_inf_count"]
+
+            if "quality" not in stats:
+                stats["quality"] = {}
+
+            stats["quality"].update(
+                {
+                    "nan_count": nan_count,
+                    "infinity_count": inf_count + neg_inf_count,
+                }
+            )
+
+        # Derived statistics
         if stats["min"] is not None and stats["max"] is not None:
             stats["range"] = stats["max"] - stats["min"]
 
@@ -455,61 +447,32 @@ class StatisticsComputer:
             and stats.get("q3") is not None
         ):
             stats["iqr"] = stats["q3"] - stats["q1"]
-
-            # Calculate outliers
-            outliers = self._calculate_outliers(stats["q1"], stats["q3"], total_rows)
-            stats["outliers"] = outliers
+            # Calculate outlier bounds (counts computed separately)
+            iqr = stats["iqr"]
+            stats["outliers"] = {
+                "method": "iqr",
+                "lower_bound": stats["q1"] - OUTLIER_IQR_MULTIPLIER * iqr,
+                "upper_bound": stats["q3"] + OUTLIER_IQR_MULTIPLIER * iqr,
+                "outlier_count": 0,  # Updated in _compute_special_cases
+                "outlier_percentage": 0.0,
+                "lower_outlier_count": 0,
+                "upper_outlier_count": 0,
+            }
 
         # Coefficient of variation
         if stats["mean"] and stats["mean"] != 0 and stats["std"]:
             stats["cv"] = abs(stats["std"] / stats["mean"])
 
-    def _calculate_outliers(
-        self, q1: float, q3: float, total_rows: int
-    ) -> Dict[str, Any]:
-        """Calculate outlier information based on IQR method."""
-        iqr = q3 - q1
-        lower_bound = q1 - OUTLIER_IQR_MULTIPLIER * iqr
-        upper_bound = q3 + OUTLIER_IQR_MULTIPLIER * iqr
-
-        # Note: For now, we'll need a separate scan for actual outlier counts
-        # This will be handled in _compute_special_cases
-        return {
-            "method": "iqr",
-            "lower_bound": lower_bound,
-            "upper_bound": upper_bound,
-            "outlier_count": 0,  # Placeholder, will be updated in special cases
-            "outlier_percentage": 0.0,
-            "lower_outlier_count": 0,
-            "upper_outlier_count": 0,
-        }
-
-    def _unpack_numeric_quality(
-        self, stats: Dict[str, Any], result_row: Any, col_name: str
-    ) -> None:
-        """Unpack numeric quality metrics from result row."""
-        nan_count = result_row[f"{col_name}__nan_count"]
-        inf_count = result_row[f"{col_name}__inf_count"]
-        neg_inf_count = result_row[f"{col_name}__neg_inf_count"]
-
-        if "quality" not in stats:
-            stats["quality"] = {}
-
-        stats["quality"].update(
-            {
-                "nan_count": nan_count,
-                "infinity_count": inf_count + neg_inf_count,
-            }
-        )
-
-    def _unpack_string_stats(
+    def _unpack_string(
         self,
         stats: Dict[str, Any],
         result_row: Any,
         col_name: str,
         include_advanced: bool,
+        include_quality: bool,
     ) -> None:
-        """Unpack string statistics from result row."""
+        """Unpack all string statistics and quality metrics from result row."""
+        # Basic string stats
         stats.update(
             {
                 "min_length": result_row[f"{col_name}__min_length"],
@@ -519,11 +482,11 @@ class StatisticsComputer:
             }
         )
 
+        # Advanced statistics
         if include_advanced:
             stats["has_whitespace_count"] = result_row[
                 f"{col_name}__has_whitespace_count"
             ]
-
             # Pattern detection results
             stats["patterns"] = {
                 "email_count": result_row[f"{col_name}__email_count"],
@@ -534,22 +497,20 @@ class StatisticsComputer:
                 "lowercase_count": result_row[f"{col_name}__lowercase_count"],
             }
 
-    def _unpack_string_quality(
-        self, stats: Dict[str, Any], result_row: Any, col_name: str
-    ) -> None:
-        """Unpack string quality metrics from result row."""
-        if "quality" not in stats:
-            stats["quality"] = {}
+        # Quality metrics
+        if include_quality:
+            if "quality" not in stats:
+                stats["quality"] = {}
 
-        stats["quality"].update(
-            {
-                "blank_count": result_row[f"{col_name}__blank_count"],
-                "non_ascii_count": result_row[f"{col_name}__non_ascii_count"],
-                "single_char_count": result_row[f"{col_name}__single_char_count"],
-            }
-        )
+            stats["quality"].update(
+                {
+                    "blank_count": result_row[f"{col_name}__blank_count"],
+                    "non_ascii_count": result_row[f"{col_name}__non_ascii_count"],
+                    "single_char_count": result_row[f"{col_name}__single_char_count"],
+                }
+            )
 
-    def _unpack_temporal_stats(
+    def _unpack_temporal(
         self, stats: Dict[str, Any], result_row: Any, col_name: str
     ) -> None:
         """Unpack temporal statistics from result row."""
@@ -597,7 +558,7 @@ class StatisticsComputer:
         quality_score = quality_metrics["completeness"]
 
         # Penalize for outliers in numeric columns
-        if isinstance(column_type, NumericType) and "outliers" in stats:
+        if isinstance(column_type, T.NumericType) and "outliers" in stats:
             outlier_percentage = stats["outliers"].get("outlier_percentage", 0.0)
             outlier_penalty = min(
                 outlier_percentage / 100.0 * QUALITY_OUTLIER_PENALTY_MAX,
@@ -619,11 +580,11 @@ class StatisticsComputer:
 
     def _get_type_name(self, column_type: Any) -> str:
         """Get simplified type name for reporting."""
-        if isinstance(column_type, NumericType):
+        if isinstance(column_type, T.NumericType):
             return "numeric"
-        elif isinstance(column_type, StringType):
+        elif isinstance(column_type, T.StringType):
             return "string"
-        elif isinstance(column_type, (TimestampType, DateType)):
+        elif isinstance(column_type, (T.TimestampType, T.DateType)):
             return "temporal"
         else:
             return "other"
@@ -649,7 +610,7 @@ class StatisticsComputer:
 
             # Numeric columns need outlier counts (only if advanced stats are requested)
             if (
-                isinstance(col_type, NumericType)
+                isinstance(col_type, T.NumericType)
                 and col_name in results
                 and include_advanced
             ):
@@ -657,7 +618,7 @@ class StatisticsComputer:
                     numeric_cols_needing_outliers.append(col_name)
 
             # String columns need top values (only if advanced stats are requested)
-            elif isinstance(col_type, StringType) and include_advanced:
+            elif isinstance(col_type, T.StringType) and include_advanced:
                 string_cols_needing_top_values.append(col_name)
 
         # Compute outlier counts for numeric columns in one scan
@@ -702,10 +663,10 @@ class StatisticsComputer:
 
                 agg_exprs.extend(
                     [
-                        count(when(col(escaped) < lower_bound, 1)).alias(
+                        F.count(F.when(F.col(escaped) < lower_bound, 1)).alias(
                             f"{col_name}__lower_outliers"
                         ),
-                        count(when(col(escaped) > upper_bound, 1)).alias(
+                        F.count(F.when(F.col(escaped) > upper_bound, 1)).alias(
                             f"{col_name}__upper_outliers"
                         ),
                     ]
@@ -751,10 +712,10 @@ class StatisticsComputer:
 
         try:
             top_values = (
-                self.df.filter(col(escaped).isNotNull())
+                self.df.filter(F.col(escaped).isNotNull())
                 .groupBy(column_name)
                 .count()
-                .orderBy(desc("count"))
+                .orderBy(F.desc("count"))
                 .limit(limit)
                 .collect()
             )
@@ -765,88 +726,3 @@ class StatisticsComputer:
         except Exception as e:
             logger.warning(f"Failed to compute top values for {column_name}: {str(e)}")
             return []
-
-    # Convenience method for single column computation
-    def compute_column_stats(
-        self, column_name: str, include_quality: bool = True
-    ) -> Dict[str, Any]:
-        """Compute statistics for a single column."""
-        results = self.compute_all_columns_batch(
-            [column_name], include_quality=include_quality
-        )
-        return results.get(column_name, {})
-
-    # Test compatibility methods - these wrap the new batch interface
-    def compute_basic_stats(self, column_name: str) -> Dict[str, Any]:
-        """Compute basic statistics for a single column (test compatibility)."""
-        stats = self.compute_column_stats(column_name, include_quality=False)
-        # Extract only basic stats
-        return {
-            k: v
-            for k, v in stats.items()
-            if k
-            in [
-                "total_count",
-                "non_null_count",
-                "null_count",
-                "null_percentage",
-                "distinct_count",
-                "distinct_percentage",
-            ]
-        }
-
-    def compute_numeric_stats(
-        self, column_name: str, advanced: bool = True
-    ) -> Dict[str, Any]:
-        """Compute numeric statistics for a single column (test compatibility)."""
-        stats = self.compute_column_stats(column_name, include_quality=False)
-        # Return all numeric-specific stats
-        return {k: v for k, v in stats.items() if k not in ["data_type", "quality"]}
-
-    def compute_string_stats(
-        self, column_name: str, pattern_detection: bool = True, top_n: int = 10
-    ) -> Dict[str, Any]:
-        """Compute string statistics for a single column (test compatibility)."""
-        stats = self.compute_column_stats(column_name, include_quality=False)
-        result = {k: v for k, v in stats.items() if k not in ["data_type", "quality"]}
-
-        # If top_values exist and top_n is different from default, recompute with the requested limit
-        if "top_values" in result and top_n != DEFAULT_TOP_VALUES_LIMIT:
-            result["top_values"] = self._get_top_values(column_name, limit=top_n)
-
-        return result
-
-    def compute_temporal_stats(self, column_name: str) -> Dict[str, Any]:
-        """Compute temporal statistics for a single column (test compatibility)."""
-        stats = self.compute_column_stats(column_name, include_quality=False)
-        # Return all temporal-specific stats
-        return {k: v for k, v in stats.items() if k not in ["data_type", "quality"]}
-
-    def compute_outlier_stats(
-        self, column_name: str, method: str = "iqr"
-    ) -> Dict[str, Any]:
-        """Compute outlier statistics for a single column (test compatibility)."""
-        stats = self.compute_column_stats(column_name, include_quality=False)
-        if "outliers" in stats:
-            result = dict(stats["outliers"])
-            # Override the method to match what was requested
-            result["method"] = method
-            # Add threshold for zscore method
-            if method == "zscore":
-                result["threshold"] = 3.0
-            return result
-        # For z-score method, we'd need a separate implementation
-        # For now, just return IQR results
-        return {
-            "method": method,
-            "outlier_count": 0,
-            "outlier_percentage": 0.0,
-            "threshold": 3.0 if method == "zscore" else None,
-        }
-
-    def compute_data_quality_stats(
-        self, column_name: str, column_type: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Compute data quality statistics for a single column (test compatibility)."""
-        stats = self.compute_column_stats(column_name, include_quality=True)
-        return dict(stats.get("quality", {}))
