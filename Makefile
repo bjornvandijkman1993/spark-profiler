@@ -1,7 +1,7 @@
 .PHONY: help install install-dev test test-cov test-quick test-integration test-unit test-watch test-parallel coverage-html \
         lint format format-check typecheck security security-scan secrets-scan clean clean-all build build-check dist-check \
         docs docs-build docs-serve docs-clean diagnose setup-java pre-commit-install pre-commit-run pre-commit-update \
-        deps-check deps-update deps-licenses sbom examples example-basic example-verify version changelog \
+        deps-check deps-update deps-licenses sbom examples example-basic example-verify example-progress version changelog \
         lint-all quality check dev all ci release-dry-run env reinstall
 
 # Default target
@@ -237,6 +237,9 @@ example-basic:
 
 example-verify:
 	uv run python examples/installation_verification.py
+
+example-progress:
+	uv run python examples/progress_bar_demo.py
 
 # Version and changelog
 version:
