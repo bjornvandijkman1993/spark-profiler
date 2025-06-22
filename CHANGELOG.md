@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.2](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v5.0.1...v5.0.2) (2025-06-22)
+
+
+### Bug Fixes
+
+* apply ruff linting and formatting fixes ([d74858e](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/d74858e8c966251adadbaa4999aab7ad15b4312e))
+
 ## [5.0.1](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v5.0.0...v5.0.1) (2025-06-22)
 
 

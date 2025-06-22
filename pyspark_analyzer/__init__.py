@@ -24,7 +24,7 @@ from .logging import configure_logging, disable_logging, get_logger, set_log_lev
 from .progress import ProgressTracker, track_progress
 from .sampling import SamplingConfig
 
-__version__ = "5.0.1"
+__version__ = "5.0.2"
 __all__ = [
     "ColumnNotFoundError",
     "ConfigurationError",
