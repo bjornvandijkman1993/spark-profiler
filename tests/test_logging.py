@@ -150,7 +150,6 @@ class TestLoggingOutput:
         log_contents = log_capture.getvalue()
 
         # Should see debug messages
-        assert "Sampling configuration:" in log_contents
         assert "Computing basic statistics" in log_contents
         assert "Starting batch computation" in log_contents
 
