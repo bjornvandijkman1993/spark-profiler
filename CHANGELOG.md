@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [4.4.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v4.3.0...v4.4.0) (2025-06-22)
+
+
+### Features
+
+* optimize Java environment setup in conftest.py ([434d4b7](https://github.com/bjornvandijkman1993/pyspark-analyzer/commit/434d4b71166d442e1f286e8deca02a1206ca5b58))
+
 # [4.3.0](https://github.com/bjornvandijkman1993/pyspark-analyzer/compare/v4.2.1...v4.3.0) (2025-06-19)
 
 
