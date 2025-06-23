@@ -35,21 +35,29 @@ logger = get_logger(__name__)
 class StatisticsComputer:
     """Computes statistics for DataFrame columns using type-specific calculators."""
 
-    def __init__(self, dataframe: DataFrame, total_rows: int | None = None):
+    def __init__(
+        self,
+        dataframe: DataFrame,
+        total_rows: int | None = None,
+        cache_manager: Any = None,
+    ):
         """
         Initialize with a PySpark DataFrame.
 
         Args:
             dataframe: PySpark DataFrame to compute statistics for
             total_rows: Cached row count to avoid recomputation
+            cache_manager: Optional CacheManager for performance optimization
         """
         self.df = dataframe
         self._total_rows = total_rows
+        self._cache_manager = cache_manager
         self._column_types = {
             field.name: field.dataType for field in self.df.schema.fields
         }
         logger.debug(
             f"StatisticsComputer initialized with {'cached' if total_rows else 'lazy'} row count"
+            + (", cache manager enabled" if cache_manager else "")
         )
 
     def _get_total_rows(self) -> int:
@@ -115,6 +123,8 @@ class StatisticsComputer:
         try:
             # Execute single aggregation for all statistics
             logger.debug(f"Executing aggregation with {len(agg_exprs)} expressions")
+            if self._cache_manager:
+                logger.debug("Using cached DataFrame for statistics computation")
             if progress_tracker:
                 progress_tracker.update("Executing aggregations")
             result_row = self.df.agg(*agg_exprs).collect()[0]
