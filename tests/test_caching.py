@@ -338,22 +338,18 @@ class TestIntegrationWithProfiler:
 
     def test_profile_with_caching_enabled(self, sample_dataframe):
         """Test profiling with caching enabled."""
-        from pyspark_analyzer import CacheConfig, analyze
+        from pyspark_analyzer import analyze
 
         # Mock persist/unpersist
         sample_dataframe.persist = Mock(return_value=sample_dataframe)
         sample_dataframe.unpersist = Mock()
+        sample_dataframe.count = Mock(
+            return_value=2_000_000
+        )  # Large enough to trigger caching
 
-        # Configure caching to trigger for small DataFrames
-        cache_config = CacheConfig(
-            enabled=True,
-            min_rows_to_cache=1,  # Cache even small DataFrames
-        )
-
-        # Run analysis
-        result = analyze(
-            sample_dataframe, cache_config=cache_config, output_format="dict"
-        )
+        # Run analysis with patched MIN_ROWS_TO_CACHE to trigger caching
+        with patch("pyspark_analyzer.caching.MIN_ROWS_TO_CACHE", 1):
+            result = analyze(sample_dataframe, output_format="dict")
 
         # Verify caching info is in result
         assert "caching" in result
@@ -361,36 +357,34 @@ class TestIntegrationWithProfiler:
 
     def test_profile_with_caching_disabled(self, sample_dataframe):
         """Test profiling with caching disabled."""
-        from pyspark_analyzer import CacheConfig, analyze
+        from pyspark_analyzer import analyze
 
-        cache_config = CacheConfig(enabled=False)
+        # Mock count to return small row count (won't trigger caching)
+        sample_dataframe.count = Mock(return_value=100)
 
         # Run analysis
-        result = analyze(
-            sample_dataframe, cache_config=cache_config, output_format="dict"
-        )
+        result = analyze(sample_dataframe, output_format="dict")
 
-        # Caching info should not be in result when disabled
-        assert "caching" not in result or not result.get("caching", {}).get(
-            "enabled", True
-        )
+        # When DataFrame is small and caching is not triggered,
+        # caching stats still appear but cache_key should be None
+        if "caching" in result:
+            assert result["caching"]["cache_key"] is None
+            # No actual caching should have occurred
+            assert result["caching"]["cache_hits"] == 0
 
     def test_profile_with_cache_error_handling(self, sample_dataframe):
         """Test that profiling continues even if caching fails."""
-        from pyspark_analyzer import CacheConfig, analyze
+        from pyspark_analyzer import analyze
 
         # Mock persist to raise an error
         sample_dataframe.persist = Mock(side_effect=Exception("Caching failed"))
-
-        cache_config = CacheConfig(
-            enabled=True,
-            min_rows_to_cache=1,
-        )
+        sample_dataframe.count = Mock(
+            return_value=2_000_000
+        )  # Large enough to trigger caching
 
         # Should complete successfully despite cache error
-        result = analyze(
-            sample_dataframe, cache_config=cache_config, output_format="dict"
-        )
+        with patch("pyspark_analyzer.caching.MIN_ROWS_TO_CACHE", 1):
+            result = analyze(sample_dataframe, output_format="dict")
 
         assert "columns" in result
         assert len(result["columns"]) > 0
