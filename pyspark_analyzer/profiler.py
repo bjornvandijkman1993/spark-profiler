@@ -11,6 +11,7 @@ from py4j.protocol import Py4JError, Py4JJavaError
 from pyspark.sql import DataFrame
 from pyspark.sql.utils import AnalysisException
 
+from .caching import CacheManager
 from .exceptions import (
     ColumnNotFoundError,
     DataTypeError,
@@ -97,6 +98,23 @@ def profile_dataframe(
         sampled_df, row_count=sampling_metadata.sample_size
     )
 
+    # Set up caching - always enabled
+    cache_manager = CacheManager()
+    cache_key = None
+
+    # Check if we should cache this DataFrame
+    if cache_manager.should_cache(sampled_df, sampling_metadata.sample_size):
+        try:
+            sampled_df, cache_key = cache_manager.cache_dataframe(
+                sampled_df,
+                row_count=sampling_metadata.sample_size,
+                sampling_metadata=sampling_metadata,
+            )
+            logger.info(f"DataFrame cached with key: {cache_key[:8]}...")
+        except Exception as e:
+            logger.warning(f"Failed to cache DataFrame: {e!s}")
+            # Continue without caching
+
     # Get column types
     column_types = {field.name: field.dataType for field in sampled_df.schema.fields}
 
@@ -121,9 +139,11 @@ def profile_dataframe(
         "sampling": _get_sampling_info(sampling_metadata),
     }
 
-    # Initialize stats computer
+    # Initialize stats computer with cache manager
     stats_computer = StatisticsComputer(
-        sampled_df, total_rows=sampling_metadata.sample_size
+        sampled_df,
+        total_rows=sampling_metadata.sample_size,
+        cache_manager=cache_manager,
     )
 
     # Move to statistics computation stage
@@ -142,11 +162,17 @@ def profile_dataframe(
         logger.info("Column profiling completed")
     except (AnalysisException, Py4JError, Py4JJavaError) as e:
         logger.error(f"Spark error during batch profiling: {e!s}")
+        # Clean up cache on error
+        if cache_manager and cache_key:
+            cache_manager.unpersist(cache_key)
         raise SparkOperationError(
             f"Failed to profile DataFrame due to Spark error: {e!s}", e
         ) from e
     except Exception as e:
         logger.error(f"Unexpected error during batch profiling: {e!s}")
+        # Clean up cache on error
+        if cache_manager and cache_key:
+            cache_manager.unpersist(cache_key)
         raise StatisticsError(
             f"Failed to compute statistics during batch profiling: {e!s}"
         ) from e
@@ -154,11 +180,25 @@ def profile_dataframe(
     # Move to formatting stage
     progress_stage.next_stage()
 
-    # Move to formatting stage
-    progress_stage.next_stage()
+    # Add cache statistics to profile result
+    cache_stats = cache_manager.get_statistics()
+    if cache_stats:
+        profile_result["caching"] = {
+            "enabled": True,
+            "cache_key": cache_key[:8] + "..." if cache_key else None,
+            "hit_rate": cache_stats.hit_rate,
+            "total_requests": cache_stats.total_requests,
+            "cache_hits": cache_stats.cache_hits,
+            "cache_misses": cache_stats.cache_misses,
+        }
 
     logger.debug(f"Formatting output as {output_format}")
     result = format_profile_output(profile_result, output_format)
+
+    # Clean up cache after successful completion (auto_unpersist is True by default)
+    if cache_key:
+        logger.debug("Unpersisting cached DataFrame after successful completion")
+        cache_manager.unpersist(cache_key)
 
     # Finish progress tracking
     progress_stage.finish()
